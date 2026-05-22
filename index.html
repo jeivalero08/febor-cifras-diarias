@@ -601,7 +601,7 @@ function renderHist(data){
   const ch=new Chart(document.getElementById('chHist'),{
     type:'line',
     data:{labels:data.map(r=>r.Fecha),datasets:PRODS.map(p=>({
-      label:p.k,data:(()=>{const isMob=window.innerWidth<768;const st=isMob&&data.length>200?Math.ceil(data.length/200):1;return st>1?data.filter((_,i)=>i%st===0||i===data.length-1).map(r=>r[p.k]!=null?+(r[p.k]/1000000).toFixed(3):null):data.map(r=>r[p.k]!=null?+(r[p.k]/1000000).toFixed(3):null)})(),
+      label:p.k,data:data.map(r=>r[p.k]!=null?+(r[p.k]/1000000).toFixed(3):null),
       borderColor:p.c,backgroundColor:p.c+'18',borderWidth:2,
       pointRadius:dense?0:2,pointHoverRadius:6,hitRadius:10,tension:0.35,fill:false,spanGaps:true,
     }))},
