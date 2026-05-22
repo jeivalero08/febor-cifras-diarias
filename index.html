@@ -58,7 +58,7 @@ select,input{font-family:var(--ff)}
 .menu-hdr p{font-size:.83rem;color:var(--tx3);margin-top:.3rem;margin-bottom:1.4rem}
 .menu-hero{background:var(--g1);border-radius:var(--r16);padding:1.5rem 2rem;margin-bottom:1.2rem;display:flex;justify-content:space-between;align-items:center;gap:1.5rem;flex-wrap:wrap}
 .mh-l .lbl{font-size:.62rem;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.4);margin-bottom:.2rem}
-.mh-l .val{font-family:var(--fm);font-size:1.8rem;font-weight:500;color:var(--gold)}
+.mh-l .val{font-family:var(--fm);font-size:clamp(1.2rem,4vw,1.8rem);font-weight:500;color:var(--gold)}
 .mh-l .sub{font-size:.7rem;color:rgba(255,255,255,.3);margin-top:.12rem}
 .mh-badges{display:flex;gap:.4rem;flex-wrap:wrap;margin-top:.65rem}
 .badge{padding:3px 9px;border-radius:20px;font-size:.67rem;font-weight:500;background:rgba(0,146,122,.25);color:#7eeedd}
@@ -105,7 +105,7 @@ select,input{font-family:var(--ff)}
 .kpi{background:var(--surf);border:1px solid var(--bord);border-radius:var(--r12);padding:.95rem 1.1rem;position:relative;overflow:hidden}
 .kpi-bar{position:absolute;top:0;left:0;width:100%;height:3px}
 .kpi-lbl{font-size:.63rem;font-weight:600;text-transform:uppercase;letter-spacing:.09em;color:var(--tx3);margin-bottom:.3rem}
-.kpi-val{font-family:var(--fm);font-size:1.15rem;font-weight:500;color:var(--tx);line-height:1.1}
+.kpi-val{font-family:var(--fm);font-size:clamp(.9rem,2.5vw,1.15rem);font-weight:500;color:var(--tx);line-height:1.1}
 .kpi-unit{font-size:.62rem;color:var(--tx3);margin-top:.1rem}
 .kpi-d{display:inline-flex;align-items:center;font-size:.67rem;font-weight:600;padding:2px 7px;border-radius:20px;margin-top:.28rem}
 .kpi-d.up{background:var(--grn-l);color:var(--grn)}
@@ -122,8 +122,23 @@ select,input{font-family:var(--ff)}
 .ctop{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:.9rem;gap:1rem}
 .ctitle{font-size:.88rem;font-weight:600;color:var(--g1)}
 .csub{font-size:.67rem;color:var(--tx3);margin-top:2px}
-.cwrap{position:relative}
-.h340{height:340px}.h280{height:280px}
+.cwrap{position:relative;overflow:hidden}
+.cwrap.scrollable{overflow-x:auto;overflow-y:hidden}
+@media(max-width:768px){
+  .crow{grid-template-columns:1fr}
+  .ccard.span2{grid-column:1}
+  .kpis{grid-template-columns:repeat(2,1fr)}
+  .kpi-tot{grid-column:1/-1}
+  .sel-bar{flex-direction:column;align-items:flex-start}
+  .date-range{flex-wrap:wrap}
+  .hdr{padding:0 1rem}
+  .hdr-r .btn-h span{display:none}
+  .pg{padding:1rem 1rem 3rem}
+  .det-hero-top{grid-template-columns:1fr}
+  .det-stats-r{grid-template-columns:repeat(3,1fr)}
+  .menu-hero{flex-direction:column}
+}
+.h340{height:340px}.h280{height:280px}@media(max-width:600px){.h340{height:260px}.h280{height:220px}}
 .cleg{display:flex;flex-wrap:wrap;gap:9px;margin-top:.8rem}
 .cleg-i{display:flex;align-items:center;gap:4px;font-size:.7rem;color:var(--tx2);cursor:pointer;transition:opacity .14s}
 .cleg-i:hover{opacity:.7}
@@ -152,7 +167,7 @@ select,input{font-family:var(--ff)}
 .det-hero{background:var(--g1);border-radius:var(--r20);padding:1.5rem 1.8rem;margin-bottom:1.25rem}
 .det-hero-top{display:grid;grid-template-columns:1fr auto;gap:1.5rem;align-items:start}
 .det-pname{font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.4);margin-bottom:.22rem}
-.det-val{font-family:var(--fm);font-size:1.9rem;font-weight:500;color:var(--gold);line-height:1}
+.det-val{font-family:var(--fm);font-size:clamp(1.3rem,4vw,1.9rem);font-weight:500;color:var(--gold);line-height:1}
 .det-unit{font-size:.7rem;color:rgba(255,255,255,.3);margin-top:.28rem}
 .det-deltas{display:flex;gap:.45rem;margin-top:.55rem;flex-wrap:wrap}
 .det-d{display:inline-flex;align-items:center;font-size:.73rem;font-weight:600;padding:3px 9px;border-radius:20px}
@@ -9020,11 +9035,10 @@ select,input{font-family:var(--ff)}
       <div class="shdr-t">Resumen comparativo por producto</div>
       <div class="shdr-s">Saldo inicial → final y variación en el período</div>
     </div></div>
-    <table class="stbl">
+    <div style="overflow-x:auto;-webkit-overflow-scrolling:touch"><table class="stbl">
       <thead><tr><th>Producto</th><th>Saldo inicial</th><th>Saldo actual</th><th>Variación $</th><th>Variación %</th><th>Promedio</th></tr></thead>
       <tbody id="stblBody"></tbody>
-    </table>
-  </div>
+    </table></div>
 </div>
 
 <!-- PAGE PRODUCTO -->
@@ -9257,7 +9271,7 @@ function renderHist(data){
       borderColor:p.c,backgroundColor:p.c+'18',borderWidth:2,
       pointRadius:dense?0:2,pointHoverRadius:6,hitRadius:10,tension:0.35,fill:false,spanGaps:true,
     }))},
-    options:{responsive:true,maintainAspectRatio:false,
+    options:{responsive:true,maintainAspectRatio:false,resizeDelay:100,
       interaction:{mode:'index',intersect:false,axis:'x'},
       plugins:{legend:{display:false},tooltip:{callbacks:{
         title:t=>fDt(t[0].label),
@@ -9289,7 +9303,7 @@ function renderVar(data){
   new Chart(document.getElementById('chVar'),{type:'bar',
     data:{labels:mlabs,datasets:[{label:'Promedio',data:mavg,
       backgroundColor:colors,borderColor:bcolors,borderWidth:1,borderRadius:4}]},
-    options:{responsive:true,maintainAspectRatio:false,
+    options:{responsive:true,maintainAspectRatio:false,resizeDelay:100,
       plugins:{legend:{display:false},
         tooltip:{callbacks:{label:t=>`Promedio: ${t.parsed.y.toLocaleString('es-CO',{minimumFractionDigits:2,maximumFractionDigits:2})} M`}}},
       scales:{
@@ -9312,7 +9326,7 @@ function renderDonut(data){
   }).join('');
   new Chart(document.getElementById('chDonut'),{type:'doughnut',
     data:{labels:PRODS.map(p=>p.k),datasets:[{data:vals,backgroundColor:PRODS.map(p=>p.c),borderWidth:2,borderColor:'#fff',hoverOffset:6}]},
-    options:{responsive:true,maintainAspectRatio:false,cutout:'58%',plugins:{legend:{display:false},
+    options:{responsive:true,maintainAspectRatio:false,resizeDelay:100,cutout:'58%',plugins:{legend:{display:false},
       tooltip:{callbacks:{label:ctx=>{const pct=(ctx.parsed/total*100).toFixed(1);return ` ${ctx.label}: ${(ctx.parsed/1000000).toLocaleString('es-CO',{minimumFractionDigits:2,maximumFractionDigits:2})} M (${pct}%)`;}}}}
     }
   });
@@ -9371,7 +9385,7 @@ function renderProd(prod){
     data:{labels:data.map(r=>r.Fecha),datasets:[{label:prod,data:data.map(r=>+(r[prod]/1000000).toFixed(3)),
       borderColor:p.c,backgroundColor:p.c+'22',borderWidth:2.5,
       pointRadius:dense?0:2.5,pointHoverRadius:5,tension:0.4,fill:true}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},
+    options:{responsive:true,maintainAspectRatio:false,resizeDelay:100,plugins:{legend:{display:false},
       tooltip:{callbacks:{title:t=>fDt(t[0].label),label:t=>` ${t.parsed.y.toLocaleString('es-CO',{minimumFractionDigits:2,maximumFractionDigits:2})} M`}}},
       scales:{x:{ticks:{maxTicksLimit:12,font:{size:10},callback:(v,i)=>{const d=data[i]?.Fecha;return d?`${d.slice(8,10)}/${d.slice(5,7)}/${d.slice(2,4)}`:''}},grid:{display:false}},
         y:{ticks:{font:{size:10},callback:v=>(v).toLocaleString('es-CO',{minimumFractionDigits:0,maximumFractionDigits:2})+' M'},grid:{color:'#e8ede9'}}}}
@@ -9383,7 +9397,7 @@ function renderProd(prod){
     data:{labels:mks.map(k=>`${MS[parseInt(k.slice(5,7))]} ${k.slice(2,4)}`),
       datasets:[{label:'Prom',data:mks.map(k=>+(bM[k].s/bM[k].n/1000000).toFixed(3)),
         backgroundColor:p.c+'99',borderColor:p.c,borderWidth:1,borderRadius:4}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},
+    options:{responsive:true,maintainAspectRatio:false,resizeDelay:100,plugins:{legend:{display:false},
       tooltip:{callbacks:{label:t=>` ${t.parsed.y.toLocaleString('es-CO',{minimumFractionDigits:2,maximumFractionDigits:2})} M`}}},
       scales:{x:{ticks:{maxTicksLimit:14,font:{size:10},maxRotation:45},grid:{display:false}},
         y:{ticks:{font:{size:10},callback:v=>(v).toLocaleString('es-CO',{minimumFractionDigits:0,maximumFractionDigits:2})+' M'},grid:{color:'#e8ede9'}}}}
@@ -9396,7 +9410,7 @@ function renderProd(prod){
     ['Promedio período',fK(avgV)+' M'],
     ['Tendencia 12 días',t12!=null?`<span class="${t12>=0?'cup':'cdn'}">${fP(t12)}</span>`:'—'],
     ['Días con datos',vals.length.toString()]];
-  document.getElementById('detStats').innerHTML=`<table class="stbl"><tbody>
+  document.getElementById('detStats').innerHTML=`<div style="overflow-x:auto;-webkit-overflow-scrolling:touch"><table class="stbl"><tbody>
     ${rows.map(([l,v])=>`<tr><td style="color:var(--tx3)">${l}</td><td>${v}</td></tr>`).join('')}
   </tbody></table>`;
 }
