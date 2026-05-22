@@ -484,17 +484,14 @@ function buildSelects(){}
 
 function filtrar(st){
   let data=[...ALL];
-  // Prioridad 1: rango de fechas explícito
-  if(st.from&&st.to){
-    const f=new Date(st.from),t=new Date(st.to);
-    t.setHours(23,59,59,999);
-    return data.filter(r=>r._d>=f&&r._d<=t);
-  }
-  // Prioridad 2: pills de días
   if(st.days>0){
     const cutoff=new Date(ALL[ALL.length-1]._d);
     cutoff.setDate(cutoff.getDate()-st.days);
     return data.filter(r=>r._d>=cutoff);
+  }
+  if(st.from&&st.to){
+    // Compare as strings to avoid timezone issues
+    return data.filter(r=>r.Fecha>=st.from&&r.Fecha<=st.to);
   }
   return data;
 }
