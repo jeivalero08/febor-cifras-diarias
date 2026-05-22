@@ -220,6 +220,7 @@ select,input{font-family:var(--ff)}
     <div class="mcard" onclick="goProd('Aportes')"><div class="mcard-stripe"></div><div class="mcard-ico">🤝</div><h3>Aportes Sociales</h3><p>Cuenta 3110</p><span class="mcard-arr">→</span></div>
     <div class="mcard" onclick="goProd('Ahorro Contractual')"><div class="mcard-stripe"></div><div class="mcard-ico">📝</div><h3>Ahorro Contractual</h3><p>Cuenta 2125</p><span class="mcard-arr">→</span></div>
     <div class="mcard" onclick="goProd('Bolsillo Rentable')"><div class="mcard-stripe"></div><div class="mcard-ico">💳</div><h3>Bolsillo Rentable</h3><p>Cuenta 210505002</p><span class="mcard-arr">→</span></div>
+    <div class="mcard" onclick="goCartera()"><div class="mcard-stripe" style="background:#c0392b"></div><div class="mcard-ico">📊</div><h3>Cartera de Créditos</h3><p>Índice de mora, categorías de riesgo y evolución histórica</p><span class="mcard-arr">→</span></div>
   </div>
 </div>
 
@@ -315,6 +316,81 @@ select,input{font-family:var(--ff)}
   </div>
 </div>
 
+
+<!-- CARTERA -->
+<div class="pg" id="pgCartera">
+  <button class="det-back" onclick="goMenu()">← Volver al menú</button>
+  <div class="sel-bar">
+    <span class="sel-bar-title">Cartera de Créditos</span>
+    <div class="date-range">
+      <span class="sel-lbl">Desde</span><input type="date" class="date-inp" id="cFrom">
+      <span class="sel-lbl">Hasta</span><input type="date" class="date-inp" id="cTo">
+      <button class="btn-apply" onclick="applyCarteraDate()">Aplicar</button>
+      <button class="btn-clr" onclick="clearCarteraDate()">✕</button>
+    </div>
+    <div class="sel-sep"></div>
+    <div class="qpills" id="qpCar">
+      <button class="qpill" onclick="setQCar(30,this)">30d</button>
+      <button class="qpill" onclick="setQCar(90,this)">90d</button>
+      <button class="qpill" onclick="setQCar(180,this)">6m</button>
+      <button class="qpill" onclick="setQCar(365,this)">1a</button>
+      <button class="qpill on" onclick="setQCar(0,this)">Todo</button>
+    </div>
+    <span class="sel-info" id="carInfo">Sin datos de cartera</span>
+  </div>
+
+  <!-- KPIs cartera -->
+  <div class="kpis" id="kpisCar"></div>
+
+  <!-- Gráficas fila 1 -->
+  <div class="crow">
+    <div class="ccard span2">
+      <div class="ctop"><div>
+        <div class="ctitle">Evolución del índice de mora</div>
+        <div class="csub">Mora (B+C+D+E) / Cartera total · Clasificación FEBOR</div>
+      </div></div>
+      <div class="cwrap h340"><canvas id="chMoraLine"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Gráficas fila 2 -->
+  <div class="crow">
+    <div class="ccard">
+      <div class="ctop"><div>
+        <div class="ctitle">Composición por categoría de riesgo</div>
+        <div class="csub">Último día del período · A/B/C/D/E</div>
+      </div></div>
+      <div class="cwrap h280 donut-wrap">
+        <canvas id="chCatDonut"></canvas>
+        <div class="donut-ctr">
+          <div class="donut-ctr-val" id="carDonutTotal">—</div>
+          <div class="donut-ctr-lbl">Total M</div>
+        </div>
+      </div>
+      <div class="cleg" id="legCatDonut"></div>
+    </div>
+    <div class="ccard">
+      <div class="ctop"><div>
+        <div class="ctitle">Evolución cartera total</div>
+        <div class="csub">Saldo de capital en millones COP</div>
+      </div></div>
+      <div class="cwrap h280"><canvas id="chCarteraBar"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Tabla resumen -->
+  <div class="ccard span2" style="margin-bottom:.9rem">
+    <div class="shdr"><div class="shdr-t">Resumen por categoría de riesgo</div>
+      <div class="shdr-s">Último día del período · Clasificación FEBOR según días mora</div></div>
+    <div class="stbl-wrap"><table class="stbl">
+      <thead><tr>
+        <th>Categoría</th><th>Descripción</th><th>Días mora</th><th>Saldo</th><th>Participación</th>
+      </tr></thead>
+      <tbody id="carTblBody"></tbody>
+    </table></div>
+  </div>
+</div>
+
 <div class="footer" id="footer">Dashboard FEBOR · Evolución de Depósitos · Jeisson Alirio Valero Núñez</div>
 
 <script>
@@ -396,6 +472,7 @@ function setBc(v,prod){
   const bc=document.getElementById('bcNav');
   if(v==='menu'){bc.innerHTML='<span class="bc-item on" onclick="goMenu()">Inicio</span>';return;}
   if(v==='gen'){bc.innerHTML='<span class="bc-item" onclick="goMenu()">Inicio</span><span class="bc-sep">›</span><span class="bc-item on">Vista General</span>';return;}
+  if(v==='cartera'){bc.innerHTML='<span class="bc-item" onclick="goMenu()">Inicio</span><span class="bc-sep">›</span><span class="bc-item on">Cartera de Créditos</span>';return;}
   bc.innerHTML=`<span class="bc-item" onclick="goMenu()">Inicio</span><span class="bc-sep">›</span><span class="bc-item" onclick="goGeneral()">Vista General</span><span class="bc-sep">›</span><span class="bc-item on">${prod}</span>`;
 }
 
@@ -606,11 +683,164 @@ function downloadHTML(){
   a.download=`FEBOR_Depositos_${new Date().toISOString().slice(0,10)}.html`;a.click();
 }
 
+
+// ── CARTERA ───────────────────────────────────────────────────────
+let CAR_ALL = [], CAR_F = {days:0, from:'', to:''};
+
+const CAT_COLORS = {A:'#005648', B:'#FAC616', C:'#e67e22', D:'#c0392b', E:'#7b241c'};
+const CAT_NAMES  = {A:'A - Riesgo Normal', B:'B - Riesgo Aceptable', C:'C - Riesgo Apreciable', D:'D - Riesgo Significativo', E:'E - Riesgo Incobrabilidad'};
+const CAT_DIAS   = {A:'0-30 / 0-60 días', B:'31-60 / 61-150 días', C:'61-90 / 151-360 días', D:'91-180 / 361-540 días', E:'+181 / +541 días'};
+
+function initCartera(data){
+  CAR_ALL=data.map(r=>({...r,_d:new Date(r.Fecha+'T12:00:00')})).sort((a,b)=>a._d-b._d);
+  const minD=CAR_ALL[0]?.Fecha||'',maxD=CAR_ALL[CAR_ALL.length-1]?.Fecha||'';
+  document.getElementById('cFrom').min=minD;document.getElementById('cFrom').max=maxD;
+  document.getElementById('cTo').min=minD;document.getElementById('cTo').max=maxD;
+  document.getElementById('cFrom').value=minD;document.getElementById('cTo').value=maxD;
+}
+function goCartera(){showPg('pgCartera');setBc('cartera');renderCartera();}
+
+function filtrarCar(st){
+  if(st.days>0){const c=new Date(CAR_ALL[CAR_ALL.length-1]?._d||new Date());c.setDate(c.getDate()-st.days);return CAR_ALL.filter(r=>new Date(r.Fecha+'T12:00:00')>=c);}
+  if(st.from&&st.to) return CAR_ALL.filter(r=>r.Fecha>=st.from&&r.Fecha<=st.to);
+  return [...CAR_ALL];
+}
+function setQCar(d,btn){CAR_F={days:d,from:'',to:''};clearQ('qpCar');btn.classList.add('on');renderCartera();}
+function applyCarteraDate(){const f=document.getElementById('cFrom').value,t=document.getElementById('cTo').value;if(!f||!t)return;CAR_F={days:0,from:f,to:t};clearQ('qpCar');renderCartera();}
+function clearCarteraDate(){CAR_F={days:0,from:'',to:''};clearQ('qpCar');document.querySelector('#qpCar .qpill:last-child').classList.add('on');renderCartera();}
+
+function renderCartera(){
+  if(!CAR_ALL.length){
+    document.getElementById('carInfo').textContent='Sin datos — agrega reportes de cartera a la carpeta';
+    document.getElementById('kpisCar').innerHTML='<div style="padding:2rem;color:var(--tx3);font-size:.85rem">No hay datos de cartera. Agrega archivos <strong>reportedeCartera DD-MM-YYYY.xlsx</strong> a la carpeta <strong>Reportes de cartera</strong> dentro de cada mes en Balances.</div>';
+    return;
+  }
+  const data=filtrarCar(CAR_F);
+  if(!data.length) return;
+  document.getElementById('carInfo').textContent=infoStr(data.map(r=>({Fecha:r.Fecha})));
+
+  const l=data[data.length-1], f=data[0];
+  const tot=l.CarteraTotal;
+
+  // KPIs
+  const pctMora=l.IndiceMora;
+  const pctMoraF=f.IndiceMora;
+  const deltaMora=pctMora-pctMoraF;
+  document.getElementById('kpisCar').innerHTML=`
+    <div class="kpi kpi-tot"><div class="kpi-bar" style="background:var(--gold)"></div>
+      <div class="kpi-lbl">Cartera total</div>
+      <div class="kpi-val">${fK(tot)}</div>
+      <div class="kpi-unit">millones COP · ${fDt(l.Fecha)}</div>
+    </div>
+    <div class="kpi"><div class="kpi-bar" style="background:#c0392b"></div>
+      <div class="kpi-lbl">Índice de mora</div>
+      <div class="kpi-val">${pctMora.toFixed(2)}%</div>
+      <div class="kpi-unit">Mora (B+C+D+E) / Total</div>
+      <span class="kpi-d ${deltaMora<=0?'up':'dn'}">${deltaMora>=0?'+':''}${deltaMora.toFixed(2)}pp</span>
+    </div>
+    <div class="kpi"><div class="kpi-bar" style="background:#005648"></div>
+      <div class="kpi-lbl">Cartera sana (A)</div>
+      <div class="kpi-val">${fK(l.CatA)}</div>
+      <div class="kpi-unit">${(l.CatA/tot*100).toFixed(1)}% del total</div>
+    </div>
+    <div class="kpi"><div class="kpi-bar" style="background:#e67e22"></div>
+      <div class="kpi-lbl">Cartera en mora</div>
+      <div class="kpi-val">${fK(l.Mora)}</div>
+      <div class="kpi-unit">B+C+D+E · ${pctMora.toFixed(2)}%</div>
+    </div>
+    <div class="kpi"><div class="kpi-bar" style="background:#00927A"></div>
+      <div class="kpi-lbl">Consumo</div>
+      <div class="kpi-val">${fK(l.Consumo)}</div>
+      <div class="kpi-unit">${(l.Consumo/tot*100).toFixed(1)}% del total</div>
+    </div>
+    <div class="kpi"><div class="kpi-bar" style="background:#d4a84c"></div>
+      <div class="kpi-lbl">Hipotecario</div>
+      <div class="kpi-val">${fK(l.Hipotecario)}</div>
+      <div class="kpi-unit">${(l.Hipotecario/tot*100).toFixed(1)}% del total</div>
+    </div>`;
+
+  // Mora line chart
+  dC('chMoraLine');
+  new Chart(document.getElementById('chMoraLine'),{type:'line',
+    data:{labels:data.map(r=>r.Fecha),datasets:[
+      {label:'Índice mora',data:data.map(r=>+r.IndiceMora.toFixed(3)),
+        borderColor:'#c0392b',backgroundColor:'rgba(192,57,43,.12)',borderWidth:2.5,
+        pointRadius:data.length>60?0:3,pointHoverRadius:5,tension:0.4,fill:true},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{
+        title:t=>fDt(t[0].label),
+        label:t=>` Índice mora: ${t.parsed.y.toFixed(2)}%`
+      }}},
+      scales:{
+        x:{ticks:{maxTicksLimit:12,font:{size:10},callback:(v,i)=>{const d=data[i]?.Fecha;return d?`${d.slice(8,10)}/${d.slice(5,7)}/${d.slice(2,4)}`:''}},grid:{display:false}},
+        y:{ticks:{font:{size:10},callback:v=>v.toFixed(1)+'%'},grid:{color:'#e8ede9'},
+          suggestedMin:0}
+      }
+    }
+  });
+
+  // Donut categorías
+  const cats=['A','B','C','D','E'];
+  const catVals=cats.map(c=>+(l['Cat'+c]/1e6).toFixed(2));
+  const catColors=cats.map(c=>CAT_COLORS[c]);
+  const total_m=(tot/1e6).toFixed(2);
+  dC('chCatDonut');
+  document.getElementById('carDonutTotal').textContent=parseFloat(total_m).toLocaleString('es-CO',{minimumFractionDigits:2,maximumFractionDigits:2})+' M';
+  document.getElementById('legCatDonut').innerHTML=cats.map((c,i)=>{
+    const pct=(catVals[i]/(tot/1e6)*100).toFixed(1);
+    return `<span class="cleg-i"><span class="cleg-dot" style="background:${catColors[i]}"></span>${c} <strong style="color:var(--tx)">${pct}%</strong></span>`;
+  }).join('');
+  new Chart(document.getElementById('chCatDonut'),{type:'doughnut',
+    data:{labels:cats.map(c=>CAT_NAMES[c]),datasets:[{data:catVals,backgroundColor:catColors,borderWidth:2,borderColor:'#fff',hoverOffset:6}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'58%',
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>{
+        const pct=(ctx.parsed/(tot/1e6)*100).toFixed(1);
+        return ` ${ctx.label}: ${ctx.parsed.toLocaleString('es-CO',{minimumFractionDigits:2,maximumFractionDigits:2})} M (${pct}%)`;
+      }}}}}
+  });
+
+  // Cartera total bar
+  dC('chCarteraBar');
+  new Chart(document.getElementById('chCarteraBar'),{type:'bar',
+    data:{labels:data.map(r=>r.Fecha),datasets:[
+      {label:'Cat A',data:data.map(r=>+(r.CatA/1e6).toFixed(2)),backgroundColor:'#005648cc',stack:'s'},
+      {label:'Cat B',data:data.map(r=>+(r.CatB/1e6).toFixed(2)),backgroundColor:'#FAC616cc',stack:'s'},
+      {label:'Cat C',data:data.map(r=>+(r.CatC/1e6).toFixed(2)),backgroundColor:'#e67e22cc',stack:'s'},
+      {label:'Cat D',data:data.map(r=>+(r.CatD/1e6).toFixed(2)),backgroundColor:'#c0392bcc',stack:'s'},
+      {label:'Cat E',data:data.map(r=>+(r.CatE/1e6).toFixed(2)),backgroundColor:'#7b241ccc',stack:'s'},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      interaction:{mode:'index',intersect:false},
+      plugins:{legend:{position:'bottom',labels:{boxWidth:10,padding:10,font:{size:10}}},
+        tooltip:{callbacks:{title:t=>fDt(t[0].label),label:t=>` ${t.dataset.label}: ${t.parsed.y.toLocaleString('es-CO',{minimumFractionDigits:2,maximumFractionDigits:2})} M`}}},
+      scales:{
+        x:{ticks:{maxTicksLimit:12,font:{size:10},callback:(v,i)=>{const d=data[i]?.Fecha;return d?`${d.slice(8,10)}/${d.slice(5,7)}`:'';}},grid:{display:false}},
+        y:{ticks:{font:{size:10},callback:v=>v.toLocaleString('es-CO',{maximumFractionDigits:0})+' M'},grid:{color:'#e8ede9'},stacked:true}
+      }
+    }
+  });
+
+  // Tabla
+  const rows=cats.map(c=>{
+    const s=l['Cat'+c]; const pct=(s/tot*100).toFixed(2);
+    return `<tr>
+      <td><span class="dc"><span class="dm" style="background:${CAT_COLORS[c]}"></span><strong>${c}</strong></span></td>
+      <td>${CAT_NAMES[c]}</td>
+      <td style="font-size:.75rem;color:var(--tx3)">${CAT_DIAS[c]}</td>
+      <td>${fK(s)}</td>
+      <td class="${c==='A'?'cup':'cdn'}">${pct}%</td>
+    </tr>`;
+  });
+  rows.push(`<tr><td><strong>TOTAL</strong></td><td></td><td></td><td>${fK(tot)}</td><td>100%</td></tr>`);
+  document.getElementById('carTblBody').innerHTML=rows.join('');
+}
+
 // BOOT
 (async()=>{
   setLoad(20,'Iniciando…');
-  if(window.__D__&&window.__D__.length){setLoad(80,'Cargando…');initData(window.__D__);goMenu();return;}
-  try{setLoad(40,'Buscando datos…');const r=await fetch('saldos_data.json');if(r.ok){setLoad(80,'Cargando…');initData(await r.json());goMenu();return;}}catch(e){}
+  if(window.__D__&&window.__D__.length){setLoad(80,'Cargando…');initData(window.__D__);if(window.__CAR__)initCartera(window.__CAR__);goMenu();return;}
+  try{setLoad(40,'Buscando datos…');const r=await fetch('saldos_data.json');if(r.ok){setLoad(80,'Cargando…');initData(await r.json());try{const rc=await fetch('cartera_data.json');if(rc.ok)initCartera(await rc.json());}catch(e){}goMenu();return;}}catch(e){}
   setLoad(100,'');setTimeout(()=>{hideLoad();goMenu();},400);
 })();
 </script>
