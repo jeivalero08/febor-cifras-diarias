@@ -968,6 +968,15 @@ function showCarDetail(tipo, dayData){
   panel.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 
+// INIT CARTERA — popula CAR_ALL desde el JSON generado por Python
+function initCartera(raw){
+  if(!raw||!raw.length) return;
+  const seen=new Set();
+  CAR_ALL=raw.map(r=>({...r,_d:new Date(r.Fecha+'T12:00:00')}))
+    .filter(r=>{if(seen.has(r.Fecha))return false;seen.add(r.Fecha);return true;})
+    .sort((a,b)=>a._d-b._d);
+}
+
 // BOOT
 (async()=>{
   setLoad(20,'Iniciando…');
