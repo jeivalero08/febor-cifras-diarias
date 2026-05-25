@@ -383,8 +383,8 @@ select,input{font-family:var(--ff)}
     <div class="shdr"><div class="shdr-t">Resumen por categoría de riesgo</div>
       <div class="shdr-s">Último día del período · Clasificación FEBOR según días mora</div></div>
     <div class="stbl-wrap"><table class="stbl">
-      <thead><tr>
-        <th>Categoría</th><th>Descripción</th><th>Días mora</th><th>Saldo</th><th>Participación</th>
+      <thead id="carTblHead"><tr>
+        <th>CAT</th><th>DESCRIPCIÓN / DÍAS MORA</th><th style="text-align:right">SALDO</th><th style="text-align:right">PART.</th><th style="text-align:right">VAR. DÍA</th>
       </tr></thead>
       <tbody id="carTblBody"></tbody>
     </table></div>
@@ -823,24 +823,50 @@ function renderCartera(){
       plugins:{legend:{position:'bottom',labels:{boxWidth:10,padding:8,font:{size:10}}},
         tooltip:{callbacks:{title:t=>fDt(t[0].label),label:t=>` ${t.dataset.label}: ${t.parsed.y.toLocaleString('es-CO',{minimumFractionDigits:2,maximumFractionDigits:2})} M`}}},
       scales:{
-        x:{ticks:{maxTicksLimit:12,font:{size:10},callback:(v,i)=>{const d=data[i]?.Fecha;return d?`${d.slice(8,10)}/${d.slice(5,7)}`:'';}},grid:{display:false}},
+        x:{ticks:{font:{size:10},autoSkip:false,maxRotation:45,callback:(v,i)=>{const d=data[i]?.Fecha;return d?`${d.slice(8,10)}/${d.slice(5,7)}`:'';}},grid:{display:false}},
         y:{ticks:{font:{size:10},callback:v=>v.toLocaleString('es-CO',{maximumFractionDigits:0})+' M'},grid:{color:'#e8ede9'},stacked:true}
       }
     }
   });
 
-  // Tabla resumen (mora sin arrastre)
+  // Tabla resumen — más informativa: saldo, participación, top producto, días mora ref
+  // Buscar registro anterior para calcular variación
+  const idxL = data.length - 1;
+  const prev  = idxL > 0 ? data[idxL - 1] : null;
   const rows=cats.map(c=>{
-    const s=l['Cat'+c]||0; const pct=(s/tot*100).toFixed(2);
+    const s    = l['Cat'+c] || 0;
+    const pct  = (s/tot*100).toFixed(2);
+    const sP   = prev ? (prev['Cat'+c]||0) : s;
+    const varM = ((s - sP)/1e6).toFixed(2);
+    const varSign = s >= sP ? '+' : '';
+    const varColor = c==='A' ? (s>=sP?'var(--grn)':'#c0392b') : (s<=sP?'var(--grn)':'#c0392b');
+    const diasRef  = c==='A'
+      ? '<span style="color:var(--tx3);font-size:.72rem">Consumo ≤30d · Hip ≤60d</span>'
+      : `<span style="color:var(--tx3);font-size:.72rem">C: ${CAT_DIAS_CONSUMO[c]} · H: ${CAT_DIAS_HIP[c]}</span>`;
     return `<tr style="cursor:pointer" onclick="showCarDetail('cat_${c}',${JSON.stringify(l).replace(/'/g,"\'")})" title="Clic para ver detalle">
       <td><span class="dc"><span class="dm" style="background:${CAT_COLORS[c]}"></span><strong>${c}</strong></span></td>
-      <td>${CAT_NAMES[c]}</td>
-      <td style="font-size:.75rem;color:var(--tx3)">${CAT_DIAS_CONSUMO[c]}</td>
-      <td>${fK(s)}</td>
-      <td class="${c==='A'?'cup':'cdn'}">${pct}%</td>
+      <td><div style="font-size:.82rem;font-weight:600">${CAT_NAMES[c].split(' - ')[1]||CAT_NAMES[c]}</div>${diasRef}</td>
+      <td style="font-family:var(--fm);text-align:right">${fK(s)}</td>
+      <td style="text-align:right"><strong class="${c==='A'?'cup':'cdn'}">${pct}%</strong></td>
+      <td style="text-align:right;font-size:.78rem;color:${varColor}">${prev?varSign+varM+' M':'—'}</td>
     </tr>`;
   });
-  rows.push(`<tr><td><strong>TOTAL</strong></td><td></td><td></td><td>${fK(tot)}</td><td>100%</td></tr>`);
+  const moraTotal = l.Mora||0;
+  rows.push(`<tr style="font-weight:700;border-top:2px solid var(--bord)">
+    <td colspan="2">TOTAL CARTERA</td>
+    <td style="font-family:var(--fm);text-align:right">${fK(tot)}</td>
+    <td style="text-align:right">100%</td>
+    <td style="text-align:right;font-size:.78rem;color:var(--tx3)">${prev?((((tot-(prev.CarteraTotal||tot))/1e6)).toFixed(2)+' M'):'—'}</td>
+  </tr>
+  <tr style="font-size:.8rem;color:#c0392b">
+    <td colspan="2" style="padding-top:.3rem">⬛ MORA TOTAL (B+C+D+E)</td>
+    <td style="font-family:var(--fm);text-align:right;padding-top:.3rem">${fK(moraTotal)}</td>
+    <td style="text-align:right;padding-top:.3rem"><strong>${(moraTotal/tot*100).toFixed(2)}%</strong></td>
+    <td style="text-align:right;font-size:.78rem;padding-top:.3rem">${prev?((((moraTotal-(prev.Mora||moraTotal))/1e6)).toFixed(2)+' M'):'—'}</td>
+  </tr>`);
+  // Actualizar encabezado de tabla con columna variación
+  const thead = document.getElementById('carTblHead');
+  if(thead) thead.innerHTML='<tr><th>CAT</th><th>DESCRIPCIÓN / DÍAS MORA</th><th style="text-align:right">SALDO</th><th style="text-align:right">PART.</th><th style="text-align:right">VAR. DÍA</th></tr>';
   document.getElementById('carTblBody').innerHTML=rows.join('');
 
   // Próximos A→B
@@ -936,10 +962,58 @@ function showCarDetail(tipo, dayData){
     const cat=tipo.replace('cat_','');
     title=CAT_NAMES[cat];color=CAT_COLORS[cat];
     const s=dayData['Cat'+cat]||0; const tot=dayData.CarteraTotal;
-    content=`<div style="margin-bottom:.8rem"><div style="font-family:var(--fm);font-size:1.5rem;color:${color}">${fK(s)}</div><div style="font-size:.75rem;color:var(--tx3)">${(s/tot*100).toFixed(2)}% del total · ${fDt(dayData.Fecha)}</div></div>
-    <div style="padding:.5rem 0;border-bottom:1px solid var(--bord)"><span style="font-size:.72rem;color:var(--tx3)">Consumo: 0-30d / Hipotecario: 0-60d — definición FEBOR</span></div>
-    <div style="padding:.5rem 0"><span style="font-size:.8rem">Días mora Consumo: <strong>${CAT_DIAS_CONSUMO[cat]}</strong></span></div>
-    <div style="padding:.5rem 0"><span style="font-size:.8rem">Días mora Hipotecario: <strong>${CAT_DIAS_HIP[cat]}</strong></span></div>`;
+    // Top créditos en mora de esta categoría (desde ProximosAB para cat A,
+    // o descripción de saldo por categoría para B-E)
+    const proxAB = dayData.ProximosAB || [];
+    let credTable = '';
+    if(cat==='A' && proxAB.length){
+      // Para cat A mostrar próximos a cambiar
+      const rows = proxAB.slice(0,10).map(p=>`
+        <tr>
+          <td style="font-size:.75rem">${p.Cliente||'—'}</td>
+          <td style="font-size:.75rem;color:var(--tx3)">${p.Identificacion||'—'}</td>
+          <td style="font-size:.75rem">${p.Producto||'—'}</td>
+          <td style="font-size:.75rem;text-align:right">${fK(p.Saldo)}</td>
+          <td style="font-size:.75rem;text-align:center;color:#e67e22"><strong>${p.DiasActual}d</strong></td>
+          <td style="font-size:.75rem;text-align:center;color:#c0392b"><strong>${p.DiasRestantes}d</strong></td>
+        </tr>`).join('');
+      credTable = proxAB.length
+        ? `<div style="margin-top:.8rem">
+            <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;color:var(--tx3);margin-bottom:.4rem">⚠️ Próximos a entrar en mora (primeros 10)</div>
+            <div style="overflow-x:auto">
+            <table style="width:100%;border-collapse:collapse;font-size:.75rem">
+              <thead><tr style="border-bottom:1px solid var(--bord)">
+                <th style="text-align:left;padding:.3rem .4rem;font-size:.65rem">CLIENTE</th>
+                <th style="text-align:left;padding:.3rem .4rem;font-size:.65rem">CC</th>
+                <th style="text-align:left;padding:.3rem .4rem;font-size:.65rem">PRODUCTO</th>
+                <th style="text-align:right;padding:.3rem .4rem;font-size:.65rem">SALDO</th>
+                <th style="text-align:center;padding:.3rem .4rem;font-size:.65rem">DÍAS</th>
+                <th style="text-align:center;padding:.3rem .4rem;font-size:.65rem">FALTAN</th>
+              </tr></thead>
+              <tbody>${rows}</tbody>
+            </table></div></div>`
+        : '<div style="font-size:.78rem;color:var(--tx3);margin-top:.6rem">Sin créditos próximos a cambiar.</div>';
+    } else if(cat!=='A'){
+      // Para B-E: info de composición por tipo y días de mora
+      credTable = `<div style="margin-top:.8rem;padding:.6rem;background:var(--bg);border-radius:8px;font-size:.8rem">
+        <div style="margin-bottom:.4rem"><strong>Consumo:</strong> mora ${CAT_DIAS_CONSUMO[cat]}</div>
+        <div><strong>Hipotecario:</strong> mora ${CAT_DIAS_HIP[cat]}</div>
+        <div style="margin-top:.6rem;font-size:.75rem;color:var(--tx3)">
+          Para ver los créditos individuales en mora, consulte el reporte de cartera del sistema.
+        </div>
+      </div>`;
+    }
+    content=`
+    <div style="display:flex;gap:1.2rem;margin-bottom:.8rem;flex-wrap:wrap">
+      <div><div style="font-family:var(--fm);font-size:1.4rem;color:${color}">${fK(s)}</div>
+        <div style="font-size:.72rem;color:var(--tx3)">${(s/tot*100).toFixed(2)}% del total · ${fDt(dayData.Fecha)}</div></div>
+      <div style="border-left:2px solid var(--bord);padding-left:1rem">
+        <div style="font-size:.72rem;color:var(--tx3);margin-bottom:.2rem">RANGOS DÍAS MORA</div>
+        <div style="font-size:.78rem">Consumo: <strong>${CAT_DIAS_CONSUMO[cat]}</strong></div>
+        <div style="font-size:.78rem">Hipotecario: <strong>${CAT_DIAS_HIP[cat]}</strong></div>
+      </div>
+    </div>
+    ${credTable}`;
   } else if(tipo==='consumo'){
     title='Cartera de Consumo';color='#00927A';
     const tot=dayData.CarteraTotal;
@@ -966,15 +1040,6 @@ function showCarDetail(tipo, dayData){
     ${content}
   </div>`;
   panel.scrollIntoView({behavior:'smooth',block:'nearest'});
-}
-
-// INIT CARTERA — popula CAR_ALL desde el JSON generado por Python
-function initCartera(raw){
-  if(!raw||!raw.length) return;
-  const seen=new Set();
-  CAR_ALL=raw.map(r=>({...r,_d:new Date(r.Fecha+'T12:00:00')}))
-    .filter(r=>{if(seen.has(r.Fecha))return false;seen.add(r.Fecha);return true;})
-    .sort((a,b)=>a._d-b._d);
 }
 
 // BOOT
