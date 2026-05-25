@@ -214,23 +214,23 @@ select,input{font-family:var(--ff)}
   <div class="mgrid" style="grid-template-columns:repeat(3,1fr);max-width:900px;margin:1.5rem auto 0">
     <div class="mcard" onclick="goGeneral()" style="padding:2rem">
       <div class="mcard-stripe" style="background:#00927A"></div>
-      <div class="mcard-ico" style="font-size:2.5rem">🏦</div>
-      <h3 style="font-size:1.2rem;margin:.8rem 0 .4rem">Depósitos</h3>
-      <p style="font-size:.85rem">Ahorro Voluntario · CDAT · Daes · Ahorro Contractual · Bolsillo Rentable</p>
+      <div class="mcard-ico" style="font-size:2rem;width:52px;height:52px">🏦</div>
+      <h3 style="font-size:1.1rem;margin:.8rem 0 .4rem">Depósitos</h3>
+      <p style="font-size:.82rem">Ahorro Voluntario · CDAT · Daes · Ahorro Contractual · Bolsillo Rentable</p>
       <span class="mcard-arr">→</span>
     </div>
-    <div class="mcard" onclick="goProd('Aportes')" style="padding:2rem">
+    <div class="mcard" onclick="goAportes()" style="padding:2rem">
       <div class="mcard-stripe" style="background:#7ab8a8"></div>
-      <div class="mcard-ico" style="font-size:2.5rem">🤝</div>
-      <h3 style="font-size:1.2rem;margin:.8rem 0 .4rem">Aportes Sociales</h3>
-      <p style="font-size:.85rem">Cuenta 3110 · Evolución histórica y variaciones</p>
+      <div class="mcard-ico" style="font-size:2rem;width:52px;height:52px">🤝</div>
+      <h3 style="font-size:1.1rem;margin:.8rem 0 .4rem">Aportes Sociales</h3>
+      <p style="font-size:.82rem">Cuentas 3105 + 311005 · Evolución histórica y variaciones</p>
       <span class="mcard-arr">→</span>
     </div>
     <div class="mcard" onclick="goCartera()" style="padding:2rem">
       <div class="mcard-stripe" style="background:#c0392b"></div>
-      <div class="mcard-ico" style="font-size:2.5rem">📊</div>
-      <h3 style="font-size:1.2rem;margin:.8rem 0 .4rem">Cartera de Créditos</h3>
-      <p style="font-size:.85rem">Índice de mora sin y con arrastre · Categorías A/B/C/D/E</p>
+      <div class="mcard-ico" style="font-size:2rem;width:52px;height:52px">📊</div>
+      <h3 style="font-size:1.1rem;margin:.8rem 0 .4rem">Cartera de Créditos</h3>
+      <p style="font-size:.82rem">Índice de mora sin y con arrastre · Categorías A/B/C/D/E</p>
       <span class="mcard-arr">→</span>
     </div>
   </div>
@@ -289,6 +289,55 @@ select,input{font-family:var(--ff)}
 </div>
 
 <!-- PRODUCTO -->
+<div class="pg" id="pgAportes">
+  <button class="det-back" onclick="goMenu()">← Volver al menú</button>
+  <div class="sel-bar">
+    <span class="sel-bar-title">Aportes Sociales</span>
+    <div class="date-range">
+      <span class="sel-lbl">Desde</span><input type="date" class="date-inp" id="apoFrom">
+      <span class="sel-lbl">Hasta</span><input type="date" class="date-inp" id="apoTo">
+      <button class="btn-apply" onclick="applyApoDate()">Aplicar</button>
+      <button class="btn-clr" onclick="clearApoDate()">✕</button>
+    </div>
+    <div class="sel-sep"></div>
+    <div class="qpills" id="qpApo">
+      <button class="qpill" onclick="setQApo(30,this)">30d</button>
+      <button class="qpill" onclick="setQApo(90,this)">90d</button>
+      <button class="qpill" onclick="setQApo(180,this)">6m</button>
+      <button class="qpill" onclick="setQApo(365,this)">1a</button>
+      <button class="qpill on" onclick="setQApo(0,this)">Todo</button>
+    </div>
+    <span class="sel-info" id="apoInfo">—</span>
+  </div>
+  <div class="det-hero" id="apoHero"></div>
+  <div class="crow">
+    <div class="ccard span2">
+      <div class="ctop"><div>
+        <div class="ctitle">Aportes Sociales — Evolución histórica</div>
+        <div class="csub">Cuentas 3105 + 311005 · Saldo diario en millones COP</div>
+      </div></div>
+      <div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
+        <div class="cwrap h340" style="min-width:600px"><canvas id="chApoHist"></canvas></div>
+      </div>
+    </div>
+  </div>
+  <div class="crow">
+    <div class="ccard">
+      <div class="ctop"><div>
+        <div class="ctitle">Promedio mensual</div>
+        <div class="csub">Saldo promedio por mes</div>
+      </div></div>
+      <div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
+        <div class="cwrap h260" style="min-width:500px"><canvas id="chApoMes"></canvas></div>
+      </div>
+    </div>
+    <div class="ccard">
+      <div class="ctop"><div><div class="ctitle">Estadísticas del período</div></div></div>
+      <div id="apoStats" style="padding:.2rem 0"></div>
+    </div>
+  </div>
+</div>
+
 <div class="pg" id="pgProd">
   <button class="det-back" onclick="goGeneral()">← Volver a vista general</button>
   <div class="det-hero" id="detHero"></div>
@@ -350,68 +399,84 @@ select,input{font-family:var(--ff)}
     </div>
     <span class="sel-info" id="carInfo">Sin datos de cartera</span>
   </div>
-
-  <!-- KPIs cartera -->
   <div class="kpis" id="kpisCar"></div>
 
-  <!-- Gráficas fila 1 -->
-  <div class="crow">
-    <div class="ccard span2">
+  <!-- Dos gráficas de mora lado a lado — cada una clicable -->
+  <div class="crow" id="wrapMoraCharts">
+    <div class="ccard" style="cursor:pointer" onclick="showMoraDetalle('sp')">
       <div class="ctop"><div>
-        <div class="ctitle">Evolución del índice de mora</div>
-        <div class="csub">Mora (B+C+D+E) / Cartera total · Clasificación FEBOR</div>
+        <div class="ctitle" style="color:#c0392b">📉 Mora sin arrastre (CALIF_PRESTAMO)</div>
+        <div class="csub">Clic para ver detalle completo</div>
       </div></div>
-      <div class="cwrap h340"><canvas id="chMoraLine"></canvas></div>
+      <div class="cwrap h240"><canvas id="chMoraSP"></canvas></div>
+    </div>
+    <div class="ccard" style="cursor:pointer" onclick="showMoraDetalle('ca')">
+      <div class="ctop"><div>
+        <div class="ctitle" style="color:#8b0000">📉 Mora con arrastre (por cliente)</div>
+        <div class="csub">Clic para ver detalle completo</div>
+      </div></div>
+      <div class="cwrap h240"><canvas id="chMoraCA"></canvas></div>
     </div>
   </div>
 
-  <!-- Gráficas fila 2 -->
-  <div class="crow">
-    <div class="ccard">
-      <div class="ctop"><div>
-        <div class="ctitle">Composición por categoría de riesgo</div>
-        <div class="csub">Último día del período · A/B/C/D/E</div>
-      </div></div>
-      <div class="cwrap h280 donut-wrap">
-        <canvas id="chCatDonut"></canvas>
-        <div class="donut-ctr">
-          <div class="donut-ctr-val" id="carDonutTotal">—</div>
-          <div class="donut-ctr-lbl">Total M</div>
-        </div>
+  <!-- Panel detalle mora SP -->
+  <div id="pgMoraSP" style="display:none">
+    <div style="display:flex;align-items:center;gap:.8rem;margin-bottom:.8rem;flex-wrap:wrap">
+      <button class="det-back" style="position:static;margin:0" onclick="closeMoraDetalle()">← Volver a Cartera</button>
+      <span style="font-size:.9rem;font-weight:600;color:#c0392b">Mora Sin Arrastre — Clasificación FEBOR por crédito</span>
+    </div>
+    <div class="crow">
+      <div class="ccard">
+        <div class="ctop"><div><div class="ctitle">Participación por categoría</div><div class="csub">% del total · último día</div></div></div>
+        <div class="cwrap h260"><canvas id="chMoraCatSP"></canvas></div>
       </div>
-      <div class="cleg" id="legCatDonut"></div>
+      <div class="ccard">
+        <div class="ctop"><div><div class="ctitle">Evolución cartera</div><div class="csub">Saldo en millones COP</div></div></div>
+        <div style="overflow-x:auto;-webkit-overflow-scrolling:touch"><div class="cwrap h260" style="min-width:500px"><canvas id="chCarteraBarSP"></canvas></div></div>
+      </div>
     </div>
-    <div class="ccard">
-      <div class="ctop"><div>
-        <div class="ctitle">Evolución cartera total</div>
-        <div class="csub">Saldo de capital en millones COP</div>
-      </div></div>
-      <div class="cwrap h280"><canvas id="chCarteraBar"></canvas></div>
+    <div class="ccard span2" style="margin-bottom:.9rem">
+      <div class="shdr"><div class="shdr-t">Resumen por categoría — Sin arrastre</div>
+        <div class="shdr-s">Último día · rangos FEBOR por tipo de crédito</div></div>
+      <div class="stbl-wrap"><table class="stbl">
+        <thead id="thdSP"><tr>
+          <th>CAT</th><th>DESCRIPCIÓN / DÍAS MORA</th><th style="text-align:right">SALDO</th><th style="text-align:right">PART.</th><th style="text-align:right">VAR. DÍA</th>
+        </tr></thead>
+        <tbody id="tbodySP"></tbody>
+      </table></div>
     </div>
+    <!-- Créditos próximos a cambiar categoría: A→B, B→C, C→D, D→E -->
+    <div id="secProxSP"></div>
+    <div id="carDetailPanel"></div>
   </div>
 
-  <!-- Tabla resumen -->
-  <div class="ccard span2" style="margin-bottom:.9rem">
-    <div class="shdr"><div class="shdr-t">Resumen por categoría de riesgo</div>
-      <div class="shdr-s">Último día del período · Clasificación FEBOR según días mora</div></div>
-    <div class="stbl-wrap"><table class="stbl">
-      <thead><tr>
-        <th>Categoría</th><th>Descripción</th><th>Días mora</th><th>Saldo</th><th>Participación</th>
-      </tr></thead>
-      <tbody id="carTblBody"></tbody>
-    </table></div>
-  </div>
-
-  <!-- Detail panel (shows when clicking KPI) -->
-  <div id="carDetailPanel"></div>
-
-  <!-- Próximos A→B -->
-  <div class="ccard span2" style="margin-bottom:.9rem">
-    <div class="shdr">
-      <div class="shdr-t">⚠️ Alertas — Próximos a cambiar A → B</div>
-      <div class="shdr-s">Créditos en categoría A con 1 a 7 días antes de entrar en mora · Último día del período</div>
+  <!-- Panel detalle mora CA -->
+  <div id="pgMoraCA" style="display:none">
+    <div style="display:flex;align-items:center;gap:.8rem;margin-bottom:.8rem;flex-wrap:wrap">
+      <button class="det-back" style="position:static;margin:0" onclick="closeMoraDetalle()">← Volver a Cartera</button>
+      <span style="font-size:.9rem;font-weight:600;color:#8b0000">Mora Con Arrastre — Agrupado por cliente</span>
     </div>
-    <div id="proximosABSection"></div>
+    <div class="crow">
+      <div class="ccard">
+        <div class="ctop"><div><div class="ctitle">Participación por categoría</div><div class="csub">% del total · último día</div></div></div>
+        <div class="cwrap h260"><canvas id="chMoraCatCA"></canvas></div>
+      </div>
+      <div class="ccard">
+        <div class="ctop"><div><div class="ctitle">Evolución índice mora CA</div><div class="csub">% sobre cartera total</div></div></div>
+        <div style="overflow-x:auto;-webkit-overflow-scrolling:touch"><div class="cwrap h260" style="min-width:500px"><canvas id="chCarteraBarCA"></canvas></div></div>
+      </div>
+    </div>
+    <div class="ccard span2" style="margin-bottom:.9rem">
+      <div class="shdr"><div class="shdr-t">Resumen por categoría — Con arrastre</div>
+        <div class="shdr-s">Último día · arrastre del historial del cliente</div></div>
+      <div class="stbl-wrap"><table class="stbl">
+        <thead><tr>
+          <th>CAT</th><th>DESCRIPCIÓN</th><th style="text-align:right">SALDO</th><th style="text-align:right">PART.</th>
+        </tr></thead>
+        <tbody id="tbodyCA"></tbody>
+      </table></div>
+    </div>
+    <div id="secProxCA"></div>
   </div>
 </div>
 
@@ -495,14 +560,15 @@ function goProd(prod){
 function setBc(v,prod){
   const bc=document.getElementById('bcNav');
   if(v==='menu'){bc.innerHTML='<span class="bc-item on" onclick="goMenu()">Inicio</span>';return;}
-  if(v==='gen'){bc.innerHTML='<span class="bc-item" onclick="goMenu()">Inicio</span><span class="bc-sep">›</span><span class="bc-item on">Vista General</span>';return;}
+  if(v==='gen'){bc.innerHTML='<span class="bc-item" onclick="goMenu()">Inicio</span><span class="bc-sep">›</span><span class="bc-item on">Depósitos</span>';return;}
+  if(v==='aportes'){bc.innerHTML='<span class="bc-item" onclick="goMenu()">Inicio</span><span class="bc-sep">›</span><span class="bc-item on">Aportes Sociales</span>';return;}
   if(v==='cartera'){bc.innerHTML='<span class="bc-item" onclick="goMenu()">Inicio</span><span class="bc-sep">›</span><span class="bc-item on">Cartera de Créditos</span>';return;}
   bc.innerHTML=`<span class="bc-item" onclick="goMenu()">Inicio</span><span class="bc-sep">›</span><span class="bc-item" onclick="goGeneral()">Vista General</span><span class="bc-sep">›</span><span class="bc-item on">${prod}</span>`;
 }
 
 // MENU HERO
 function renderMenuHero(){
-  // Hero removido — menú ahora solo muestra los 3 módulos
+  // Hero verde removido
 }
 
 // GENERAL
@@ -691,6 +757,218 @@ const CAT_NAMES  = {A:'A - Riesgo Normal', B:'B - Riesgo Aceptable', C:'C - Ries
 const CAT_DIAS_CONSUMO = {A:'0-30 días', B:'31-60 días', C:'61-90 días', D:'91-180 días', E:'+181 días'};
 const CAT_DIAS_HIP = {A:'0-60 días', B:'61-150 días', C:'151-360 días', D:'361-540 días', E:'+541 días'};
 
+let APO_F={days:0,from:'',to:''};
+
+function goAportes(){
+  showPg('pgAportes');setBc('aportes');
+  const minD=ALL[0]?.Fecha||'',maxD=ALL[ALL.length-1]?.Fecha||'';
+  APO_F={days:0,from:minD,to:maxD};
+  document.getElementById('apoFrom').value=minD;
+  document.getElementById('apoTo').value=maxD;
+  renderAportes();
+}
+function setQApo(d,btn){APO_F={days:d,from:'',to:''};clearQ('qpApo');btn.classList.add('on');renderAportes();}
+function applyApoDate(){const f=document.getElementById('apoFrom').value,t=document.getElementById('apoTo').value;if(!f||!t)return;APO_F={days:0,from:f,to:t};clearQ('qpApo');renderAportes();}
+function clearApoDate(){APO_F={days:0,from:ALL[0]?.Fecha||'',to:ALL[ALL.length-1]?.Fecha||''};document.getElementById('apoFrom').value=APO_F.from;document.getElementById('apoTo').value=APO_F.to;clearQ('qpApo');document.querySelector('#qpApo .qpill:last-child').classList.add('on');renderAportes();}
+function filtrarApo(st){if(!ALL.length)return[];if(st.days>0){const c=new Date(ALL[ALL.length-1]._d);c.setDate(c.getDate()-st.days);return ALL.filter(r=>r._d>=c);}if(st.from&&st.to)return ALL.filter(r=>r.Fecha>=st.from&&r.Fecha<=st.to);return[...ALL];}
+
+function renderAportes(){
+  const data=filtrarApo(APO_F);
+  if(!data.length)return;
+  document.getElementById('apoInfo').textContent=infoStr(data);
+  const K='Aportes',l=data[data.length-1],f=data[0];
+  const vL=l[K]||0,vF=f[K]||0;
+  const prev=data.length>1?data[data.length-2]:null;
+  const dD=prev&&prev[K]?(vL-prev[K])/prev[K]*100:null;
+  const dT=vF?(vL-vF)/vF*100:null;
+  // Hero — mismo estilo que det-hero de productos
+  document.getElementById('apoHero').innerHTML=`
+    <div class="det-hero-inner" style="background:var(--g1);border-radius:16px;padding:1.5rem 2rem;margin-bottom:1rem;color:#fff">
+      <div style="font-size:.68rem;font-weight:700;letter-spacing:.1em;color:rgba(255,255,255,.5);text-transform:uppercase;margin-bottom:.3rem">Aportes Sociales · Cuentas 3105 + 311005</div>
+      <div style="font-family:var(--fm);font-size:2rem;color:var(--gold)">${fK(vL)}</div>
+      <div style="font-size:.78rem;color:rgba(255,255,255,.6);margin:.2rem 0 .6rem">Al ${fDt(l.Fecha)}</div>
+      <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+        ${dD!=null?`<span style="background:rgba(255,255,255,.12);padding:.25rem .7rem;border-radius:20px;font-size:.72rem;color:${dD>=0?'#8ff5b0':'#ffaaaa'}">${fP(dD)} vs día anterior</span>`:''}
+        ${dT!=null?`<span style="background:rgba(255,255,255,.12);padding:.25rem .7rem;border-radius:20px;font-size:.72rem;color:rgba(255,255,255,.8)">${fP(dT)} desde inicio período</span>`:''}
+      </div>
+    </div>`;
+  // Gráfica histórica
+  const dense=data.length>120;dC('chApoHist');
+  new Chart(document.getElementById('chApoHist'),{type:'line',
+    data:{labels:data.map(r=>r.Fecha),datasets:[{label:'Aportes',data:data.map(r=>r[K]!=null?+(r[K]/1e6).toFixed(3):null),
+      borderColor:'#7ab8a8',backgroundColor:'rgba(122,184,168,.15)',borderWidth:2.5,
+      pointRadius:dense?0:2,pointHoverRadius:4,tension:0.35,fill:true,spanGaps:true}]},
+    options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+      plugins:{legend:{display:false},tooltip:{callbacks:{title:t=>fDt(t[0].label),label:t=>` Aportes: ${t.parsed.y!=null?t.parsed.y.toLocaleString('es-CO',{minimumFractionDigits:3,maximumFractionDigits:3})+' M':'—'}`}}},
+      scales:{x:{ticks:{maxTicksLimit:12,font:{size:10},callback:(v,i)=>{const d=data[i]?.Fecha;return d?`${d.slice(8,10)}/${d.slice(5,7)}/${d.slice(2,4)}`:'';}},grid:{display:false}},
+        y:{ticks:{font:{size:10},callback:v=>v.toLocaleString('es-CO',{maximumFractionDigits:0})+' M'},grid:{color:'#e8ede9'}}}}});
+  // Promedio mensual
+  const byMes={};data.forEach(r=>{if(r[K]==null)return;const m=r.Fecha.slice(0,7);if(!byMes[m]){byMes[m]={s:0,n:0};}byMes[m].s+=r[K];byMes[m].n++;});
+  const meses=Object.keys(byMes).sort(),proms=meses.map(m=>+(byMes[m].s/byMes[m].n/1e6).toFixed(3));
+  dC('chApoMes');
+  new Chart(document.getElementById('chApoMes'),{type:'bar',
+    data:{labels:meses.map(m=>{const[y,mo]=m.split('-');return MS[+mo]+' '+y.slice(2);}),datasets:[{label:'Promedio',data:proms,backgroundColor:'#7ab8a8bb',borderRadius:3}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:t=>` ${t.parsed.y.toLocaleString('es-CO',{minimumFractionDigits:2,maximumFractionDigits:2})} M`}}},
+      scales:{x:{ticks:{font:{size:9}}},y:{ticks:{callback:v=>v+' M',font:{size:9}},grid:{color:'#e8ede9'}}}}});
+  // Estadísticas
+  const vals=data.filter(r=>r[K]!=null).map(r=>r[K]);
+  const mn=Math.min(...vals),mx=Math.max(...vals),av=vals.reduce((s,v)=>s+v,0)/vals.length;
+  document.getElementById('apoStats').innerHTML=`
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem;padding:.4rem 0">
+      ${[['Máximo',fK(mx),'var(--grn)'],['Mínimo',fK(mn),'#c0392b'],['Promedio',fK(av),''],['Registros',vals.length+' días','']].map(([l,v,c])=>`
+        <div style="padding:.7rem;background:var(--bg);border-radius:8px">
+          <div style="font-size:.68rem;color:var(--tx3);text-transform:uppercase;margin-bottom:.2rem">${l}</div>
+          <div style="font-family:var(--fm);font-size:1rem${c?';color:'+c:''}">${v}</div>
+        </div>`).join('')}
+    </div>`;
+}
+
+function showMoraDetalle(tipo){
+  document.getElementById('pgMoraSP').style.display='none';
+  document.getElementById('pgMoraCA').style.display='none';
+  document.getElementById('wrapMoraCharts').style.display='none';
+  if(tipo==='sp'){document.getElementById('pgMoraSP').style.display='';renderMoraDetalleSP();}
+  else{document.getElementById('pgMoraCA').style.display='';renderMoraDetalleCA();}
+  document.getElementById('kpisCar').scrollIntoView({behavior:'smooth',block:'start'});
+}
+function closeMoraDetalle(){
+  document.getElementById('pgMoraSP').style.display='none';
+  document.getElementById('pgMoraCA').style.display='none';
+  document.getElementById('wrapMoraCharts').style.display='';
+  document.getElementById('kpisCar').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function _buildCredTable(creds, showFaltan){
+  if(!creds||!creds.length)return'<div style="font-size:.78rem;color:var(--tx3);padding:.5rem 0">Sin créditos en esta categoría.</div>';
+  const rows=creds.map(p=>`<tr>
+    <td style="font-size:.73rem;padding:.22rem .4rem">${p.Cliente||'—'}</td>
+    <td style="font-size:.73rem;padding:.22rem .4rem;color:var(--tx3)">${p.Identificacion||'—'}</td>
+    <td style="font-size:.73rem;padding:.22rem .4rem">${p.Producto||'—'}</td>
+    <td style="font-size:.73rem;padding:.22rem .4rem;text-align:right">${fK(p.Saldo)}</td>
+    <td style="font-size:.73rem;padding:.22rem .4rem;text-align:center;font-weight:700;color:#e67e22">${p.DiasActual}d</td>
+    ${showFaltan?`<td style="font-size:.73rem;padding:.22rem .4rem;text-align:center;font-weight:700;color:#c0392b">${p.DiasRestantes}d</td>`:''}
+  </tr>`).join('');
+  return`<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse">
+    <thead><tr style="border-bottom:1px solid var(--bord)">
+      <th style="font-size:.65rem;padding:.22rem .4rem;text-align:left">CLIENTE</th>
+      <th style="font-size:.65rem;padding:.22rem .4rem;text-align:left">CC</th>
+      <th style="font-size:.65rem;padding:.22rem .4rem;text-align:left">PRODUCTO</th>
+      <th style="font-size:.65rem;padding:.22rem .4rem;text-align:right">SALDO</th>
+      <th style="font-size:.65rem;padding:.22rem .4rem;text-align:center">DÍAS</th>
+      ${showFaltan?'<th style="font-size:.65rem;padding:.22rem .4rem;text-align:center">FALTAN</th>':''}
+    </tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+
+function renderMoraDetalleSP(){
+  const data=filtrarCar(CAR_F);if(!data.length)return;
+  const l=data[data.length-1],tot=l.CarteraTotal;
+  const cats=['A','B','C','D','E'],catColors=cats.map(c=>CAT_COLORS[c]);
+  // Barras horizontales participación
+  dC('chMoraCatSP');
+  const pcts=cats.map(c=>+((l['Cat'+c]||0)/tot*100).toFixed(2));
+  new Chart(document.getElementById('chMoraCatSP'),{type:'bar',
+    data:{labels:cats.map(c=>`${c} – ${CAT_NAMES[c].split(' - ')[1]||CAT_NAMES[c]}`),
+      datasets:[{label:'%',data:pcts,backgroundColor:catColors,borderRadius:4,borderSkipped:false}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>{const c=cats[ctx.dataIndex];return` ${ctx.parsed.x.toFixed(2)}% · ${fK(l['Cat'+c]||0)}`;}}}},
+      scales:{x:{ticks:{callback:v=>v+'%',font:{size:10}},grid:{color:'#e8ede9'}},y:{ticks:{font:{size:11}},grid:{display:false}}}}});
+  // Barras apiladas evolución
+  dC('chCarteraBarSP');
+  new Chart(document.getElementById('chCarteraBarSP'),{type:'bar',
+    data:{labels:data.map(r=>r.Fecha),datasets:cats.map(c=>({
+      label:'Cat '+c,data:data.map(r=>+((r['Cat'+c]||0)/1e6).toFixed(2)),backgroundColor:CAT_COLORS[c]+'cc',stack:'s'}))},
+    options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+      plugins:{legend:{position:'bottom',labels:{boxWidth:10,padding:8,font:{size:10}}},
+        tooltip:{callbacks:{title:t=>fDt(t[0].label),label:t=>` ${t.dataset.label}: ${t.parsed.y.toLocaleString('es-CO',{minimumFractionDigits:2,maximumFractionDigits:2})} M`}}},
+      scales:{x:{ticks:{autoSkip:false,maxRotation:45,font:{size:10},callback:(v,i)=>{const d=data[i]?.Fecha;return d?`${d.slice(8,10)}/${d.slice(5,7)}`:'';}},grid:{display:false}},
+        y:{ticks:{font:{size:10},callback:v=>v+' M'},grid:{color:'#e8ede9'},stacked:true}}}});
+  // Tabla resumen SP con variación
+  const prev=data.length>1?data[data.length-2]:null;
+  const rowsTbl=cats.map(c=>{
+    const s=l['Cat'+c]||0,pct=(s/tot*100).toFixed(2);
+    const sP=prev?(prev['Cat'+c]||0):s,varM=((s-sP)/1e6).toFixed(2),varSign=s>=sP?'+':'';
+    const varColor=c==='A'?(s>=sP?'var(--grn)':'#c0392b'):(s<=sP?'var(--grn)':'#c0392b');
+    const diasRef=c==='A'?'<span style="color:var(--tx3);font-size:.72rem">Consumo ≤30d · Hip ≤60d</span>':`<span style="color:var(--tx3);font-size:.72rem">C: ${CAT_DIAS_CONSUMO[c]} · H: ${CAT_DIAS_HIP[c]}</span>`;
+    return`<tr><td><span class="dc"><span class="dm" style="background:${CAT_COLORS[c]}"></span><strong>${c}</strong></span></td>
+      <td><div style="font-size:.82rem;font-weight:600">${CAT_NAMES[c].split(' - ')[1]||CAT_NAMES[c]}</div>${diasRef}</td>
+      <td style="font-family:var(--fm);text-align:right">${fK(s)}</td>
+      <td style="text-align:right"><strong class="${c==='A'?'cup':'cdn'}">${pct}%</strong></td>
+      <td style="text-align:right;font-size:.78rem;color:${varColor}">${prev?varSign+varM+' M':'—'}</td></tr>`;});
+  const moraT=l.Mora||0;
+  rowsTbl.push(`<tr style="font-weight:700;border-top:2px solid var(--bord)"><td colspan="2">TOTAL CARTERA</td><td style="font-family:var(--fm);text-align:right">${fK(tot)}</td><td style="text-align:right">100%</td><td></td></tr>`);
+  rowsTbl.push(`<tr style="font-size:.8rem;color:#c0392b"><td colspan="2">⬛ MORA TOTAL (B+C+D+E)</td><td style="font-family:var(--fm);text-align:right">${fK(moraT)}</td><td style="text-align:right"><strong>${(moraT/tot*100).toFixed(2)}%</strong></td><td></td></tr>`);
+  document.getElementById('tbodySP').innerHTML=rowsTbl.join('');
+  // Alertas por transición de categoría
+  const proxAB=l.ProximosAB||[];
+  const credMora=l.CredMora||{};
+  let secHtml='';
+  // A→B
+  if(proxAB.length){secHtml+=`<div class="ccard span2" style="margin-bottom:.9rem"><div class="shdr"><div class="shdr-t">⚠️ Próximos A → B (${proxAB.length} créditos)</div><div class="shdr-s">Créditos en cat A con 1-7 días antes de entrar en mora</div></div>${_buildCredTable(proxAB,true)}</div>`;}
+  // B→C, C→D, D→E (top 20 por saldo)
+  ['B','C','D'].forEach(cat=>{
+    const lista=credMora[cat]||[];
+    const nextCat={'B':'C','C':'D','D':'E'}[cat];
+    if(lista.length){secHtml+=`<div class="ccard span2" style="margin-bottom:.9rem"><div class="shdr"><div class="shdr-t">⚠️ Créditos en categoría ${cat} — Riesgo paso a ${nextCat} (top 20)</div><div class="shdr-s">${CAT_NAMES[cat]} · ${CAT_DIAS_CONSUMO[cat]} consumo · ${CAT_DIAS_HIP[cat]} hipotecario</div></div>${_buildCredTable(lista,false)}</div>`;}});
+  document.getElementById('secProxSP').innerHTML=secHtml;
+}
+
+function renderMoraDetalleCA(){
+  const data=filtrarCar(CAR_F);if(!data.length)return;
+  const l=data[data.length-1],tot=l.CarteraTotal;
+  // Desglose CA: usar CA_A..CA_E si existen, si no sano/mora
+  const cats=['A','B','C','D','E'];
+  const caVals=cats.map(c=>+(((l['CA_'+c]||0))/1e6).toFixed(2));
+  const catColors=cats.map(c=>CAT_COLORS[c]);
+  // Si CA_B..CA_E todos 0 (estructura vieja) usar sano/mora agrupado
+  const hasDetalle=(l.CA_B||0)+(l.CA_C||0)+(l.CA_D||0)>0;
+  // Barras participación
+  dC('chMoraCatCA');
+  if(hasDetalle){
+    const pcts=cats.map(c=>+((l['CA_'+c]||0)/tot*100).toFixed(2));
+    new Chart(document.getElementById('chMoraCatCA'),{type:'bar',
+      data:{labels:cats.map(c=>`${c} – ${CAT_NAMES[c].split(' - ')[1]||CAT_NAMES[c]}`),
+        datasets:[{label:'%',data:pcts,backgroundColor:catColors,borderRadius:4,borderSkipped:false}]},
+      options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>{const c=cats[ctx.dataIndex];return` ${ctx.parsed.x.toFixed(2)}% · ${fK((l['CA_'+c]||0))}`;}}}} ,
+        scales:{x:{ticks:{callback:v=>v+'%',font:{size:10}},grid:{color:'#e8ede9'}},y:{ticks:{font:{size:11}},grid:{display:false}}}}});
+  } else {
+    const sanoCa=l.CA_A||0,moraCa=l.MoraCA||0;
+    new Chart(document.getElementById('chMoraCatCA'),{type:'bar',
+      data:{labels:['A – Sana','B-E – En mora'],datasets:[{data:[+(sanoCa/tot*100).toFixed(2),+(moraCa/tot*100).toFixed(2)],backgroundColor:['#005648cc','#8b0000cc'],borderRadius:4}]},
+      options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` ${ctx.parsed.x.toFixed(2)}% · ${fK(ctx.dataIndex===0?sanoCa:moraCa)}`}}},
+        scales:{x:{ticks:{callback:v=>v+'%',font:{size:10}},grid:{color:'#e8ede9'}},y:{ticks:{font:{size:12}},grid:{display:false}}}}});
+  }
+  // Evolución mora CA
+  dC('chCarteraBarCA');
+  new Chart(document.getElementById('chCarteraBarCA'),{type:'line',
+    data:{labels:data.map(r=>r.Fecha),datasets:[{label:'Mora CA %',data:data.map(r=>+((r.IndiceMoraCA||0)).toFixed(3)),
+      borderColor:'#8b0000',backgroundColor:'rgba(139,0,0,.1)',borderWidth:2.5,fill:true,tension:0.4,
+      pointRadius:data.length>30?0:3,pointHoverRadius:5}]},
+    options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+      plugins:{legend:{display:false},tooltip:{callbacks:{title:t=>fDt(t[0].label),label:t=>` Mora CA: ${t.parsed.y.toFixed(2)}%`}}},
+      scales:{x:{ticks:{autoSkip:false,maxRotation:45,font:{size:10},callback:(v,i)=>{const d=data[i]?.Fecha;return d?`${d.slice(8,10)}/${d.slice(5,7)}`:'';}},grid:{display:false}},
+        y:{ticks:{callback:v=>v.toFixed(1)+'%',font:{size:10}},grid:{color:'#e8ede9'},suggestedMin:0}}}});
+  // Tabla CA
+  const moraCa=l.MoraCA||0,sanoCa=l.CA_A||0;
+  let rowsCA='';
+  if(hasDetalle){
+    rowsCA=cats.map(c=>{const s=l['CA_'+c]||0;return`<tr><td><span class="dc"><span class="dm" style="background:${CAT_COLORS[c]}"></span><strong>${c}</strong></span></td>
+      <td>${CAT_NAMES[c].split(' - ')[1]||CAT_NAMES[c]}</td>
+      <td style="font-family:var(--fm);text-align:right">${fK(s)}</td>
+      <td style="text-align:right"><strong class="${c==='A'?'cup':'cdn'}">${(s/tot*100).toFixed(2)}%</strong></td></tr>`;}).join('');
+  } else {
+    rowsCA=`<tr><td><span class="dc"><span class="dm" style="background:#005648"></span><strong>A</strong></span></td><td>Sana — sin mora por arrastre</td><td style="font-family:var(--fm);text-align:right">${fK(sanoCa)}</td><td style="text-align:right"><strong class="cup">${(sanoCa/tot*100).toFixed(2)}%</strong></td></tr>
+    <tr><td><span class="dc"><span class="dm" style="background:#8b0000"></span><strong>B-E</strong></span></td><td>En mora por arrastre de cliente</td><td style="font-family:var(--fm);text-align:right">${fK(moraCa)}</td><td style="text-align:right"><strong class="cdn">${(moraCa/tot*100).toFixed(2)}%</strong></td></tr>`;
+  }
+  rowsCA+=`<tr style="font-weight:700;border-top:2px solid var(--bord)"><td colspan="2">TOTAL CARTERA</td><td style="font-family:var(--fm);text-align:right">${fK(tot)}</td><td style="text-align:right">100%</td></tr>`;
+  document.getElementById('tbodyCA').innerHTML=rowsCA;
+  // Alertas CA: próximos a entrar en mora
+  const prox=l.ProximosAB||[];
+  let caHtml='';
+  if(prox.length){caHtml=`<div class="ccard span2" style="margin-bottom:.9rem"><div class="shdr"><div class="shdr-t">⚠️ Clientes próximos a entrar en mora (${prox.length})</div><div class="shdr-s">Créditos A con 1-7 días para cambiar categoría — aplica arrastre al cliente completo</div></div>${_buildCredTable(prox,true)}</div>`;}
+  document.getElementById('secProxCA').innerHTML=caHtml;
+}
+
 function goCartera(){showPg('pgCartera');setBc('cartera');renderCartera();}
 
 function filtrarCar(st){
@@ -724,14 +1002,14 @@ function renderCartera(){
       <div class="kpi-lbl">Cartera total</div><div class="kpi-val">${fK(tot)}</div>
       <div class="kpi-unit">millones COP · ${fDt(l.Fecha)}</div>
     </div>
-    <div class="kpi" style="cursor:pointer" onclick="showCarDetail('mora_sp',${JSON.stringify(l).replace(/'/g,'\'')})">
+    <div class="kpi" style="cursor:pointer" onclick="showMoraDetalle('sp',${JSON.stringify(l).replace(/'/g,'\'')})">
       <div class="kpi-bar" style="background:#c0392b"></div>
       <div class="kpi-lbl">Índice mora sin arrastre</div>
       <div class="kpi-val">${pctMora.toFixed(2)}%</div>
       <div class="kpi-unit">CALIF_PRESTAMO (B+C+D+E)</div>
       <span class="kpi-d ${deltaMora<=0?'up':'dn'}">${deltaMora>=0?'+':''}${deltaMora}pp</span>
     </div>
-    <div class="kpi" style="cursor:pointer" onclick="showCarDetail('mora_ca',${JSON.stringify(l).replace(/'/g,'\'')})">
+    <div class="kpi" style="cursor:pointer" onclick="showMoraDetalle('ca',${JSON.stringify(l).replace(/'/g,'\'')})">
       <div class="kpi-bar" style="background:#8b0000"></div>
       <div class="kpi-lbl">Índice mora con arrastre</div>
       <div class="kpi-val">${pctMoraCA.toFixed(2)}%</div>
