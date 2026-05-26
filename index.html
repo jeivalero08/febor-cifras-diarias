@@ -17,7 +17,7 @@
 }
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:var(--font);background:var(--bg);color:var(--tx);font-size:14px;line-height:1.4;display:flex;flex-direction:column;min-height:100vh;}
-header{background:var(--g1);color:#fff;padding:12px 20px;display:flex;justify-content:between;align-items:center;box-shadow:0 2px 4px rgba(0,0,0,0.1);z-index:10;}
+header{background:var(--g1);color:#fff;padding:12px 20px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 2px 4px rgba(0,0,0,0.1);z-index:10;}
 .logo-area{display:flex;align-items:center;gap:12px;}
 .logo-title{font-size:16px;font-weight:600;letter-spacing:0.5px;}
 .logo-subtitle{font-size:11px;color:var(--gold);font-family:'IBM Plex Mono',monospace;}
@@ -129,8 +129,8 @@ main{flex:1;padding:20px;max-width:1400px;width:100%;margin:0 auto;display:flex;
   <div id="viewGeneral" class="view-panel">
     <div class="top-bar">
       <div class="view-title">
-        <button class="btn" onclick="goMenu()">← Volver</button>
-        Evolución de Depósitos
+        <button class="btn" onclick="goMenu()">← Volver al menú</button>
+        <span id="txtModuloTitulo">Evolución de Depósitos</span>
       </div>
       <div>
         <button class="btn btn-p" id="btnExcel" onclick="downloadExcel()">📊 Descargar Histórico</button>
@@ -146,9 +146,8 @@ main{flex:1;padding:20px;max-width:1400px;width:100%;margin:0 auto;display:flex;
         <div class="chart-cont"><canvas id="chartGeneral"></canvas></div>
       </div>
       <div class="cbox">
-        <div class="cbox-h"><div class="cbox-t">Distribución Actual</div></div>
-        <div class="chart-cont" style="height:200px;"><canvas id="chartDonut"></canvas></div>
-        <div id="detStats" style="margin-top:10px;"></div>
+        <div class="cbox-h"><div class="cbox-t">Análisis Estadístico</div></div>
+        <div id="detStats" style="margin-top:5px; flex:1; display:flex; flex-direction:column; justify-content:center;"></div>
       </div>
     </div>
   </div>
@@ -207,7 +206,7 @@ main{flex:1;padding:20px;max-width:1400px;width:100%;margin:0 auto;display:flex;
 </main>
 
 <script>
-// CONFIGURACIÓN DE PRODUCTOS FINANCIEROS Y VARIABLES HISTÓRICAS GLOBALES
+// CONFIGURACIÓN DE PRODUCTOS FINANCIEROS Y COLORES ASOCIADOS
 const PRODS = ['Ahorro Voluntario','Bolsillo Rentable','Ahorro Contractual','CDAT','Daes'];
 const COLORES = {
   'Ahorro Voluntario':'#005648','Bolsillo Rentable':'#00927A','Ahorro Contractual':'#20b2aa',
@@ -215,31 +214,27 @@ const COLORES = {
 };
 
 let dataM = [], carteraM = [];
-let selP = null, chartG = null, chartD = null;
+let selP = null, chartG = null;
 let chartCSP = null, chartCCA = null;
 
-// ARRANQUE DINÁMICO RESILIENTE (SOPORTA INYECCIÓN BASE64 DE PYTHON)
+// ARRANQUE COMPATIBLE CON LA INYECCIÓN BASE64 DE PYTHON
 window.onload = function(){
-  // Asignar variables desde ventana global inyectadas por atob
   if(window.__D__) dataM = window.__D__;
   if(window.__CAR__) carteraM = window.__CAR__;
 
   if(!dataM || dataM.length===0){
-    document.getElementById('loadTxt').innerHTML = "<span style='color:var(--red)'>✗ Error: Datos de saldos no encontrados en la plantilla HTML.</span>";
+    document.getElementById('loadTxt').innerHTML = "<span style='color:var(--red)'>✗ Error: Los datos de saldos no se han cargado correctamente.</span>";
     return;
   }
   
-  // Inicialización de componentes visuales si existen datos
   initSaldos();
   if(carteraM && carteraM.length > 0) {
      initCartera();
   }
   
-  // Ocultar pantalla de bloqueo
   document.getElementById('loader').classList.add('gone');
 };
 
-// FORMATOS NUMÉRICOS COLOMBIANOS
 function fK(v){if(v==null||isNaN(v))return'—';return'$'+Math.round(v).toLocaleString('es-CO');}
 function fP(v){if(v==null||isNaN(v))return'—';return(v>=0?'+':'')+v.toFixed(2)+'%';}
 
@@ -250,16 +245,22 @@ function goMenu(){
 function goGeneral(){
   document.querySelectorAll('.view-panel').forEach(p=>p.classList.remove('active'));
   document.getElementById('viewGeneral').classList.add('active');
+  document.getElementById('txtModuloTitulo').innerText = "Evolución de Depósitos";
   selP = null; refreshGeneral();
 }
 function goProd(pname){
   document.querySelectorAll('.view-panel').forEach(p=>p.classList.remove('active'));
   document.getElementById('viewGeneral').classList.add('active');
+  if(pname === 'Aportes') {
+    document.getElementById('txtModuloTitulo').innerText = "Módulo Aportes Sociales";
+  } else {
+    document.getElementById('txtModuloTitulo').innerText = "Evolución de Depósitos";
+  }
   selP = pname; refreshGeneral();
 }
 function goCarteraMenu(){
   document.querySelectorAll('.view-panel').forEach(p=>p.classList.remove('active'));
-  document.getElementById('viewCartera').classList.add('active');
+  document.getElementById('viewActive' || 'viewCartera').classList.add('active');
   if(chartCSP) chartCSP.update();
   if(chartCCA) chartCCA.update();
 }
@@ -278,11 +279,11 @@ function showDetailCA(){
   renderDetailCA();
 }
 
-// MÓDULO DEPÓSITOS Y APORTES
 function initSaldos(){
   refreshGeneral();
 }
 
+// RESTAURACIÓN DE LA LÓGICA ESTADÍSTICA COMPLETA DE CÁLCULO
 function refreshGeneral(){
   const last = dataM[dataM.length-1];
   const prev = dataM[dataM.length-2] || last;
@@ -290,7 +291,6 @@ function refreshGeneral(){
   document.getElementById('lblRangoFechas').innerText = `Corte: ${last.Fecha}`;
   
   let htmlK = '';
-  // Si no hay producto seleccionado, renderizar KPIs de los 5 de Depósitos
   const targetProds = selP ? [selP] : PRODS;
   
   targetProds.forEach(p=>{
@@ -307,8 +307,42 @@ function refreshGeneral(){
   document.getElementById('kpiRowGen').innerHTML = htmlK;
   
   renderMainChart();
-  renderDonutChart();
-  renderStatsTable();
+  
+  // Procesamiento matemático interno de tendencias, mínimos, máximos y promedios por producto
+  const activeP = selP || PRODS[0];
+  const vals = dataM.map(r=>r[activeP]).filter(v=>v!=null);
+  const maxV = Math.max(...vals);
+  const minV = Math.min(...vals);
+  const avgV = vals.reduce((a,b)=>a+b,0)/vals.length;
+  
+  const lastV = last[activeP]||0;
+  const prevV = prev[activeP]||0;
+  const pctD = prevV>0?((lastV-prevV)/prevV*100):0;
+  
+  // Variación contra el inicio de la serie histórica (últimos 12 puntos)
+  let t12 = null;
+  if(vals.length>=12){
+    const v12 = vals[vals.length-12];
+    t12 = v12>0?((lastV-v12)/v12*100):0;
+  }
+
+  const rows = [
+    ['Saldo actual',fK(lastV)],
+    ['Variación vs día ant.',`<span class="${pctD>=0?'cup':'cdn'}">${fP(pctD)}</span>`],
+    ['Mínimo período',fK(minV)],
+    ['Máximo período',fK(maxV)],
+    ['Promedio período',fK(avgV)],
+    ['Tendencia (Ptos control)',t12!=null?`<span class="${t12>=0?'cup':'cdn'}">${fP(t12)}</span>`:'—'],
+    ['Registros históricos',vals.length.toString()]
+  ];
+  
+  document.getElementById('detStats').innerHTML = `
+    <table class="stbl">
+      <tbody>
+        ${rows.map(([l,v])=>`<tr><td style="color:var(--tx3)">${l}</td><td class="num" style="font-weight:600;">${v}</td></tr>`).join('')}
+      </tbody>
+    </table>
+  `;
 }
 
 function renderMainChart(){
@@ -326,7 +360,7 @@ function renderMainChart(){
       borderColor: COLORES[selP]||'#005648',
       backgroundColor: 'transparent',
       borderWidth: 2.5,
-      pointRadius: 0
+      pointRadius: 1
     });
   } else {
     document.getElementById('mainChartTitle').innerText = 'Evolución Consolidada de Depósitos';
@@ -349,45 +383,11 @@ function renderMainChart(){
       responsive: true, maintainAspectRatio: false,
       plugins: { legend: { position: 'top', labels: { boxWidth: 12, font: { family: 'Poppins' } } } },
       scales: {
-        y: { ticks: { callback: v=>'$'+(v/1e6)+'M', font: { family: 'IBM Plex Mono' } } },
+        y: { ticks: { callback: v=>'$'+(v/1e9)+'B', font: { family: 'IBM Plex Mono' } } },
         x: { ticks: { font: { family: 'IBM Plex Mono', size: 10 } } }
       }
     }
   });
-}
-
-function renderDonutChart(){
-  const ctx = document.getElementById('chartDonut').getContext('2d');
-  if(chartD) chartD.destroy();
-  
-  const last = dataM[dataM.length-1];
-  const items = selP ? [selP] : PRODS;
-  const labels = items;
-  const data = items.map(p=>last[p]||0);
-  const bg = items.map(p=>COLORES[p]);
-  
-  chartD = new Chart(ctx, {
-    type: 'doughnut',
-    data: { labels: labels, datasets: [{ data: data, backgroundColor: bg }] },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false } }
-    }
-  });
-}
-
-function renderStatsTable(){
-  const last = dataM[dataM.length-1];
-  const items = selP ? [selP] : PRODS;
-  let total = 0; items.forEach(p=>total+=(last[p]||0));
-  
-  let h = `<table class="stbl"><thead><tr><th>Producto</th><th class="num">Saldo</th><th class="num">Part.</th></tr></thead><tbody>`;
-  items.forEach(p=>{
-    const v = last[p]||0; const part = total>0?(v/total*100):0;
-    h += `<tr><td><span style="color:${COLORES[p]}">●</span> ${p}</td><td class="num">${fK(v)}</td><td class="num">${part.toFixed(1)}%</td></tr>`;
-  });
-  h += `</tbody></table>`;
-  document.getElementById('detStats').innerHTML = h;
 }
 
 // MÓDULO CARTERA DE CRÉDITOS (SARL)
@@ -422,7 +422,6 @@ function initCartera(){
 
   const lbls = carteraM.map(r=>r.Fecha);
 
-  // Gráfica Histórica SP (Lado Izquierdo)
   const ctxSP = document.getElementById('chartCarteraSP').getContext('2d');
   if(chartCSP) chartCSP.destroy();
   chartCSP = new Chart(ctxSP, {
@@ -440,7 +439,6 @@ function initCartera(){
     options: { responsive: true, maintainAspectRatio: false, scales: { y: { ticks: { callback: v=>v+'%' } } } }
   });
 
-  // Gráfica Histórica CA (Lado Derecho)
   const ctxCA = document.getElementById('chartCarteraCA').getContext('2d');
   if(chartCCA) chartCCA.destroy();
   chartCCA = new Chart(ctxCA, {
@@ -493,7 +491,6 @@ function renderDetailSP(){
   h += `</tbody></table>`;
   document.getElementById('tableContainerSP').innerHTML = h;
 
-  // Renderizar Alertas Tempranas
   let ha = '';
   if(last.CreditosRiesgo && last.CreditosRiesgo.length > 0){
     last.CreditosRiesgo.forEach(cr=>{
@@ -508,7 +505,7 @@ function renderDetailSP(){
           </div>
           <div style="margin-top:4px;">
             <span class="alert-pill alert-high">Mora Actual: ${cr.DiasActual} días</span>
-            <span class="alert-pill alert-low" style="margin-left:5px;">Quedan ${cr.DiasRestantes} días para cambio de Categoría</span>
+            <span class="alert-pill alert-low" style="margin-left:5px;">Quedan ${cr.DiasRestantes} días para cambio</span>
           </div>
         </div>
       `;
@@ -548,7 +545,6 @@ function renderDetailCA(){
   document.getElementById('tableContainerCA').innerHTML = h;
 }
 
-// TRATAMIENTO DE DESCARGA DE EXCEL MADRE
 function downloadExcel(){
   const base = window.location.origin;
   if(!base.includes('localhost') && !base.includes('127.0.0.1')){
