@@ -421,9 +421,10 @@ select,input{font-family:var(--ff)}
 const PRODS=[
   {k:'Ahorro Voluntario',c:'#005648'},{k:'Bolsillo Rentable',c:'#00927A'},
   {k:'Ahorro Contractual',c:'#FAC616'},{k:'CDAT',c:'#003d32'},
-  {k:'Aportes',c:'#7ab8a8'},{k:'Daes',c:'#d4a84c'},
+  {k:'Daes',c:'#d4a84c'},
 ];
 const PM=Object.fromEntries(PRODS.map(p=>[p.k,p]));
+PM['Aportes']={k:'Aportes',c:'#7ab8a8'};
 const MS=['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 
 let ALL=[], CUR='', G={days:0,from:'',to:''}, D={days:0,from:'',to:''};
