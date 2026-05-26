@@ -56,7 +56,7 @@ body{background:var(--bg);color:var(--tx);font-family:var(--font);font-size:.9re
 .table-header-actions{display:flex;align-items:center;justify-content:space-between;padding:1.2rem 1.5rem;border-bottom:1px solid var(--bord);background:linear-gradient(to bottom,#fafcfa,var(--surf))}
 .table-wrapper{max-height:400px;overflow-y:auto}
 table{width:100%;border-collapse:collapse;text-align:left;font-size:.85rem}
-th{position:sticky;top:0;background:#f0f4f2;color:var(--g0);font-weight:600;padding Albem;padding:.8rem 1rem;border-bottom:2px solid var(--bord);z-index:10;font-size:.78rem;text-transform:uppercase;letter-spacing:0.02em}
+th{position:sticky;top:0;background:#f0f4f2;color:var(--g0);font-weight:600;padding:.8rem 1rem;border-bottom:2px solid var(--bord);z-index:10;font-size:.78rem;text-transform:uppercase;letter-spacing:0.02em}
 td{padding:.75rem 1rem;border-bottom:1px solid #e8f0ec;color:var(--tx);font-family:'IBM Plex Mono',monospace}
 tr:hover td{background:#f7faf8}
 .num{text-align:right}
@@ -411,7 +411,7 @@ function exportTableToExcel(tableID,filename=''){
   downloadLink.download=filename;downloadLink.click();
 }
 
-// ─── INSTANCIACIÓN BOOT GENERAL CORREGIDA ───────────────────────────
+// ─── INSTANCIACIÓN BOOT GENERAL REPARADA ───────────────────────────
 (async()=>{
   setLoad(20,'Conectando bases de datos…');
   setTimeout(()=>{
@@ -419,7 +419,7 @@ function exportTableToExcel(tableID,filename=''){
     setTimeout(()=>{
       setLoad(80,'Renderizando paneles analíticos…');
       
-      // Llamadas correctas a los módulos existentes
+      // Llamadas directas y seguras a tus funciones originales
       if(window.__D__ && window.__D__.length) {
           initDepositosModule();
       }
