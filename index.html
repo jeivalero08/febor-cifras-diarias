@@ -290,7 +290,7 @@ select,input{font-family:var(--ff)}
 
 <!-- PRODUCTO -->
 <div class="pg" id="pgProd">
-  <button class="det-back" onclick="goGeneral()">← Volver a vista general</button>
+  <button class="det-back" id="detBackBtn" onclick="goGeneral()">← Volver a vista general</button>
   <div class="det-hero" id="detHero"></div>
   <div class="sel-bar">
     <span class="sel-bar-title" id="detBarTitle">Detalle</span>
@@ -635,6 +635,10 @@ function renderTable(data){
 // PRODUCTO
 function renderProd(prod){
   const p=PM[prod];if(!p)return;
+  // Botón volver: Aportes → menú principal; otros → vista general
+  const btn=document.getElementById('detBackBtn');
+  if(btn){if(prod==='Aportes'){btn.textContent='← Volver al menú';btn.onclick=goMenu;}
+  else{btn.textContent='← Volver a vista general';btn.onclick=goGeneral;}}
   const data=filtrarProd(D,prod);
   if(!data.length)return;
   document.getElementById('detBarTitle').textContent=prod;
