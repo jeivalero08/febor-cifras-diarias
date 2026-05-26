@@ -436,6 +436,14 @@ const fDt=iso=>{if(!iso)return'—';const[y,m,d]=iso.split('-');return`${d}/${m}
 function setLoad(p,t){document.getElementById('loadBar').style.width=p+'%';document.getElementById('loadTxt').textContent=t;}
 function hideLoad(){const o=document.getElementById('loadOv');o.classList.add('gone');setTimeout(()=>o.style.display='none',450);}
 
+function initCartera(raw){
+  if(!raw||!raw.length)return;
+  const seen=new Set();
+  CAR_ALL=raw.map(r=>({...r,_d:new Date(r.Fecha+'T12:00:00')}))
+    .filter(r=>{if(seen.has(r.Fecha))return false;seen.add(r.Fecha);return true;})
+    .sort((a,b)=>a._d-b._d);
+}
+
 function initData(raw){
   const seen=new Set();
   ALL=raw.map(r=>({...r,_d:new Date(r.Fecha+'T12:00:00')}))
