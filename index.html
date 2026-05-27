@@ -689,7 +689,7 @@ function downloadHTML(){
   a.click();
 }
 // BOOT
-(function(){
+document.addEventListener('DOMContentLoaded',function(){
   try{
     if(window.__D__&&window.__D__.length){
       initData(window.__D__);
@@ -698,8 +698,9 @@ function downloadHTML(){
       return;
     }
   }catch(e){console.error('boot error:',e);}
-  document.getElementById('loadTxt').textContent='Sin datos. Ejecuta Actualizar FEBOR.bat';
-})();
+  var el=document.getElementById('loadTxt');
+  if(el) el.textContent='Sin datos. Ejecuta Actualizar FEBOR.bat';
+});
 </script>
 </body>
 </html>
