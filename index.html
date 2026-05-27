@@ -481,6 +481,7 @@ function setBc(v,prod){
 // MENU HERO
 function renderMenuHero(){
   const w=document.getElementById('menuHero');
+  if(!w)return;
   if(!ALL.length){w.innerHTML='<div class="no-data"><p>Sin datos. Ejecuta el Actualizar FEBOR.bat para cargar el historial.</p></div>';return;}
   const l=ALL[ALL.length-1],f=ALL[0];
   const tot=PRODS.reduce((s,p)=>s+(l[p.k]||0),0);
