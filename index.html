@@ -689,6 +689,231 @@ function downloadHTML(){
   a.download='EvolucionSaldos_FEBOR.html';
   a.click();
 }
+let CAR_F={days:0,from:'',to:''};
+
+function filtrarCar(st){
+  if(!CAR_ALL.length)return[];
+  if(st.days>0){const c=new Date(CAR_ALL[CAR_ALL.length-1]._d);c.setDate(c.getDate()-st.days);return CAR_ALL.filter(r=>r._d>=c);}
+  if(st.from&&st.to)return CAR_ALL.filter(r=>r.Fecha>=st.from&&r.Fecha<=st.to);
+  return[...CAR_ALL];
+}
+
+function goCartera(){showPg('pgCartera');setBc('cartera');renderCartera();}
+
+function renderCartera(){
+  const data=filtrarCar(CAR_F);
+  const info=document.getElementById('carInfo');
+  if(!data.length){if(info)info.textContent='Sin datos de cartera';return;}
+  if(info)info.textContent=infoStr(data);
+  const l=data[data.length-1],tot=l.CarteraTotal;
+  const prev=data.length>1?data[data.length-2]:null;
+  const pctMora=l.IndiceMora||0,pctMoraCA=l.IndiceMoraCA||0;
+  const deltaMora=prev?+((pctMora-(prev.IndiceMora||0)).toFixed(2)):0;
+  document.getElementById('kpisCar').innerHTML=`
+    <div class="kpi kpi-tot"><div class="kpi-bar" style="background:var(--gold)"></div>
+      <div class="kpi-lbl">Cartera total</div><div class="kpi-val">${fK(tot)}</div>
+      <div class="kpi-unit">millones COP · ${fDt(l.Fecha)}</div></div>
+    <div class="kpi" style="cursor:pointer" onclick="showMoraDetalle('sp')">
+      <div class="kpi-bar" style="background:#c0392b"></div>
+      <div class="kpi-lbl">Índice mora sin arrastre</div>
+      <div class="kpi-val">${pctMora.toFixed(2)}%</div>
+      <div class="kpi-unit">CALIF_PRESTAMO (B+C+D+E)</div>
+      <span class="kpi-d ${deltaMora<=0?'up':'dn'}">${deltaMora>=0?'+':''}${deltaMora}pp</span></div>
+    <div class="kpi" style="cursor:pointer" onclick="showMoraDetalle('ca')">
+      <div class="kpi-bar" style="background:#8b0000"></div>
+      <div class="kpi-lbl">Índice mora con arrastre</div>
+      <div class="kpi-val">${pctMoraCA.toFixed(2)}%</div>
+      <div class="kpi-unit">Agrupado por cliente</div></div>
+    <div class="kpi"><div class="kpi-bar" style="background:#005648"></div>
+      <div class="kpi-lbl">Cartera sana (A)</div>
+      <div class="kpi-val">${fK(l.CatA||0)}</div>
+      <div class="kpi-unit">${((l.CatA||0)/tot*100).toFixed(1)}% del total</div></div>
+    <div class="kpi"><div class="kpi-bar" style="background:#00927A"></div>
+      <div class="kpi-lbl">Consumo</div>
+      <div class="kpi-val">${fK(l.Consumo||0)}</div>
+      <div class="kpi-unit">${((l.Consumo||0)/tot*100).toFixed(1)}% del total</div></div>
+    <div class="kpi"><div class="kpi-bar" style="background:#d4a84c"></div>
+      <div class="kpi-lbl">Hipotecario</div>
+      <div class="kpi-val">${fK(l.Hipotecario||0)}</div>
+      <div class="kpi-unit">${((l.Hipotecario||0)/tot*100).toFixed(1)}% del total</div></div>`;
+  // Dos mini gráficas mora SP y CA
+  const cats=['A','B','C','D','E'];
+  const mkMini=(id,getVal,color)=>{
+    dC(id);
+    if(!document.getElementById(id))return;
+    new Chart(document.getElementById(id),{type:'line',
+      data:{labels:data.map(r=>r.Fecha),datasets:[{
+        data:data.map(r=>+((getVal(r)||0)).toFixed(3)),
+        borderColor:color,backgroundColor:color+'22',borderWidth:2.5,
+        pointRadius:data.length>30?0:3,pointHoverRadius:5,tension:0.4,fill:true}]},
+      options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+        plugins:{legend:{display:false},tooltip:{callbacks:{
+          title:t=>fDt(t[0].label),label:t=>` ${t.parsed.y.toFixed(2)}%`}}},
+        scales:{
+          x:{ticks:{maxTicksLimit:9,font:{size:9},callback:(v,i)=>{const d=data[i]?.Fecha;return d?`${d.slice(8,10)}/${d.slice(5,7)}`:'';}},grid:{display:false}},
+          y:{ticks:{font:{size:9},callback:v=>v.toFixed(1)+'%'},grid:{color:'#e8ede9'},suggestedMin:0}}}});
+  };
+  mkMini('chMoraSP',r=>r.IndiceMora,'#c0392b');
+  mkMini('chMoraCA',r=>r.IndiceMoraCA,'#8b0000');
+}
+
+function showMoraDetalle(tipo){
+  const cardSP=document.getElementById('chMoraSP')?.closest('.ccard');
+  const cardCA=document.getElementById('chMoraCA')?.closest('.ccard');
+  if(cardSP)cardSP.style.display=tipo==='sp'?'':'none';
+  if(cardCA)cardCA.style.display=tipo==='ca'?'':'none';
+  const pSP=document.getElementById('pgMoraSP');
+  const pCA=document.getElementById('pgMoraCA');
+  if(pSP)pSP.style.display=tipo==='sp'?'':'none';
+  if(pCA)pCA.style.display=tipo==='ca'?'':'none';
+  if(tipo==='sp')renderMoraDetalleSP();
+  else renderMoraDetalleCA();
+}
+
+function closeMoraDetalle(){
+  const cardSP=document.getElementById('chMoraSP')?.closest('.ccard');
+  const cardCA=document.getElementById('chMoraCA')?.closest('.ccard');
+  if(cardSP)cardSP.style.display='';
+  if(cardCA)cardCA.style.display='';
+  const pSP=document.getElementById('pgMoraSP');
+  const pCA=document.getElementById('pgMoraCA');
+  if(pSP){pSP.style.display='none';pSP.innerHTML='';}
+  if(pCA){pCA.style.display='none';pCA.innerHTML='';}
+}
+
+function _tblCred(creds,showFaltan){
+  if(!creds||!creds.length)return'<div style="padding:.6rem;font-size:.78rem;color:var(--tx3)">Sin créditos.</div>';
+  return`<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse">
+    <thead><tr style="border-bottom:1px solid var(--bord)">
+      <th style="font-size:.63rem;padding:.2rem .4rem;text-align:left">CLIENTE</th>
+      <th style="font-size:.63rem;padding:.2rem .4rem;text-align:left">CC</th>
+      <th style="font-size:.63rem;padding:.2rem .4rem;text-align:left">PRODUCTO</th>
+      <th style="font-size:.63rem;padding:.2rem .4rem;text-align:right">SALDO</th>
+      <th style="font-size:.63rem;padding:.2rem .4rem;text-align:center">DÍAS</th>
+      ${showFaltan?'<th style="font-size:.63rem;padding:.2rem .4rem;text-align:center">FALTAN</th>':''}
+    </tr></thead>
+    <tbody>${creds.map(p=>`<tr>
+      <td style="font-size:.72rem;padding:.2rem .4rem">${p.Cliente||'—'}</td>
+      <td style="font-size:.72rem;padding:.2rem .4rem;color:var(--tx3)">${p.Identificacion||'—'}</td>
+      <td style="font-size:.72rem;padding:.2rem .4rem">${p.Producto||'—'}</td>
+      <td style="font-size:.72rem;padding:.2rem .4rem;text-align:right">${fK(p.Saldo)}</td>
+      <td style="font-size:.72rem;padding:.2rem .4rem;text-align:center;font-weight:700;color:#e67e22">${p.DiasActual}d</td>
+      ${showFaltan?`<td style="font-size:.72rem;padding:.2rem .4rem;text-align:center;font-weight:700;color:#c0392b">${p.DiasRestantes}d</td>`:''}
+    </tr>`).join('')}</tbody></table></div>`;
+}
+
+function renderMoraDetalleSP(){
+  const data=filtrarCar(CAR_F);if(!data.length)return;
+  const l=data[data.length-1],tot=l.CarteraTotal,prev=data.length>1?data[data.length-2]:null;
+  const cats=['A','B','C','D','E'],catColors=cats.map(c=>CAT_COLORS[c]);
+  const pcts=cats.map(c=>+((l['Cat'+c]||0)/tot*100).toFixed(2));
+  let h=`<div style="display:flex;align-items:center;gap:.8rem;margin:.6rem 0 .8rem;flex-wrap:wrap">
+    <button class="det-back" style="position:static;margin:0" onclick="closeMoraDetalle()">← Volver a Cartera</button>
+    <span style="font-weight:600;color:#c0392b;font-size:.88rem">Mora Sin Arrastre — Clasificación FEBOR por crédito</span></div>
+  <div class="crow">
+    <div class="ccard"><div class="ctop"><div><div class="ctitle">Participación por categoría</div></div></div>
+      <div class="cwrap h260"><canvas id="chCatSP"></canvas></div></div>
+    <div class="ccard"><div class="ctop"><div><div class="ctitle">Evolución cartera</div></div></div>
+      <div style="overflow-x:auto"><div class="cwrap h260" style="min-width:500px"><canvas id="chEvolSP"></canvas></div></div></div>
+  </div>`;
+  const tRows=cats.map(c=>{
+    const s=l['Cat'+c]||0,pct=(s/tot*100).toFixed(2),sP=prev?(prev['Cat'+c]||0):s;
+    const varM=((s-sP)/1e6).toFixed(2),varColor=c==='A'?(s>=sP?'var(--grn)':'#c0392b'):(s<=sP?'var(--grn)':'#c0392b');
+    const diasRef=c==='A'?'Consumo ≤30d · Hip ≤60d':`C: ${CAT_DIAS_CONSUMO[c]} · H: ${CAT_DIAS_HIP[c]}`;
+    return`<tr><td><span class="dc"><span class="dm" style="background:${CAT_COLORS[c]}"></span><strong>${c}</strong></span></td>
+      <td><div style="font-size:.82rem;font-weight:600">${CAT_NAMES[c].split(' - ')[1]||CAT_NAMES[c]}</div>
+      <span style="font-size:.71rem;color:var(--tx3)">${diasRef}</span></td>
+      <td style="font-family:var(--fm);text-align:right">${fK(s)}</td>
+      <td style="text-align:right"><strong class="${c==='A'?'cup':'cdn'}">${pct}%</strong></td>
+      <td style="text-align:right;font-size:.78rem;color:${varColor}">${prev?(s>=sP?'+':'')+varM+' M':'—'}</td></tr>`;
+  });
+  const moraT=l.Mora||0;
+  tRows.push(`<tr style="font-weight:700;border-top:2px solid var(--bord)"><td colspan="2">TOTAL</td><td style="font-family:var(--fm);text-align:right">${fK(tot)}</td><td style="text-align:right">100%</td><td></td></tr>`);
+  tRows.push(`<tr style="color:#c0392b;font-size:.8rem"><td colspan="2">MORA (B+C+D+E)</td><td style="font-family:var(--fm);text-align:right">${fK(moraT)}</td><td style="text-align:right"><strong>${(moraT/tot*100).toFixed(2)}%</strong></td><td></td></tr>`);
+  h+=`<div class="ccard span2" style="margin-bottom:.9rem">
+    <div class="shdr"><div class="shdr-t">Resumen — Sin arrastre</div></div>
+    <div class="stbl-wrap"><table class="stbl"><thead><tr>
+      <th>CAT</th><th>DESCRIPCIÓN</th><th style="text-align:right">SALDO</th><th style="text-align:right">PART.</th><th style="text-align:right">VAR. DÍA</th>
+    </tr></thead><tbody>${tRows.join('')}</tbody></table></div></div>`;
+  const proxAB=l.ProximosAB||[],credMora=l.CredMora||{};
+  if(proxAB.length)h+=`<div class="ccard span2" style="margin-bottom:.9rem">
+    <div class="shdr"><div class="shdr-t">⚠️ Próximos A → B (${proxAB.length})</div></div>${_tblCred(proxAB,true)}</div>`;
+  ['B','C','D'].forEach(cat=>{
+    const lista=credMora[cat]||[],next={'B':'C','C':'D','D':'E'}[cat];
+    if(lista.length)h+=`<div class="ccard span2" style="margin-bottom:.9rem">
+      <div class="shdr"><div class="shdr-t">⚠️ Cat ${cat} → ${next} (top 20)</div></div>${_tblCred(lista,false)}</div>`;
+  });
+  document.getElementById('pgMoraSP').innerHTML=h;
+  dC('chCatSP');
+  new Chart(document.getElementById('chCatSP'),{type:'bar',
+    data:{labels:cats.map(c=>`${c} – ${CAT_NAMES[c].split(' - ')[1]||CAT_NAMES[c]}`),
+      datasets:[{data:pcts,backgroundColor:catColors,borderRadius:4,borderSkipped:false}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` ${ctx.parsed.x.toFixed(2)}%`}}},
+      scales:{x:{ticks:{callback:v=>v+'%',font:{size:10}},grid:{color:'#e8ede9'}},y:{ticks:{font:{size:10}},grid:{display:false}}}}});
+  dC('chEvolSP');
+  new Chart(document.getElementById('chEvolSP'),{type:'bar',
+    data:{labels:data.map(r=>r.Fecha),datasets:cats.map(c=>({
+      label:'Cat '+c,data:data.map(r=>+((r['Cat'+c]||0)/1e6).toFixed(2)),backgroundColor:CAT_COLORS[c]+'cc',stack:'s'}))},
+    options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+      plugins:{legend:{position:'bottom',labels:{boxWidth:10,font:{size:10}}},
+        tooltip:{callbacks:{title:t=>fDt(t[0].label),label:t=>` ${t.dataset.label}: ${t.parsed.y.toLocaleString('es-CO',{minimumFractionDigits:2})} M`}}},
+      scales:{x:{ticks:{autoSkip:false,maxRotation:45,font:{size:9},callback:(v,i)=>{const d=data[i]?.Fecha;return d?`${d.slice(8,10)}/${d.slice(5,7)}`:'';}},grid:{display:false}},
+        y:{ticks:{font:{size:9},callback:v=>v+' M'},grid:{color:'#e8ede9'},stacked:true}}}});
+}
+
+function renderMoraDetalleCA(){
+  const data=filtrarCar(CAR_F);if(!data.length)return;
+  const l=data[data.length-1],tot=l.CarteraTotal;
+  const cats=['A','B','C','D','E'],catColors=cats.map(c=>CAT_COLORS[c]);
+  const hasDetalle=(l.CA_B||0)+(l.CA_C||0)+(l.CA_D||0)>0;
+  let h=`<div style="display:flex;align-items:center;gap:.8rem;margin:.6rem 0 .8rem;flex-wrap:wrap">
+    <button class="det-back" style="position:static;margin:0" onclick="closeMoraDetalle()">← Volver a Cartera</button>
+    <span style="font-weight:600;color:#8b0000;font-size:.88rem">Mora Con Arrastre — Agrupado por cliente</span></div>
+  <div class="crow">
+    <div class="ccard"><div class="ctop"><div><div class="ctitle">Participación por categoría</div></div></div>
+      <div class="cwrap h260"><canvas id="chCatCA"></canvas></div></div>
+    <div class="ccard"><div class="ctop"><div><div class="ctitle">Evolución índice mora CA</div></div></div>
+      <div style="overflow-x:auto"><div class="cwrap h260" style="min-width:500px"><canvas id="chEvolCA"></canvas></div></div></div>
+  </div>`;
+  let rowsCA='';
+  if(hasDetalle){
+    rowsCA=cats.map(c=>{const s=l['CA_'+c]||0;return`<tr>
+      <td><span class="dc"><span class="dm" style="background:${CAT_COLORS[c]}"></span><strong>${c}</strong></span></td>
+      <td>${CAT_NAMES[c].split(' - ')[1]||CAT_NAMES[c]}</td>
+      <td style="font-family:var(--fm);text-align:right">${fK(s)}</td>
+      <td style="text-align:right"><strong class="${c==='A'?'cup':'cdn'}">${(s/tot*100).toFixed(2)}%</strong></td></tr>`;}).join('');
+  }else{
+    const sano=l.CA_A||0,mora=l.MoraCA||0;
+    rowsCA=`<tr><td><span class="dc"><span class="dm" style="background:#005648"></span><strong>A</strong></span></td><td>Sana</td><td style="font-family:var(--fm);text-align:right">${fK(sano)}</td><td style="text-align:right"><strong class="cup">${(sano/tot*100).toFixed(2)}%</strong></td></tr>
+    <tr><td><span class="dc"><span class="dm" style="background:#8b0000"></span><strong>B-E</strong></span></td><td>En mora por arrastre</td><td style="font-family:var(--fm);text-align:right">${fK(mora)}</td><td style="text-align:right"><strong class="cdn">${(mora/tot*100).toFixed(2)}%</strong></td></tr>`;
+  }
+  rowsCA+=`<tr style="font-weight:700;border-top:2px solid var(--bord)"><td colspan="2">TOTAL</td><td style="font-family:var(--fm);text-align:right">${fK(tot)}</td><td style="text-align:right">100%</td></tr>`;
+  h+=`<div class="ccard span2" style="margin-bottom:.9rem">
+    <div class="shdr"><div class="shdr-t">Resumen — Con arrastre</div></div>
+    <div class="stbl-wrap"><table class="stbl"><thead><tr><th>CAT</th><th>DESCRIPCIÓN</th><th style="text-align:right">SALDO</th><th style="text-align:right">PART.</th></tr></thead>
+    <tbody>${rowsCA}</tbody></table></div></div>`;
+  const prox=l.ProximosAB||[];
+  if(prox.length)h+=`<div class="ccard span2" style="margin-bottom:.9rem">
+    <div class="shdr"><div class="shdr-t">⚠️ Clientes próximos a entrar en mora (${prox.length})</div></div>${_tblCred(prox,true)}</div>`;
+  document.getElementById('pgMoraCA').innerHTML=h;
+  const caLabels=hasDetalle?cats.map(c=>`${c}`):['A – Sana','B-E – Mora'];
+  const caData=hasDetalle?cats.map(c=>+((l['CA_'+c]||0)/tot*100).toFixed(2)):[+((l.CA_A||0)/tot*100).toFixed(2),+((l.MoraCA||0)/tot*100).toFixed(2)];
+  const caBg=hasDetalle?catColors:['#005648cc','#8b0000cc'];
+  dC('chCatCA');
+  new Chart(document.getElementById('chCatCA'),{type:'bar',data:{labels:caLabels,datasets:[{data:caData,backgroundColor:caBg,borderRadius:4,borderSkipped:false}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` ${ctx.parsed.x.toFixed(2)}%`}}},
+      scales:{x:{ticks:{callback:v=>v+'%',font:{size:10}},grid:{color:'#e8ede9'}},y:{ticks:{font:{size:10}},grid:{display:false}}}}});
+  dC('chEvolCA');
+  new Chart(document.getElementById('chEvolCA'),{type:'line',data:{labels:data.map(r=>r.Fecha),datasets:[{
+    data:data.map(r=>+((r.IndiceMoraCA||0)).toFixed(3)),borderColor:'#8b0000',backgroundColor:'rgba(139,0,0,.1)',borderWidth:2.5,fill:true,tension:0.4,
+    pointRadius:data.length>30?0:3,pointHoverRadius:5}]},
+    options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+      plugins:{legend:{display:false},tooltip:{callbacks:{title:t=>fDt(t[0].label),label:t=>` Mora CA: ${t.parsed.y.toFixed(2)}%`}}},
+      scales:{x:{ticks:{autoSkip:false,maxRotation:45,font:{size:9},callback:(v,i)=>{const d=data[i]?.Fecha;return d?`${d.slice(8,10)}/${d.slice(5,7)}`:'';}},grid:{display:false}},
+        y:{ticks:{callback:v=>v.toFixed(1)+'%',font:{size:9}},grid:{color:'#e8ede9'},suggestedMin:0}}}});
+}
+
 // BOOT
 document.addEventListener('DOMContentLoaded',function(){
   try{
