@@ -784,6 +784,92 @@ function showMoraDetalle(tipo){
   else renderMoraDetalleCA();
 }
 
+function showDrillDown(cat){
+  const data=filtrarCar(CAR_F);if(!data.length)return;
+  const l=data[data.length-1];
+  const det=l.DetalleCat?.[cat];
+  const panel=document.getElementById('drillDownSP');
+  if(!panel)return;
+
+  const CAT_LABEL={'A':'Riesgo Normal','B':'Riesgo Aceptable','C':'Riesgo Apreciable','D':'Riesgo Significativo','E':'Riesgo de Incobrabilidad'};
+  const CAT_COLOR={'A':'#005648','B':'#FAC616','C':'#e67e22','D':'#c0392b','E':'#8b0000'};
+
+  if(!det){
+    panel.style.display='';
+    panel.innerHTML=`<div class="ccard span2" style="margin-top:.8rem;border-left:4px solid ${CAT_COLOR[cat]}">
+      <div style="padding:1rem;color:var(--tx3);font-size:.85rem">Sin datos de detalle para categoría ${cat}. Corre el .bat con el nuevo actualizar_saldos.py para generarlos.</div>
+    </div>`;
+    return;
+  }
+
+  const tot=det.saldo||0;
+  const cons=det.porTipo?.Consumo||{num:0,saldo:0};
+  const hip=det.porTipo?.Hipotecario||{num:0,saldo:0};
+  const caja=det.porPago?.Caja||{num:0,saldo:0};
+  const lib=det.porPago?.Libranza||{num:0,saldo:0};
+  const deb=det.porPago?.['Débito']||{num:0,saldo:0};
+
+  const pct=(v,t)=>t>0?(v/t*100).toFixed(1):'0.0';
+  const bar=(p,c)=>`<div style="height:6px;border-radius:3px;background:#e8ede9;margin:.3rem 0">
+    <div style="width:${p}%;height:100%;border-radius:3px;background:${c}"></div></div>`;
+
+  panel.style.display='';
+  panel.innerHTML=`
+  <div class="ccard span2" style="margin-top:.8rem;border-left:4px solid ${CAT_COLOR[cat]};animation:fadeIn .2s ease">
+    <div class="shdr">
+      <div class="shdr-t" style="color:${CAT_COLOR[cat]}">🔍 Detalle Categoría ${cat} — ${CAT_LABEL[cat]}</div>
+      <div class="shdr-s">${det.num} créditos · ${fK(tot)} de capital expuesto</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;padding:1rem">
+
+      <!-- Volumen -->
+      <div style="padding:.8rem;background:var(--bg);border-radius:10px">
+        <div style="font-size:.65rem;color:var(--tx3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.4rem">Volumen</div>
+        <div style="font-family:var(--fm);font-size:1.6rem;color:${CAT_COLOR[cat]};font-weight:700">${det.num}</div>
+        <div style="font-size:.72rem;color:var(--tx3)">créditos en categoría ${cat}</div>
+        <div style="font-family:var(--fm);font-size:.95rem;margin-top:.4rem">${fK(tot)}</div>
+        <div style="font-size:.7rem;color:var(--tx3)">capital expuesto</div>
+      </div>
+
+      <!-- Por tipo -->
+      <div style="padding:.8rem;background:var(--bg);border-radius:10px">
+        <div style="font-size:.65rem;color:var(--tx3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.6rem">Composición</div>
+        <div style="margin-bottom:.5rem">
+          <div style="display:flex;justify-content:space-between;font-size:.75rem">
+            <span>🏦 Consumo</span><span style="font-family:var(--fm)">${cons.num} · ${pct(cons.saldo,tot)}%</span>
+          </div>
+          ${bar(pct(cons.saldo,tot),'#00927A')}
+          <div style="font-size:.7rem;color:var(--tx3)">${fK(cons.saldo)}</div>
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;font-size:.75rem">
+            <span>🏠 Hipotecario</span><span style="font-family:var(--fm)">${hip.num} · ${pct(hip.saldo,tot)}%</span>
+          </div>
+          ${bar(pct(hip.saldo,tot),'#005648')}
+          <div style="font-size:.7rem;color:var(--tx3)">${fK(hip.saldo)}</div>
+        </div>
+      </div>
+
+      <!-- Por pagaduría -->
+      <div style="padding:.8rem;background:var(--bg);border-radius:10px">
+        <div style="font-size:.65rem;color:var(--tx3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.6rem">Tipo de Pago</div>
+        ${[['Caja',caja,'#FAC616'],['Libranza',lib,'#00927A'],['Débito',deb,'#005648']].map(([n,v,c])=>`
+        <div style="margin-bottom:.4rem">
+          <div style="display:flex;justify-content:space-between;font-size:.75rem">
+            <span>${n}</span><span style="font-family:var(--fm)">${v.num} · ${pct(v.saldo,tot)}%</span>
+          </div>
+          ${bar(pct(v.saldo,tot),c)}
+        </div>`).join('')}
+      </div>
+
+    </div>
+    <div style="padding:.4rem 1rem .8rem;text-align:right">
+      <button onclick="document.getElementById('drillDownSP').style.display='none'"
+        style="font-size:.72rem;color:var(--tx3);background:none;border:none;cursor:pointer">✕ Cerrar detalle</button>
+    </div>
+  </div>`;
+}
+
 function closeMoraDetalle(){
   // Restaurar las dos gráficas lado a lado
   const wrap=document.getElementById('wrapMoraCharts');
@@ -874,13 +960,15 @@ function renderMoraDetalleSP(){
         </div>${_tblCred(lista,false)}</div>`;
     }
   });
+  h+=`<div id="drillDownSP" style="display:none"></div>`;
   document.getElementById('pgMoraSP').innerHTML=h;
   dC('chCatSP');
   new Chart(document.getElementById('chCatSP'),{type:'bar',
     data:{labels:cats.map(c=>`${c} – ${CAT_NAMES[c].split(' - ')[1]||CAT_NAMES[c]}`),
       datasets:[{data:pcts,backgroundColor:catColors,borderRadius:4,borderSkipped:false}]},
     options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` ${ctx.parsed.x.toFixed(2)}%`}}},
+      onClick:(e,els)=>{if(els.length){showDrillDown(cats[els[0].index]);}},
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` ${ctx.parsed.x.toFixed(2)}% · clic para detalle`}}},
       scales:{x:{ticks:{callback:v=>v+'%',font:{size:10}},grid:{color:'#e8ede9'}},y:{ticks:{font:{size:10}},grid:{display:false}}}}});
   dC('chEvolSP');
   new Chart(document.getElementById('chEvolSP'),{type:'bar',
