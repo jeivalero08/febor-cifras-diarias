@@ -800,8 +800,7 @@ function renderCartera(){
       const pts=spChart.getElementsAtEventForMode(e,'nearest',{intersect:true},true);
       if(pts.length){
         _CAR_SELECTED_DATE=data[pts[0].index]?.Fecha||null;
-        renderCartera();
-        if(document.getElementById('pgMoraSP').style.display!=='none') renderMoraDetalleSP();
+        showMoraDetalle('sp');
       }
     };
   }
@@ -825,12 +824,25 @@ function showMoraDetalle(tipo){
 
 function showDrillDown(cat){
   const data=filtrarCar(CAR_F);if(!data.length)return;
-  // Usar el último día del período filtrado
   const idx=_CAR_SELECTED_DATE?data.findIndex(r=>r.Fecha===_CAR_SELECTED_DATE):-1;
   const l=idx>=0?data[idx]:data[data.length-1];
-  // Si ese día no tiene DetalleCat, buscar el más cercano en CAR_ALL
-  const det=l.DetalleCat?.[cat]||
-    ([...CAR_ALL].reverse().find(r=>r.DetalleCat?.[cat]))?.DetalleCat?.[cat];
+  const _tot=l.CarteraTotal||1;
+  // Usar DetalleCat si existe, si no construir desde los campos Cat* del registro
+  let det=l.DetalleCat?.[cat];
+  if(!det){
+    const saldo=l['Cat'+cat]||0;
+    // Estimar composición desde datos disponibles
+    const pCons=l.Consumo/_tot, pHip=l.Hipotecario/_tot;
+    det={
+      num: Math.round((saldo/_tot)*(l.NumCreditos||0)),
+      saldo: saldo,
+      porTipo:{
+        Consumo:{num:Math.round((saldo/_tot)*(l.NumCreditos||0)*pCons/(pCons+pHip)||0), saldo:saldo*pCons/(pCons+pHip)||0},
+        Hipotecario:{num:Math.round((saldo/_tot)*(l.NumCreditos||0)*pHip/(pCons+pHip)||0), saldo:saldo*pHip/(pCons+pHip)||0}
+      },
+      porPago:{Caja:{num:0,saldo:0},Libranza:{num:0,saldo:0},'Débito':{num:0,saldo:0}}
+    };
+  }
   const panel=document.getElementById('drillDownSP');
   if(!panel)return;
 
@@ -951,10 +963,11 @@ function _tblCred(creds,showFaltan){
 
 function renderMoraDetalleSP(){
   const data=filtrarCar(CAR_F);if(!data.length)return;
-  // Si hay un día seleccionado en la gráfica, usarlo; si no, el último del período
   const idx=_CAR_SELECTED_DATE?data.findIndex(r=>r.Fecha===_CAR_SELECTED_DATE):-1;
   const lIdx=idx>=0?idx:data.length-1;
   const l=data[lIdx],tot=l.CarteraTotal,prev=lIdx>0?data[lIdx-1]:null;
+  // Actualizar KPIs con el día seleccionado
+  renderCartera();
   const cats=['A','B','C','D','E'],catColors=cats.map(c=>CAT_COLORS[c]);
   const pcts=cats.map(c=>+((l['Cat'+c]||0)/tot*100).toFixed(2));
   let h=`<div style="display:flex;align-items:center;gap:.8rem;margin:.6rem 0 .8rem;flex-wrap:wrap">
