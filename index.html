@@ -1024,6 +1024,13 @@ function renderMoraDetalleSP(){
     options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
       plugins:{legend:{position:'bottom',labels:{boxWidth:10,font:{size:10}}},
         tooltip:{callbacks:{title:t=>fDt(t[0].label),label:t=>` ${t.dataset.label}: ${t.parsed.y.toLocaleString('es-CO',{minimumFractionDigits:2})} M`}}},
+      onClick:(e,els)=>{
+        if(els.length){
+          _CAR_SELECTED_DATE=data[els[0].index]?.Fecha||null;
+          renderCartera();
+          renderMoraDetalleSP();
+        }
+      },
       scales:{x:{ticks:{autoSkip:false,maxRotation:45,font:{size:9},callback:(v,i)=>{const d=data[i]?.Fecha;return d?`${d.slice(8,10)}/${d.slice(5,7)}`:'';}},grid:{display:false}},
         y:{ticks:{font:{size:9},callback:v=>v+' M'},grid:{color:'#e8ede9'},stacked:true}}}});
 }
