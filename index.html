@@ -785,10 +785,10 @@ function showMoraDetalle(tipo){
 }
 
 function showDrillDown(cat){
-  const data=filtrarCar(CAR_F);if(!data.length)return;
-  // Buscar último registro que tenga DetalleCat
-  const lDet=[...data].reverse().find(r=>r.DetalleCat)||data[data.length-1];
-  const det=lDet.DetalleCat?.[cat];
+  if(!CAR_ALL.length)return;
+  // Buscar último registro con DetalleCat en TODOS los datos (no solo filtrados)
+  const lDet=[...CAR_ALL].reverse().find(r=>r.DetalleCat&&r.DetalleCat[cat]);
+  const det=lDet?.DetalleCat?.[cat];
   const panel=document.getElementById('drillDownSP');
   if(!panel)return;
 
