@@ -699,6 +699,7 @@ function downloadHTML(){
   a.click();
 }
 let CAR_F={days:0,from:'',to:''};
+let _CAR_SELECTED_DATE=null; // día seleccionado al hacer clic en gráfica
 
 function filtrarCar(st){
   if(!CAR_ALL.length)return[];
@@ -707,6 +708,29 @@ function filtrarCar(st){
   return[...CAR_ALL];
 }
 
+function setQCar(d,btn){
+  CAR_F={days:d,from:'',to:''};
+  clearQ('qpCar');btn.classList.add('on');
+  renderCartera();
+  if(document.getElementById('pgMoraSP').style.display!=='none') renderMoraDetalleSP();
+  if(document.getElementById('pgMoraCA').style.display!=='none') renderMoraDetalleCA();
+}
+function applyCarteraDate(){
+  const f=document.getElementById('cFrom').value,t=document.getElementById('cTo').value;
+  if(!f||!t)return;
+  CAR_F={days:0,from:f,to:t};clearQ('qpCar');
+  renderCartera();
+  if(document.getElementById('pgMoraSP').style.display!=='none') renderMoraDetalleSP();
+  if(document.getElementById('pgMoraCA').style.display!=='none') renderMoraDetalleCA();
+}
+function clearCarteraDate(){
+  CAR_F={days:0,from:'',to:''};
+  document.getElementById('cFrom').value='';
+  document.getElementById('cTo').value='';
+  clearQ('qpCar');
+  document.querySelector('#qpCar .qpill:last-child').classList.add('on');
+  renderCartera();
+}
 function goCartera(){showPg('pgCartera');setBc('cartera');renderCartera();}
 
 function renderCartera(){
@@ -714,8 +738,11 @@ function renderCartera(){
   const info=document.getElementById('carInfo');
   if(!data.length){if(info)info.textContent='Sin datos de cartera';return;}
   if(info)info.textContent=infoStr(data);
-  const l=data[data.length-1],tot=l.CarteraTotal;
-  const prev=data.length>1?data[data.length-2]:null;
+  // Si hay día seleccionado por clic, usarlo para KPIs
+  const idx=_CAR_SELECTED_DATE?data.findIndex(r=>r.Fecha===_CAR_SELECTED_DATE):-1;
+  const lIdx=idx>=0?idx:data.length-1;
+  const l=data[lIdx],tot=l.CarteraTotal;
+  const prev=lIdx>0?data[lIdx-1]:null;
   const pctMora=l.IndiceMora||0,pctMoraCA=l.IndiceMoraCA||0;
   const deltaMora=prev?+((pctMora-(prev.IndiceMora||0)).toFixed(2)):0;
   document.getElementById('kpisCar').innerHTML=`
@@ -766,6 +793,18 @@ function renderCartera(){
   };
   mkMini('chMoraSP',r=>r.IndiceMora,'#c0392b');
   mkMini('chMoraCA',r=>r.IndiceMoraCA,'#8b0000');
+  // Clic en punto de mora SP → actualiza detalle con ese día
+  const spChart=Chart.getChart(document.getElementById('chMoraSP'));
+  if(spChart){
+    document.getElementById('chMoraSP').onclick=function(e){
+      const pts=spChart.getElementsAtEventForMode(e,'nearest',{intersect:true},true);
+      if(pts.length){
+        _CAR_SELECTED_DATE=data[pts[0].index]?.Fecha||null;
+        renderCartera();
+        if(document.getElementById('pgMoraSP').style.display!=='none') renderMoraDetalleSP();
+      }
+    };
+  }
 }
 
 function showMoraDetalle(tipo){
@@ -787,7 +826,8 @@ function showMoraDetalle(tipo){
 function showDrillDown(cat){
   const data=filtrarCar(CAR_F);if(!data.length)return;
   // Usar el último día del período filtrado
-  const l=data[data.length-1];
+  const idx=_CAR_SELECTED_DATE?data.findIndex(r=>r.Fecha===_CAR_SELECTED_DATE):-1;
+  const l=idx>=0?data[idx]:data[data.length-1];
   // Si ese día no tiene DetalleCat, buscar el más cercano en CAR_ALL
   const det=l.DetalleCat?.[cat]||
     ([...CAR_ALL].reverse().find(r=>r.DetalleCat?.[cat]))?.DetalleCat?.[cat];
@@ -874,6 +914,7 @@ function showDrillDown(cat){
 }
 
 function closeMoraDetalle(){
+  _CAR_SELECTED_DATE=null;
   // Restaurar las dos gráficas lado a lado
   const wrap=document.getElementById('wrapMoraCharts');
   if(wrap) wrap.style.cssText='';
@@ -910,7 +951,10 @@ function _tblCred(creds,showFaltan){
 
 function renderMoraDetalleSP(){
   const data=filtrarCar(CAR_F);if(!data.length)return;
-  const l=data[data.length-1],tot=l.CarteraTotal,prev=data.length>1?data[data.length-2]:null;
+  // Si hay un día seleccionado en la gráfica, usarlo; si no, el último del período
+  const idx=_CAR_SELECTED_DATE?data.findIndex(r=>r.Fecha===_CAR_SELECTED_DATE):-1;
+  const lIdx=idx>=0?idx:data.length-1;
+  const l=data[lIdx],tot=l.CarteraTotal,prev=lIdx>0?data[lIdx-1]:null;
   const cats=['A','B','C','D','E'],catColors=cats.map(c=>CAT_COLORS[c]);
   const pcts=cats.map(c=>+((l['Cat'+c]||0)/tot*100).toFixed(2));
   let h=`<div style="display:flex;align-items:center;gap:.8rem;margin:.6rem 0 .8rem;flex-wrap:wrap">
