@@ -941,8 +941,15 @@ function showDrillDown(cat){
         +'<span style="font-size:.77rem;">'+a.n+' créditos</span>'
         +'<span style="font-family:var(--fm);font-size:.8rem;font-weight:700;">'+fK(a.v)+'</span>'
         +'</div>';}).join('')
+      +'<div style="text-align:right;margin-top:.5rem">'
+      +'<button onclick="descargarAlertasExcel()" style="font-size:.72rem;background:#005648;color:#fff;border:none;border-radius:6px;padding:.35rem .8rem;cursor:pointer">⬇ Descargar Excel detallado</button>'
+      +'</div>'
       +'</div>';
   }
+}
+
+function descargarAlertasExcel(){
+  alert('El archivo Alertas_Deterioro_FEBOR.xlsx se genera automáticamente en la carpeta del proyecto cada vez que corres el .bat. Ábrelo con la contraseña del administrador.');
 }
 
 function closeMoraDetalle(){
