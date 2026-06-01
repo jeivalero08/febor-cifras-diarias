@@ -801,6 +801,7 @@ function renderCartera(){
       const pts=spChart.getElementsAtEventForMode(e,'nearest',{intersect:true},true);
       if(pts.length){
         _CAR_SELECTED_DATE=data[pts[0].index]?.Fecha||null;
+        renderCartera();
         showMoraDetalle('sp');
       }
     };
@@ -920,18 +921,6 @@ function showDrillDown(cat){
         style="font-size:.72rem;color:var(--tx3);background:none;border:none;cursor:pointer">✕ Cerrar detalle</button>
     </div>
   </div>`;
-  if(cat==='A'){
-    const _last=data[data.length-1];
-    const _proxAB=_last.ProximosAB||[];
-    if(_proxAB.length){
-      const _sv=(arr)=>arr.reduce((s,p)=>s+(p.Saldo||0),0);
-      const _s1=_proxAB.filter(p=>p.DiasRestantes>=0&&p.DiasRestantes<=10);
-      const _s2=_proxAB.filter(p=>p.DiasRestantes>=11&&p.DiasRestantes<=20);
-      const _s3=_proxAB.filter(p=>p.DiasRestantes>=21&&p.DiasRestantes<=30);
-      const _srow=(lbl,arr,col)=>arr.length?'<div style="display:flex;justify-content:space-between;padding:.45rem .7rem;border-radius:7px;background:var(--bg);margin-bottom:.35rem"><span style="font-size:.77rem;font-weight:600;color:'+col+'">'+ lbl +'</span><span style="font-size:.77rem">'+arr.length+' créditos</span><span style="font-family:var(--fm);font-size:.8rem;font-weight:700">'+fK(_sv(arr))+'</span></div>':'' ;
-      panel.innerHTML+='<div style="margin-top:.6rem;border-left:4px solid #005648;padding:.6rem 1rem;background:var(--bg2);border-radius:8px"><div style="font-size:.72rem;font-weight:700;color:#005648;margin-bottom:.5rem">⚠️ Próximos A → B — último día disponible</div>'+_srow('0 – 10 días restantes',_s1,'#c0392b')+_srow('11 – 20 días restantes',_s2,'#e67e22')+_srow('21 – 30 días restantes',_s3,'#FAC616')+'</div>';
-    }
-  }
 }
 
 function closeMoraDetalle(){
@@ -1008,7 +997,16 @@ function renderMoraDetalleSP(){
     <div class="stbl-wrap"><table class="stbl"><thead><tr>
       <th>CAT</th><th>DESCRIPCIÓN</th><th style="text-align:right">SALDO</th><th style="text-align:right">PART.</th><th style="text-align:right">VAR. DÍA</th>
     </tr></thead><tbody>${tRows.join('')}</tbody></table></div></div>`;
-  const credMora=l.CredMora||{};
+  const proxAB=l.ProximosAB||[],credMora=l.CredMora||{};
+  // Alertas A→B: resumen de cantidad y valor total
+  if(proxAB.length){
+    const totalProxAB=proxAB.reduce((s,p)=>s+(p.Saldo||0),0);
+    h+=`<div class="ccard span2" style="margin-bottom:.9rem">
+      <div class="shdr">
+        <div class="shdr-t">⚠️ Próximos A → B — ${proxAB.length} créditos · ${fK(totalProxAB)} en riesgo</div>
+        <div class="shdr-s">Créditos en categoría A con 1 a 7 días antes de entrar en mora</div>
+      </div>${_tblCred(proxAB,true)}</div>`;
+  }
   // B→C, C→D, D→E: resumen de cantidad y valor total
   ['B','C','D'].forEach(cat=>{
     const lista=credMora[cat]||[],next={'B':'C','C':'D','D':'E'}[cat];
