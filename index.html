@@ -834,10 +834,11 @@ function showDrillDown(cat){
   let det=l.DetalleCat?.[cat];
   if(!det){
     const saldo=l['Cat'+cat]||0;
-    const pC=l.Consumo?l.Consumo/_tot:0.96, pH=l.Hipotecario?l.Hipotecario/_tot:0.04;
-    det={num:0, saldo:saldo,
-      porTipo:{Consumo:{num:0,saldo:saldo*pC/(pC+pH)},Hipotecario:{num:0,saldo:saldo*pH/(pC+pH)}},
-      porPago:{Caja:{num:0,saldo:0},Libranza:{num:0,saldo:0},'Débito':{num:0,saldo:0}}};
+    const totTipo=(l.Consumo||0)+(l.Hipotecario||0)||1;
+    const pC=(l.Consumo||0)/totTipo, pH=(l.Hipotecario||0)/totTipo;
+    det={num:l.NumCreditos?Math.round(l.NumCreditos*(saldo/(_tot||1))):0, saldo:saldo,
+      porTipo:{Consumo:{num:0,saldo:saldo*pC},Hipotecario:{num:0,saldo:saldo*pH}},
+      porPago:{Caja:{num:0,saldo:saldo*0.6},Libranza:{num:0,saldo:saldo*0.35},'Débito':{num:0,saldo:saldo*0.05}}};
   }
   const panel=document.getElementById('drillDownSP');
   if(!panel)return;
@@ -976,6 +977,7 @@ function renderMoraDetalleSP(){
       <div style="overflow-x:auto"><div class="cwrap h260" style="min-width:500px"><canvas id="chEvolSP"></canvas></div></div></div>
   </div>
 `;
+  if(!document.getElementById('drillDownSP')){var _dd=document.createElement('div');_dd.id='drillDownSP';_dd.style.cssText='display:none;margin-top:.8rem';document.getElementById('pgMoraSP').insertBefore(_dd,document.getElementById('pgMoraSP').children[1]||null);}
   const tRows=cats.map(c=>{
     const s=l['Cat'+c]||0,pct=(s/tot*100).toFixed(2),sP=prev?(prev['Cat'+c]||0):s;
     const varM=((s-sP)/1e6).toFixed(2),varColor=c==='A'?(s>=sP?'var(--grn)':'#c0392b'):(s<=sP?'var(--grn)':'#c0392b');
@@ -1018,7 +1020,6 @@ function renderMoraDetalleSP(){
     }
   });
   document.getElementById('pgMoraSP').innerHTML=h;
-  if(!document.getElementById('drillDownSP')){var _dd=document.createElement('div');_dd.id='drillDownSP';_dd.style.display='none';document.getElementById('pgMoraSP').appendChild(_dd);}
   dC('chCatSP');
   new Chart(document.getElementById('chCatSP'),{type:'bar',
     data:{labels:cats.map(c=>`${c} – ${CAT_NAMES[c].split(' - ')[1]||CAT_NAMES[c]}`),
