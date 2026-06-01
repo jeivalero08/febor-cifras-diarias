@@ -835,10 +835,11 @@ function showDrillDown(cat){
   let det=l.DetalleCat?.[cat];
   if(!det){
     const saldo=l['Cat'+cat]||0;
-    const totTipo=(l.Consumo||0)+(l.Hipotecario||0)||1;
+    const totTipo=(l.Consumo||0)+(l.Hipotecario||0)||_tot;
     const pC=(l.Consumo||0)/totTipo, pH=(l.Hipotecario||0)/totTipo;
-    det={num:0, saldo:saldo,
-      porTipo:{Consumo:{num:0,saldo:saldo*pC},Hipotecario:{num:0,saldo:saldo*pH}},
+    const numEst=l.NumCreditos&&_tot>0?Math.round(l.NumCreditos*(saldo/_tot)):0;
+    det={num:numEst, saldo:saldo,
+      porTipo:{Consumo:{num:Math.round(numEst*pC),saldo:saldo*pC},Hipotecario:{num:Math.round(numEst*pH),saldo:saldo*pH}},
       porPago:{Caja:{num:Math.round(numEst*0.6),saldo:saldo*0.6},Libranza:{num:Math.round(numEst*0.35),saldo:saldo*0.35},'Débito':{num:Math.round(numEst*0.05),saldo:saldo*0.05}}};
   }
   const panel=document.getElementById('drillDownSP');
