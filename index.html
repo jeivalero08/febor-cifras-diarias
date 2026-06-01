@@ -700,6 +700,7 @@ function downloadHTML(){
 }
 let CAR_F={days:0,from:'',to:''};
 let _CAR_SELECTED_DATE=null; // día seleccionado al hacer clic en gráfica
+let _SP_OPEN_CAT=null;
 
 function filtrarCar(st){
   if(!CAR_ALL.length)return[];
@@ -823,6 +824,7 @@ function showMoraDetalle(tipo){
 }
 
 function showDrillDown(cat){
+  _SP_OPEN_CAT=cat;
   const data=filtrarCar(CAR_F);if(!data.length)return;
   // Usar el último día del período filtrado
   const idx=_CAR_SELECTED_DATE?data.findIndex(r=>r.Fecha===_CAR_SELECTED_DATE):-1;
@@ -913,7 +915,7 @@ function showDrillDown(cat){
 
     </div>
     <div style="padding:.4rem 1rem .8rem;text-align:right">
-      <button onclick="document.getElementById('drillDownSP').style.display='none'"
+      <button onclick="document.getElementById('drillDownSP').style.display='none';_SP_OPEN_CAT=null;"
         style="font-size:.72rem;color:var(--tx3);background:none;border:none;cursor:pointer">✕ Cerrar detalle</button>
     </div>
   </div>`;
