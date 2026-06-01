@@ -949,7 +949,27 @@ function showDrillDown(cat){
 }
 
 function descargarAlertasExcel(){
-  alert('El archivo Alertas_Deterioro_FEBOR.xlsx se genera automáticamente en la carpeta del proyecto cada vez que corres el .bat. Ábrelo con la contraseña del administrador.');
+  const _PWD='Febor2026$';
+  const _last=(window.__CAR__||[]).slice(-1)[0];
+  if(!_last){alert('Sin datos disponibles.');return;}
+  const _cm=_last.CredMora||{};
+  const _pab=_last.ProximosAB||[];
+  const COLS=['IDENTIFICACION','CLIENTE','N° OPERACION','PRODUCTO','PAGADURIA','FORMA PAGO','DIAS MORA','SALDO CAPITAL'];
+  const _wb=XLSX.utils.book_new();
+  const _sheets=[
+    {name:'A→B Alertas',   rows:_pab.map(function(c){return[c.Identificacion||'',c.Cliente||'','',c.Producto||'','','',c.DiasActual||0,c.Saldo||0];})},
+    {name:'B→C Deterioro', rows:(_cm.B||[]).map(function(c){return[c.Identificacion||'',c.Cliente||'',c.Operacion||'',c.Producto||'',c.Pagaduria||'',c.FormaPago||'',c.DiasActual||0,c.Saldo||0];})},
+    {name:'C→D Deterioro', rows:(_cm.C||[]).map(function(c){return[c.Identificacion||'',c.Cliente||'',c.Operacion||'',c.Producto||'',c.Pagaduria||'',c.FormaPago||'',c.DiasActual||0,c.Saldo||0];})},
+    {name:'D→E Deterioro', rows:(_cm.D||[]).map(function(c){return[c.Identificacion||'',c.Cliente||'',c.Operacion||'',c.Producto||'',c.Pagaduria||'',c.FormaPago||'',c.DiasActual||0,c.Saldo||0];})},
+  ];
+  _sheets.forEach(function(s){
+    if(!s.rows.length)return;
+    var _ws=XLSX.utils.aoa_to_sheet([COLS].concat(s.rows));
+    _ws['!protect']={password:_PWD,sheet:true,selectLockedCells:true,selectUnlockedCells:true};
+    XLSX.utils.book_append_sheet(_wb,_ws,s.name);
+  });
+  if(!_wb.SheetNames.length){alert('Sin créditos para exportar.');return;}
+  XLSX.writeFile(_wb,'Alertas_Deterioro_FEBOR_'+(_last.Fecha||'').replace(/-/g,'')+'.xlsx');
 }
 
 function closeMoraDetalle(){
