@@ -798,9 +798,10 @@ function renderCartera(){
   const spChart=Chart.getChart(document.getElementById('chMoraSP'));
   if(spChart){
     document.getElementById('chMoraSP').onclick=function(e){
-      const pts=spChart.getElementsAtEventForMode(e,'nearest',{intersect:true},true);
+      const pts=spChart.getElementsAtEventForMode(e,'nearest',{intersect:false},true);
       if(pts.length){
         _CAR_SELECTED_DATE=data[pts[0].index]?.Fecha||null;
+        renderCartera();
         showMoraDetalle('sp');
       }
     };
