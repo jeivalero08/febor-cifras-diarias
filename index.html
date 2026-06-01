@@ -801,7 +801,6 @@ function renderCartera(){
       const pts=spChart.getElementsAtEventForMode(e,'nearest',{intersect:true},true);
       if(pts.length){
         _CAR_SELECTED_DATE=data[pts[0].index]?.Fecha||null;
-        renderCartera();
         showMoraDetalle('sp');
       }
     };
