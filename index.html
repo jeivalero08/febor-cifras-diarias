@@ -975,7 +975,7 @@ function renderMoraDetalleSP(){
     <div class="ccard"><div class="ctop"><div><div class="ctitle">Evolución cartera</div></div></div>
       <div style="overflow-x:auto"><div class="cwrap h260" style="min-width:500px"><canvas id="chEvolSP"></canvas></div></div></div>
   </div>
-  <div id="drillDownSP" style="display:none"></div>`;
+`;
   const tRows=cats.map(c=>{
     const s=l['Cat'+c]||0,pct=(s/tot*100).toFixed(2),sP=prev?(prev['Cat'+c]||0):s;
     const varM=((s-sP)/1e6).toFixed(2),varColor=c==='A'?(s>=sP?'var(--grn)':'#c0392b'):(s<=sP?'var(--grn)':'#c0392b');
@@ -1018,6 +1018,7 @@ function renderMoraDetalleSP(){
     }
   });
   document.getElementById('pgMoraSP').innerHTML=h;
+  if(!document.getElementById('drillDownSP')){var _dd=document.createElement('div');_dd.id='drillDownSP';_dd.style.display='none';document.getElementById('pgMoraSP').appendChild(_dd);}
   dC('chCatSP');
   new Chart(document.getElementById('chCatSP'),{type:'bar',
     data:{labels:cats.map(c=>`${c} – ${CAT_NAMES[c].split(' - ')[1]||CAT_NAMES[c]}`),
@@ -1042,6 +1043,7 @@ function renderMoraDetalleSP(){
       },
       scales:{x:{ticks:{autoSkip:false,maxRotation:45,font:{size:9},callback:(v,i)=>{const d=data[i]?.Fecha;return d?`${d.slice(8,10)}/${d.slice(5,7)}`:'';}},grid:{display:false}},
         y:{ticks:{font:{size:9},callback:v=>v+' M'},grid:{color:'#e8ede9'},stacked:true}}}});
+  if(_SP_OPEN_CAT) showDrillDown(_SP_OPEN_CAT);
 }
 
 function renderMoraDetalleCA(){
