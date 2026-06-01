@@ -840,7 +840,7 @@ function showDrillDown(cat){
     const numEst=l.NumCreditos&&_tot>0?Math.round(l.NumCreditos*(saldo/_tot)):0;
     det={num:numEst, saldo:saldo,
       porTipo:{Consumo:{num:Math.round(numEst*pC),saldo:saldo*pC},Hipotecario:{num:Math.round(numEst*pH),saldo:saldo*pH}},
-      porPago:{Caja:{num:Math.round(numEst*0.6),saldo:saldo*0.6},Libranza:{num:Math.round(numEst*0.35),saldo:saldo*0.35},'Débito':{num:Math.round(numEst*0.05),saldo:saldo*0.05}}};
+      porPago:{Caja:{num:0,saldo:saldo*0.6},Libranza:{num:0,saldo:saldo*0.35},'Débito':{num:0,saldo:saldo*0.05}}};
   }
   const panel=document.getElementById('drillDownSP');
   if(!panel)return;
@@ -922,6 +922,27 @@ function showDrillDown(cat){
         style="font-size:.72rem;color:var(--tx3);background:none;border:none;cursor:pointer">✕ Cerrar detalle</button>
     </div>
   </div>`;
+  // Resumen alertas deterioro — último día del histórico
+  const _last=data[data.length-1];
+  const _credMora=_last.CredMora||{};
+  const _proxAB=_last.ProximosAB||[];
+  const _sv=(arr)=>arr.reduce((s,p)=>s+(p.Saldo||0),0);
+  const _alertas=[];
+  if(_proxAB.length) _alertas.push({label:'A → B',n:_proxAB.length,v:_sv(_proxAB),col:'#FAC616'});
+  ['B','C','D'].forEach(function(c){
+    const lst=_credMora[c]||[],nxt={'B':'C','C':'D','D':'E'}[c];
+    if(lst.length) _alertas.push({label:c+' → '+nxt,n:lst.length,v:_sv(lst),col:{'B':'#e67e22','C':'#c0392b','D':'#8b0000'}[c]});
+  });
+  if(_alertas.length){
+    panel.innerHTML+='<div style="margin-top:.8rem;padding:.7rem 1rem;background:var(--bg2);border-radius:8px;border-left:4px solid #c0392b">'
+      +'<div style="font-size:.72rem;font-weight:700;color:#c0392b;margin-bottom:.5rem">⚠️ Alertas deterioro — último día disponible</div>'
+      +_alertas.map(function(a){return '<div style="display:flex;justify-content:space-between;align-items:center;padding:.35rem .5rem;border-radius:6px;background:var(--bg);margin-bottom:.3rem">'
+        +'<span style="font-size:.77rem;font-weight:700;color:'+a.col+'">'+a.label+'</span>'
+        +'<span style="font-size:.77rem;">'+a.n+' créditos</span>'
+        +'<span style="font-family:var(--fm);font-size:.8rem;font-weight:700;">'+fK(a.v)+'</span>'
+        +'</div>';}).join('')
+      +'</div>';
+  }
 }
 
 function closeMoraDetalle(){
@@ -998,28 +1019,6 @@ function renderMoraDetalleSP(){
     <div class="stbl-wrap"><table class="stbl"><thead><tr>
       <th>CAT</th><th>DESCRIPCIÓN</th><th style="text-align:right">SALDO</th><th style="text-align:right">PART.</th><th style="text-align:right">VAR. DÍA</th>
     </tr></thead><tbody>${tRows.join('')}</tbody></table></div></div>`;
-  const proxAB=l.ProximosAB||[],credMora=l.CredMora||{};
-  // Alertas A→B: resumen de cantidad y valor total
-  if(proxAB.length){
-    const totalProxAB=proxAB.reduce((s,p)=>s+(p.Saldo||0),0);
-    h+=`<div class="ccard span2" style="margin-bottom:.9rem">
-      <div class="shdr">
-        <div class="shdr-t">⚠️ Próximos A → B — ${proxAB.length} créditos · ${fK(totalProxAB)} en riesgo</div>
-        <div class="shdr-s">Créditos en categoría A con 1 a 7 días antes de entrar en mora</div>
-      </div>${_tblCred(proxAB,true)}</div>`;
-  }
-  // B→C, C→D, D→E: resumen de cantidad y valor total
-  ['B','C','D'].forEach(cat=>{
-    const lista=credMora[cat]||[],next={'B':'C','C':'D','D':'E'}[cat];
-    if(lista.length){
-      const totalCat=lista.reduce((s,p)=>s+(p.Saldo||0),0);
-      h+=`<div class="ccard span2" style="margin-bottom:.9rem">
-        <div class="shdr">
-          <div class="shdr-t">⚠️ Categoría ${cat} → ${next} — ${lista.length} créditos · ${fK(totalCat)} en riesgo</div>
-          <div class="shdr-s">${CAT_NAMES[cat].split(' - ')[1]||CAT_NAMES[cat]} · próximos a deteriorar calificación</div>
-        </div>${_tblCred(lista,false)}</div>`;
-    }
-  });
   document.getElementById('pgMoraSP').innerHTML=h;
   dC('chCatSP');
   new Chart(document.getElementById('chCatSP'),{type:'bar',
