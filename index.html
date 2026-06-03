@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>FEBOR · Evolución de Depósitos</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -16,7 +16,7 @@
   --ff:'Poppins',sans-serif;--fm:'IBM Plex Mono',monospace;
 }
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{max-width:100%;overflow-x:hidden}body{font-family:var(--ff);background:var(--bg);color:var(--tx);font-size:14px;line-height:1.6}
+body{font-family:var(--ff);background:var(--bg);color:var(--tx);font-size:14px;line-height:1.6}
 button{cursor:pointer;font-family:var(--ff);border:none;background:none}
 select,input{font-family:var(--ff)}
 
@@ -111,8 +111,6 @@ select,input{font-family:var(--ff)}
 .ctitle{font-size:.88rem;font-weight:600;color:var(--g1)}
 .csub{font-size:.67rem;color:var(--tx3);margin-top:2px}
 .cwrap{position:relative;overflow:hidden}.cwrap canvas{max-width:100%}
-.chart-scroll{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;width:100%}
-.chart-scroll .cwrap{min-width:380px}
 .h340{height:340px}.h280{height:280px}
 .cleg{display:flex;flex-wrap:wrap;gap:9px;margin-top:.8rem}
 .cleg-i{display:flex;align-items:center;gap:4px;font-size:.7rem;color:#3d6b52;cursor:pointer}
@@ -178,6 +176,19 @@ select,input{font-family:var(--ff)}
   .mgrid{grid-template-columns:1fr}
   .kpis{grid-template-columns:1fr}
   .kpi-tot{grid-column:1}
+}
+@media(max-width:600px){
+  .crow{grid-template-columns:1fr!important;}
+  .span2{grid-column:span 1!important;}
+  .kpi{min-width:140px;}
+  #kpisCar{flex-wrap:wrap;gap:.4rem;}
+  .ccard{padding:.7rem .8rem;}
+  .ctitle{font-size:.78rem;}
+  .kpi-val{font-size:1.3rem;}
+  .shdr-t{font-size:.8rem;}
+  canvas{max-height:200px;}
+  .det-back{font-size:.75rem;padding:.3rem .6rem;}
+  #wrapMoraCharts{grid-template-columns:1fr!important;}
 }
 </style>
 <script>
@@ -271,14 +282,14 @@ select,input{font-family:var(--ff)}
   <div class="crow">
     <div class="ccard span2">
       <div class="ctop"><div><div class="ctitle">Evolución histórica por producto</div><div class="csub">Clic en un producto para ver su detalle · Millones COP</div></div></div>
-      <div class="chart-scroll"><div class="cwrap h340"><canvas id="chHist"></canvas></div></div>
+      <div class="cwrap h340"><canvas id="chHist"></canvas></div>
       <div class="cleg" id="legHist"></div>
     </div>
   </div>
   <div class="crow">
     <div class="ccard">
       <div class="ctop"><div><div class="ctitle">Variación mensual del portafolio</div><div class="csub">Promedio mensual total en millones COP</div></div></div>
-      <div class="chart-scroll"><div class="cwrap h280"><canvas id="chVar"></canvas></div></div>
+      <div class="cwrap h280"><canvas id="chVar"></canvas></div>
     </div>
     <div class="ccard">
       <div class="ctop"><div><div class="ctitle">Composición actual</div><div class="csub">Participación % por producto en el último día</div></div></div>
@@ -323,13 +334,13 @@ select,input{font-family:var(--ff)}
   <div class="crow">
     <div class="ccard span2">
       <div class="ctop"><div><div class="ctitle" id="detChTitle">Evolución histórica</div><div class="csub">Saldo diario en millones COP</div></div></div>
-      <div class="chart-scroll"><div class="cwrap h340"><canvas id="chDetLine"></canvas></div></div>
+      <div class="cwrap h340"><canvas id="chDetLine"></canvas></div>
     </div>
   </div>
   <div class="crow">
     <div class="ccard">
       <div class="ctop"><div><div class="ctitle">Promedio mensual</div><div class="csub">Saldo promedio por mes</div></div></div>
-      <div class="chart-scroll"><div class="cwrap h280"><canvas id="chDetBar"></canvas></div></div>
+      <div class="cwrap h280"><canvas id="chDetBar"></canvas></div>
     </div>
     <div class="ccard">
       <div class="ctop"><div><div class="ctitle">Estadísticas del período</div><div class="csub">Análisis descriptivo</div></div></div>
@@ -371,14 +382,14 @@ select,input{font-family:var(--ff)}
         <div class="ctitle" style="color:#c0392b">📉 Mora sin arrastre (CALIF_PRESTAMO)</div>
         <div class="csub">Clic para ver detalle · B+C+D+E / Total</div>
       </div></div>
-      <div class="chart-scroll"><div class="cwrap h260"><canvas id="chMoraSP"></canvas></div></div>
+      <div class="cwrap h260"><canvas id="chMoraSP"></canvas></div>
     </div>
     <div class="ccard" style="cursor:pointer" onclick="showMoraDetalle('ca')">
       <div class="ctop"><div>
         <div class="ctitle" style="color:#8b0000">📉 Mora con arrastre (por cliente)</div>
         <div class="csub">Clic para ver detalle · agrupado por cédula</div>
       </div></div>
-      <div class="chart-scroll"><div class="cwrap h260"><canvas id="chMoraCA"></canvas></div></div>
+      <div class="cwrap h260"><canvas id="chMoraCA"></canvas></div>
     </div>
   </div>
   <!-- Paneles de detalle -->
@@ -930,19 +941,45 @@ function showDrillDown(cat){
   const _proxAB=_last.ProximosAB||[];
   const _sv=(arr)=>arr.reduce((s,p)=>s+(p.Saldo||0),0);
   const _alertas=[];
-  if(_proxAB.length) _alertas.push({label:'A → B',n:_proxAB.length,v:_sv(_proxAB),col:'#FAC616'});
+  // A→B: segmentado por días restantes
+  if(_proxAB.length){
+    var _seg=function(a,b){return _proxAB.filter(function(p){return p.DiasRestantes>=a&&p.DiasRestantes<=b;});};
+    var _s1=_seg(0,10),_s2=_seg(11,20),_s3=_seg(21,30);
+    _alertas.push({label:'A → B',segs:[{rng:'0 – 10 días',arr:_s1,col:'#c0392b'},{rng:'11 – 20 días',arr:_s2,col:'#e67e22'},{rng:'21 – 30 días',arr:_s3,col:'#FAC616'}]});
+  }
   ['B','C','D'].forEach(function(c){
     const lst=_credMora[c]||[],nxt={'B':'C','C':'D','D':'E'}[c];
-    if(lst.length) _alertas.push({label:c+' → '+nxt,n:lst.length,v:_sv(lst),col:{'B':'#e67e22','C':'#c0392b','D':'#8b0000'}[c]});
+    _alertas.push({label:c+' → '+nxt,n:lst.length,v:_sv(lst),col:{'B':'#e67e22','C':'#c0392b','D':'#8b0000'}[c],sinDatos:lst.length===0&&!_last.CredMora});
   });
   if(_alertas.length){
+    var _rowSimple=function(a){return '<div style="display:flex;justify-content:space-between;align-items:center;padding:.35rem .5rem;border-radius:6px;background:var(--bg);margin-bottom:.3rem">'
+      +'<span style="font-size:.77rem;font-weight:700;color:'+a.col+'">'+a.label+'</span>'
+      +(a.sinDatos
+        ?'<span style="font-size:.72rem;color:var(--tx3);font-style:italic">Sin datos este día</span>'
+        :'<span style="font-size:.77rem;">'+a.n+' créditos</span><span style="font-family:var(--fm);font-size:.8rem;font-weight:700;">'+fK(a.v)+'</span>')
+      +'</div>';};
+    var _rowSeg=function(a){
+      var tot=a.segs.reduce(function(s,sg){return s+sg.arr.length;},0);
+      var totV=a.segs.reduce(function(s,sg){return s+_sv(sg.arr);},0);
+      var rows=a.segs.map(function(sg){
+        return '<div style="display:flex;justify-content:space-between;align-items:center;padding:.3rem .5rem;border-radius:5px;background:var(--bg);margin-bottom:.25rem">'
+          +'<span style="font-size:.74rem;font-weight:600;color:'+sg.col+'">'+sg.rng+'</span>'
+          +'<span style="font-size:.74rem;">'+sg.arr.length+' créditos</span>'
+          +'<span style="font-family:var(--fm);font-size:.77rem;font-weight:700;">'+fK(_sv(sg.arr))+'</span>'
+          +'</div>';
+      }).join('');
+      return '<div style="margin-bottom:.3rem">'
+        +'<div style="display:flex;justify-content:space-between;align-items:center;padding:.35rem .5rem;border-radius:6px;background:var(--bg);margin-bottom:.2rem">'
+        +'<span style="font-size:.77rem;font-weight:700;color:#FAC616">'+a.label+'</span>'
+        +'<span style="font-size:.77rem;">'+tot+' créditos</span>'
+        +'<span style="font-family:var(--fm);font-size:.8rem;font-weight:700;">'+fK(totV)+'</span>'
+        +'</div>'
+        +'<div style="padding-left:.8rem;">'+rows+'</div>'
+        +'</div>';
+    };
     panel.innerHTML+='<div style="margin-top:.8rem;padding:.7rem 1rem;background:var(--bg2);border-radius:8px;border-left:4px solid #c0392b">'
       +'<div style="font-size:.72rem;font-weight:700;color:#c0392b;margin-bottom:.5rem">⚠️ Alertas deterioro — último día disponible</div>'
-      +_alertas.map(function(a){return '<div style="display:flex;justify-content:space-between;align-items:center;padding:.35rem .5rem;border-radius:6px;background:var(--bg);margin-bottom:.3rem">'
-        +'<span style="font-size:.77rem;font-weight:700;color:'+a.col+'">'+a.label+'</span>'
-        +'<span style="font-size:.77rem;">'+a.n+' créditos</span>'
-        +'<span style="font-family:var(--fm);font-size:.8rem;font-weight:700;">'+fK(a.v)+'</span>'
-        +'</div>';}).join('')
+      +_alertas.map(function(a){return a.segs?_rowSeg(a):_rowSimple(a);}).join('')
       +'<div style="text-align:right;margin-top:.5rem">'
       +'<button onclick="descargarAlertasExcel()" style="font-size:.72rem;background:#005648;color:#fff;border:none;border-radius:6px;padding:.35rem .8rem;cursor:pointer">⬇ Descargar Excel detallado</button>'
       +'</div>'
@@ -1024,7 +1061,7 @@ function renderMoraDetalleSP(){
     <span style="font-weight:600;color:#c0392b;font-size:.88rem">Mora Sin Arrastre — Clasificación FEBOR por crédito</span></div>
   <div class="crow">
     <div class="ccard"><div class="ctop"><div><div class="ctitle">Participación por categoría</div></div></div>
-      <div class="chart-scroll"><div class="cwrap h260"><canvas id="chCatSP"></canvas></div></div></div>
+      <div class="cwrap h260"><canvas id="chCatSP"></canvas></div></div>
     <div class="ccard"><div class="ctop"><div><div class="ctitle">Evolución cartera</div></div></div>
       <div style="overflow-x:auto"><div class="cwrap h260" style="min-width:500px"><canvas id="chEvolSP"></canvas></div></div></div>
   </div>
@@ -1086,7 +1123,7 @@ function renderMoraDetalleCA(){
     <span style="font-weight:600;color:#8b0000;font-size:.88rem">Mora Con Arrastre — Agrupado por cliente</span></div>
   <div class="crow">
     <div class="ccard"><div class="ctop"><div><div class="ctitle">Participación por categoría</div><div class="csub">% sobre cartera total · último día</div></div></div>
-      <div class="chart-scroll"><div class="cwrap h260"><canvas id="chCatCA"></canvas></div></div></div>
+      <div class="cwrap h260"><canvas id="chCatCA"></canvas></div></div>
     <div class="ccard"><div class="ctop"><div><div class="ctitle">Evolución índice mora con arrastre</div><div class="csub">% sobre cartera total · histórico</div></div></div>
       <div style="overflow-x:auto"><div class="cwrap h260" style="min-width:500px"><canvas id="chEvolCA"></canvas></div></div></div>
   </div>`;
