@@ -935,8 +935,9 @@ function showDrillDown(cat){
         style="font-size:.72rem;color:var(--tx3);background:none;border:none;cursor:pointer">✕ Cerrar detalle</button>
     </div>
   </div>`;
-  // Resumen alertas deterioro — último día del histórico
-  const _last=data[data.length-1];
+  // Resumen alertas deterioro — día seleccionado (o último si no hay selección)
+  const _lastIdx=_CAR_SELECTED_DATE?data.findIndex(function(r){return r.Fecha===_CAR_SELECTED_DATE;}): -1;
+  const _last=_lastIdx>=0?data[_lastIdx]:data[data.length-1];
   const _credMora=_last.CredMora||{};
   const _proxAB=_last.ProximosAB||[];
   const _sv=(arr)=>arr.reduce((s,p)=>s+(p.Saldo||0),0);
@@ -949,19 +950,18 @@ function showDrillDown(cat){
   }
   ['B','C','D'].forEach(function(c){
     const lst=_credMora[c]||[],nxt={'B':'C','C':'D','D':'E'}[c];
-    _alertas.push({label:c+' → '+nxt,n:lst.length,v:_sv(lst),col:{'B':'#e67e22','C':'#c0392b','D':'#8b0000'}[c],sinDatos:lst.length===0&&!_last.CredMora});
+    if(lst.length) _alertas.push({label:c+' → '+nxt,n:lst.length,v:_sv(lst),col:{'B':'#e67e22','C':'#c0392b','D':'#8b0000'}[c]});
   });
   if(_alertas.length){
     var _rowSimple=function(a){return '<div style="display:flex;justify-content:space-between;align-items:center;padding:.35rem .5rem;border-radius:6px;background:var(--bg);margin-bottom:.3rem">'
       +'<span style="font-size:.77rem;font-weight:700;color:'+a.col+'">'+a.label+'</span>'
-      +(a.sinDatos
-        ?'<span style="font-size:.72rem;color:var(--tx3);font-style:italic">Sin datos este día</span>'
-        :'<span style="font-size:.77rem;">'+a.n+' créditos</span><span style="font-family:var(--fm);font-size:.8rem;font-weight:700;">'+fK(a.v)+'</span>')
+      +'<span style="font-size:.77rem;">'+a.n+' créditos</span>'
+      +'<span style="font-family:var(--fm);font-size:.8rem;font-weight:700;">'+fK(a.v)+'</span>'
       +'</div>';};
     var _rowSeg=function(a){
       var tot=a.segs.reduce(function(s,sg){return s+sg.arr.length;},0);
       var totV=a.segs.reduce(function(s,sg){return s+_sv(sg.arr);},0);
-      var rows=a.segs.map(function(sg){
+      var rows=a.segs.filter(function(sg){return sg.arr.length>0;}).map(function(sg){
         return '<div style="display:flex;justify-content:space-between;align-items:center;padding:.3rem .5rem;border-radius:5px;background:var(--bg);margin-bottom:.25rem">'
           +'<span style="font-size:.74rem;font-weight:600;color:'+sg.col+'">'+sg.rng+'</span>'
           +'<span style="font-size:.74rem;">'+sg.arr.length+' créditos</span>'
