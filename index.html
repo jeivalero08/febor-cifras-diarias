@@ -1061,9 +1061,8 @@ function renderMoraDetalleSP(){
   let h=`<div style="display:flex;align-items:center;gap:.8rem;margin:.6rem 0 .8rem;flex-wrap:wrap">
     <button class="det-back" style="position:static;margin:0" onclick="closeMoraDetalle()">← Volver a Cartera</button>
     <span style="font-weight:600;color:#c0392b;font-size:.88rem">Mora Sin Arrastre — Clasificación FEBOR por crédito</span></div>
-  <div id="comparativaSP" style="margin-bottom:.8rem"></div>
   <div class="crow">
-    <div class="ccard"><div class="ctop"><div><div class="ctitle">Participación por categoría</div></div></div>
+    <div class="ccard"><div class="ctop"><div><div class="ctitle">Evolución Cat A — Riesgo Normal</div></div></div>
       <div class="cwrap h260"><canvas id="chCatSP"></canvas></div></div>
     <div class="ccard"><div class="ctop"><div><div class="ctitle">Evolución cartera</div></div></div>
       <div style="overflow-x:auto"><div class="cwrap h260" style="min-width:500px"><canvas id="chEvolSP"></canvas></div></div></div>
@@ -1091,18 +1090,26 @@ function renderMoraDetalleSP(){
   document.getElementById('pgMoraSP').innerHTML=h;
   dC('chCatSP');
   new Chart(document.getElementById('chCatSP'),{type:'bar',
-    data:{labels:cats.map(c=>`${c} – ${CAT_NAMES[c].split(' - ')[1]||CAT_NAMES[c]}`),
-      datasets:[{data:pcts,backgroundColor:catColors,borderRadius:4,borderSkipped:false}]},
-    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
-      onClick:(e,els)=>{if(els.length){showDrillDown(cats[els[0].index]);}},
-      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` ${ctx.parsed.x.toFixed(2)}% · clic para detalle`}}},
-      scales:{x:{ticks:{callback:v=>v+'%',font:{size:10}},grid:{color:'#e8ede9'}},y:{ticks:{font:{size:10}},grid:{display:false}}}}});
+    data:{labels:data.map(r=>r.Fecha),
+      datasets:[{label:'Cat A',data:data.map(r=>+((r.CatA||0)/1e6).toFixed(2)),
+        backgroundColor:CAT_COLORS['A']+'cc',stack:'s'}]},
+    options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+      plugins:{legend:{position:'bottom',labels:{boxWidth:10,font:{size:10}},
+        onClick:function(){showDrillDown('A');}},
+        tooltip:{callbacks:{title:t=>fDt(t[0].label),label:t=>` ${t.dataset.label}: ${t.parsed.y.toLocaleString('es-CO',{minimumFractionDigits:2})} M`}}},
+      onClick:(e,els)=>{if(els.length){_CAR_SELECTED_DATE=data[els[0].index]?.Fecha||null;renderCartera();renderMoraDetalleSP();}},
+      scales:{x:{ticks:{autoSkip:true,maxTicksLimit:10,font:{size:9},callback:(v,i)=>{const d=data[i]?.Fecha;return d?`${d.slice(8,10)}/${d.slice(5,7)}`:'';}},grid:{display:false}},
+        y:{ticks:{font:{size:9},callback:v=>v+' M'},grid:{color:'#e8ede9'},stacked:true}}}});
   dC('chEvolSP');
   new Chart(document.getElementById('chEvolSP'),{type:'bar',
-    data:{labels:data.map(r=>r.Fecha),datasets:cats.map(c=>({
+    data:{labels:data.map(r=>r.Fecha),datasets:cats.filter(c=>c!=='A').map(c=>({
       label:'Cat '+c,data:data.map(r=>+((r['Cat'+c]||0)/1e6).toFixed(2)),backgroundColor:CAT_COLORS[c]+'cc',stack:'s'}))},
     options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
-      plugins:{legend:{position:'bottom',labels:{boxWidth:10,font:{size:10}}},
+      plugins:{legend:{position:'bottom',labels:{boxWidth:10,font:{size:10}},
+        onClick:function(e,item){
+          var cat=(item.text||'').replace('Cat ','').trim();
+          if(['B','C','D','E'].includes(cat)) showDrillDown(cat);
+        }},
         tooltip:{callbacks:{title:t=>fDt(t[0].label),label:t=>` ${t.dataset.label}: ${t.parsed.y.toLocaleString('es-CO',{minimumFractionDigits:2})} M`}}},
       onClick:(e,els)=>{
         if(els.length){
@@ -1113,62 +1120,6 @@ function renderMoraDetalleSP(){
       },
       scales:{x:{ticks:{autoSkip:false,maxRotation:45,font:{size:9},callback:(v,i)=>{const d=data[i]?.Fecha;return d?`${d.slice(8,10)}/${d.slice(5,7)}`:'';}},grid:{display:false}},
         y:{ticks:{font:{size:9},callback:v=>v+' M'},grid:{color:'#e8ede9'},stacked:true}}}});
-  // ── Comparativa temporal ──
-  (function(){
-    var _cDiv=document.getElementById('comparativaSP');
-    if(!_cDiv) return;
-    var _lFecha=l.Fecha||'';
-    // Buscar mismo día del mes anterior y del año anterior en TODO el histórico
-    var _allData=(window.__CAR__||[]);
-    var _mm=_lFecha.slice(5,7),_dd=_lFecha.slice(8,10),_yyyy=_lFecha.slice(0,4);
-    var _mesAntYYYY=parseInt(_yyyy),_mesAntMM=parseInt(_mm)-1;
-    if(_mesAntMM<1){_mesAntMM=12;_mesAntYYYY--;}
-    var _fMes=_mesAntYYYY+'-'+('0'+_mesAntMM).slice(-2)+'-'+_dd;
-    var _fAnio=(parseInt(_yyyy)-1)+'-'+_mm+'-'+_dd;
-    var _dMes=_allData.find(function(r){return r.Fecha===_fMes;});
-    var _dAnio=_allData.find(function(r){return r.Fecha===_fAnio;});
-    var _fmtFecha=function(f){return f?f.slice(8,10)+'/'+f.slice(5,7)+'/'+f.slice(0,4):'';};
-    var _fmtM=function(v){return v?(v/1e6).toLocaleString('es-CO',{minimumFractionDigits:0,maximumFractionDigits:0})+' M':'—';};
-    var _deltaTag=function(base,ref){
-      if(!ref) return '';
-      var d=+(base-ref).toFixed(2);
-      var col=d>0?'#c0392b':d<0?'#27ae60':'var(--color-text-tertiary)';
-      var ico=d>0?'ti-arrow-up':d<0?'ti-arrow-down':'ti-minus';
-      return '<span style="display:inline-flex;align-items:center;gap:3px;font-size:.7rem;font-weight:500;color:'+col+'">'
-        +'<i class="ti '+ico+'" style="font-size:10px" aria-hidden="true"></i>'
-        +(d>=0?'+':'')+d+'pp</span>';
-    };
-    var _card=function(titulo,d,accentColor,dashed,refMora){
-      var border=dashed?'border:0.5px dashed var(--color-border-tertiary)':'border:0.5px solid var(--color-border-tertiary)';
-      var cats=['A','B','C','D','E'];
-      var catColors={A:'var(--color-text-primary)',B:'#B7950B',C:'#D35400',D:'#c0392b',E:'#8b0000'};
-      var catHtml=cats.map(function(c){
-        var span=c==='E'?'grid-column:1/-1':'';
-        var val=d?_fmtM(d['Cat'+c]):'—';
-        return '<div style="background:var(--color-background-secondary);border-radius:6px;padding:4px 7px;'+span+'">'
-          +'<div style="font-size:10px;color:var(--color-text-tertiary)">Cat '+c+'</div>'
-          +'<div style="font-size:11px;font-weight:500;color:'+catColors[c]+'">'+val+'</div>'
-          +'</div>';
-      }).join('');
-      var mora=d?(d.IndiceMora||0).toFixed(2)+'%':'—';
-      var delta=refMora!==undefined&&d?_deltaTag(d.IndiceMora||0,refMora):'';
-      return '<div style="background:var(--color-background-primary);'+border+';border-radius:var(--border-radius-lg);padding:.9rem 1rem;border-top:3px solid '+accentColor+'">'
-        +'<div style="font-size:10px;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">'+titulo+'</div>'
-        +'<div style="font-size:13px;font-weight:500;color:var(--color-text-primary);margin-bottom:8px">'+_fmtFecha(d?d.Fecha:'')+'</div>'
-        +'<div style="font-size:22px;font-weight:500;color:'+accentColor+';margin-bottom:1px">'+mora+'</div>'
-        +'<div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:3px">índice mora SP '+delta+'</div>'
-        +'<div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:8px">'+_fmtM(d?d.CarteraTotal:0)+'</div>'
-        +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:3px">'+catHtml+'</div>'
-        +'</div>';
-    };
-    var _cards=[];
-    _cards.push(_card('Día seleccionado',l,'#005648',false,undefined));
-    if(_dMes) _cards.push(_card('Mes anterior',_dMes,'#888780',false,l.IndiceMora||0));
-    if(_dAnio) _cards.push(_card('Año anterior',_dAnio,'#5F5E5A',true,l.IndiceMora||0));
-    var cols=_cards.length;
-    _cDiv.innerHTML='<div style="display:grid;grid-template-columns:repeat('+cols+',minmax(0,1fr));gap:10px;margin-bottom:.2rem">'+_cards.join('')+'</div>';
-  })();
-
   if(_SP_OPEN_CAT) showDrillDown(_SP_OPEN_CAT);
 }
 
