@@ -938,6 +938,7 @@ function showDrillDown(cat){
   // Resumen alertas deterioro — día seleccionado (o último si no hay selección)
   const _lastIdx=_CAR_SELECTED_DATE?data.findIndex(function(r){return r.Fecha===_CAR_SELECTED_DATE;}): -1;
   const _last=_lastIdx>=0?data[_lastIdx]:data[data.length-1];
+  const _lastFecha=_last.Fecha?_last.Fecha.slice(8,10)+'/'+_last.Fecha.slice(5,7)+'/'+_last.Fecha.slice(0,4):'';
   const _credMora=_last.CredMora||{};
   const _proxAB=_last.ProximosAB||[];
   const _sv=(arr)=>arr.reduce((s,p)=>s+(p.Saldo||0),0);
@@ -946,7 +947,7 @@ function showDrillDown(cat){
   if(_proxAB.length){
     var _seg=function(a,b){return _proxAB.filter(function(p){return p.DiasRestantes>=a&&p.DiasRestantes<=b;});};
     var _s1=_seg(0,10),_s2=_seg(11,20),_s3=_seg(21,30);
-    _alertas.push({label:'A → B',segs:[{rng:'0 – 10 días',arr:_s1,col:'#c0392b'},{rng:'11 – 20 días',arr:_s2,col:'#e67e22'},{rng:'21 – 30 días',arr:_s3,col:'#FAC616'}]});
+    _alertas.push({label:'A → B',segs:[{rng:'1 – 10 días',arr:_s1,col:'#c0392b'},{rng:'11 – 20 días',arr:_s2,col:'#e67e22'},{rng:'21 – 30 días',arr:_s3,col:'#FAC616'}]});
   }
   ['B','C','D'].forEach(function(c){
     const lst=_credMora[c]||[],nxt={'B':'C','C':'D','D':'E'}[c];
@@ -978,7 +979,8 @@ function showDrillDown(cat){
         +'</div>';
     };
     panel.innerHTML+='<div style="margin-top:.8rem;padding:.7rem 1rem;background:var(--bg2);border-radius:8px;border-left:4px solid #c0392b">'
-      +'<div style="font-size:.72rem;font-weight:700;color:#c0392b;margin-bottom:.5rem">⚠️ Alertas deterioro — último día disponible</div>'
+      +'<div style="font-size:.72rem;font-weight:700;color:#c0392b;margin-bottom:.5rem">⚠️ Alerta de vencimientos · '+_lastFecha+'</div>'
+      +'<div style="font-size:.68rem;color:var(--tx3);font-style:italic;margin-bottom:.5rem">Créditos con 0 días de mora no se muestran</div>'
       +_alertas.map(function(a){return a.segs?_rowSeg(a):_rowSimple(a);}).join('')
       +'<div style="text-align:right;margin-top:.5rem">'
       +'<button onclick="descargarAlertasExcel()" style="font-size:.72rem;background:#005648;color:#fff;border:none;border-radius:6px;padding:.35rem .8rem;cursor:pointer">⬇ Descargar Excel detallado</button>'
