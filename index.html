@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>FEBOR · Evolución de Depósitos</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -110,7 +110,7 @@ select,input{font-family:var(--ff)}
 .ctop{display:flex;align-items:flex-start;margin-bottom:.9rem}
 .ctitle{font-size:.88rem;font-weight:600;color:var(--g1)}
 .csub{font-size:.67rem;color:var(--tx3);margin-top:2px}
-.cwrap{position:relative;overflow:hidden}.cwrap canvas{max-width:100%}
+.cwrap{position:relative;overflow-x:auto;overflow-y:hidden}.cwrap canvas{min-width:420px;max-width:none}.donut-wrap{overflow:hidden}.donut-wrap canvas{min-width:unset;max-width:100%}
 .h340{height:340px}.h280{height:280px}
 .cleg{display:flex;flex-wrap:wrap;gap:9px;margin-top:.8rem}
 .cleg-i{display:flex;align-items:center;gap:4px;font-size:.7rem;color:#3d6b52;cursor:pointer}
@@ -176,19 +176,6 @@ select,input{font-family:var(--ff)}
   .mgrid{grid-template-columns:1fr}
   .kpis{grid-template-columns:1fr}
   .kpi-tot{grid-column:1}
-}
-@media(max-width:600px){
-  .crow{grid-template-columns:1fr!important;}
-  .span2{grid-column:span 1!important;}
-  .kpi{min-width:140px;}
-  #kpisCar{flex-wrap:wrap;gap:.4rem;}
-  .ccard{padding:.7rem .8rem;}
-  .ctitle{font-size:.78rem;}
-  .kpi-val{font-size:1.3rem;}
-  .shdr-t{font-size:.8rem;}
-  canvas{max-height:200px;}
-  .det-back{font-size:.75rem;padding:.3rem .6rem;}
-  #wrapMoraCharts{grid-template-columns:1fr!important;}
 }
 </style>
 <script>
@@ -941,44 +928,19 @@ function showDrillDown(cat){
   const _proxAB=_last.ProximosAB||[];
   const _sv=(arr)=>arr.reduce((s,p)=>s+(p.Saldo||0),0);
   const _alertas=[];
-  // A→B: segmentado por días restantes
-  if(_proxAB.length){
-    var _seg=function(a,b){return _proxAB.filter(function(p){return p.DiasRestantes>=a&&p.DiasRestantes<=b;});};
-    var _s1=_seg(0,10),_s2=_seg(11,20),_s3=_seg(21,30);
-    _alertas.push({label:'A → B',segs:[{rng:'0 – 10 días',arr:_s1,col:'#c0392b'},{rng:'11 – 20 días',arr:_s2,col:'#e67e22'},{rng:'21 – 30 días',arr:_s3,col:'#FAC616'}]});
-  }
+  if(_proxAB.length) _alertas.push({label:'A → B',n:_proxAB.length,v:_sv(_proxAB),col:'#FAC616'});
   ['B','C','D'].forEach(function(c){
     const lst=_credMora[c]||[],nxt={'B':'C','C':'D','D':'E'}[c];
     if(lst.length) _alertas.push({label:c+' → '+nxt,n:lst.length,v:_sv(lst),col:{'B':'#e67e22','C':'#c0392b','D':'#8b0000'}[c]});
   });
   if(_alertas.length){
-    var _rowSimple=function(a){return '<div style="display:flex;justify-content:space-between;align-items:center;padding:.35rem .5rem;border-radius:6px;background:var(--bg);margin-bottom:.3rem">'
-      +'<span style="font-size:.77rem;font-weight:700;color:'+a.col+'">'+a.label+'</span>'
-      +'<span style="font-size:.77rem;">'+a.n+' créditos</span>'
-      +'<span style="font-family:var(--fm);font-size:.8rem;font-weight:700;">'+fK(a.v)+'</span>'
-      +'</div>';};
-    var _rowSeg=function(a){
-      var tot=a.segs.reduce(function(s,sg){return s+sg.arr.length;},0);
-      var totV=a.segs.reduce(function(s,sg){return s+_sv(sg.arr);},0);
-      var rows=a.segs.filter(function(sg){return sg.arr.length>0;}).map(function(sg){
-        return '<div style="display:flex;justify-content:space-between;align-items:center;padding:.3rem .5rem;border-radius:5px;background:var(--bg);margin-bottom:.25rem">'
-          +'<span style="font-size:.74rem;font-weight:600;color:'+sg.col+'">'+sg.rng+'</span>'
-          +'<span style="font-size:.74rem;">'+sg.arr.length+' créditos</span>'
-          +'<span style="font-family:var(--fm);font-size:.77rem;font-weight:700;">'+fK(_sv(sg.arr))+'</span>'
-          +'</div>';
-      }).join('');
-      return '<div style="margin-bottom:.3rem">'
-        +'<div style="display:flex;justify-content:space-between;align-items:center;padding:.35rem .5rem;border-radius:6px;background:var(--bg);margin-bottom:.2rem">'
-        +'<span style="font-size:.77rem;font-weight:700;color:#FAC616">'+a.label+'</span>'
-        +'<span style="font-size:.77rem;">'+tot+' créditos</span>'
-        +'<span style="font-family:var(--fm);font-size:.8rem;font-weight:700;">'+fK(totV)+'</span>'
-        +'</div>'
-        +'<div style="padding-left:.8rem;">'+rows+'</div>'
-        +'</div>';
-    };
     panel.innerHTML+='<div style="margin-top:.8rem;padding:.7rem 1rem;background:var(--bg2);border-radius:8px;border-left:4px solid #c0392b">'
       +'<div style="font-size:.72rem;font-weight:700;color:#c0392b;margin-bottom:.5rem">⚠️ Alertas deterioro — último día disponible</div>'
-      +_alertas.map(function(a){return a.segs?_rowSeg(a):_rowSimple(a);}).join('')
+      +_alertas.map(function(a){return '<div style="display:flex;justify-content:space-between;align-items:center;padding:.35rem .5rem;border-radius:6px;background:var(--bg);margin-bottom:.3rem">'
+        +'<span style="font-size:.77rem;font-weight:700;color:'+a.col+'">'+a.label+'</span>'
+        +'<span style="font-size:.77rem;">'+a.n+' créditos</span>'
+        +'<span style="font-family:var(--fm);font-size:.8rem;font-weight:700;">'+fK(a.v)+'</span>'
+        +'</div>';}).join('')
       +'<div style="text-align:right;margin-top:.5rem">'
       +'<button onclick="descargarAlertasExcel()" style="font-size:.72rem;background:#005648;color:#fff;border:none;border-radius:6px;padding:.35rem .8rem;cursor:pointer">⬇ Descargar Excel detallado</button>'
       +'</div>'
