@@ -16,7 +16,7 @@
   --ff:'Poppins',sans-serif;--fm:'IBM Plex Mono',monospace;
 }
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:var(--ff);background:var(--bg);color:var(--tx);font-size:14px;line-height:1.6}
+html,body{max-width:100%;overflow-x:hidden}body{font-family:var(--ff);background:var(--bg);color:var(--tx);font-size:14px;line-height:1.6}
 button{cursor:pointer;font-family:var(--ff);border:none;background:none}
 select,input{font-family:var(--ff)}
 
@@ -110,7 +110,9 @@ select,input{font-family:var(--ff)}
 .ctop{display:flex;align-items:flex-start;margin-bottom:.9rem}
 .ctitle{font-size:.88rem;font-weight:600;color:var(--g1)}
 .csub{font-size:.67rem;color:var(--tx3);margin-top:2px}
-.cwrap{position:relative;overflow-x:auto;overflow-y:hidden}.cwrap canvas{min-width:420px;max-width:none}.donut-wrap{overflow:hidden}.donut-wrap canvas{min-width:unset;max-width:100%}
+.cwrap{position:relative;overflow:hidden}.cwrap canvas{max-width:100%}
+.chart-scroll{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;width:100%}
+.chart-scroll .cwrap{min-width:380px}
 .h340{height:340px}.h280{height:280px}
 .cleg{display:flex;flex-wrap:wrap;gap:9px;margin-top:.8rem}
 .cleg-i{display:flex;align-items:center;gap:4px;font-size:.7rem;color:#3d6b52;cursor:pointer}
@@ -269,14 +271,14 @@ select,input{font-family:var(--ff)}
   <div class="crow">
     <div class="ccard span2">
       <div class="ctop"><div><div class="ctitle">Evolución histórica por producto</div><div class="csub">Clic en un producto para ver su detalle · Millones COP</div></div></div>
-      <div class="cwrap h340"><canvas id="chHist"></canvas></div>
+      <div class="chart-scroll"><div class="cwrap h340"><canvas id="chHist"></canvas></div></div>
       <div class="cleg" id="legHist"></div>
     </div>
   </div>
   <div class="crow">
     <div class="ccard">
       <div class="ctop"><div><div class="ctitle">Variación mensual del portafolio</div><div class="csub">Promedio mensual total en millones COP</div></div></div>
-      <div class="cwrap h280"><canvas id="chVar"></canvas></div>
+      <div class="chart-scroll"><div class="cwrap h280"><canvas id="chVar"></canvas></div></div>
     </div>
     <div class="ccard">
       <div class="ctop"><div><div class="ctitle">Composición actual</div><div class="csub">Participación % por producto en el último día</div></div></div>
@@ -321,13 +323,13 @@ select,input{font-family:var(--ff)}
   <div class="crow">
     <div class="ccard span2">
       <div class="ctop"><div><div class="ctitle" id="detChTitle">Evolución histórica</div><div class="csub">Saldo diario en millones COP</div></div></div>
-      <div class="cwrap h340"><canvas id="chDetLine"></canvas></div>
+      <div class="chart-scroll"><div class="cwrap h340"><canvas id="chDetLine"></canvas></div></div>
     </div>
   </div>
   <div class="crow">
     <div class="ccard">
       <div class="ctop"><div><div class="ctitle">Promedio mensual</div><div class="csub">Saldo promedio por mes</div></div></div>
-      <div class="cwrap h280"><canvas id="chDetBar"></canvas></div>
+      <div class="chart-scroll"><div class="cwrap h280"><canvas id="chDetBar"></canvas></div></div>
     </div>
     <div class="ccard">
       <div class="ctop"><div><div class="ctitle">Estadísticas del período</div><div class="csub">Análisis descriptivo</div></div></div>
@@ -369,14 +371,14 @@ select,input{font-family:var(--ff)}
         <div class="ctitle" style="color:#c0392b">📉 Mora sin arrastre (CALIF_PRESTAMO)</div>
         <div class="csub">Clic para ver detalle · B+C+D+E / Total</div>
       </div></div>
-      <div class="cwrap h260"><canvas id="chMoraSP"></canvas></div>
+      <div class="chart-scroll"><div class="cwrap h260"><canvas id="chMoraSP"></canvas></div></div>
     </div>
     <div class="ccard" style="cursor:pointer" onclick="showMoraDetalle('ca')">
       <div class="ctop"><div>
         <div class="ctitle" style="color:#8b0000">📉 Mora con arrastre (por cliente)</div>
         <div class="csub">Clic para ver detalle · agrupado por cédula</div>
       </div></div>
-      <div class="cwrap h260"><canvas id="chMoraCA"></canvas></div>
+      <div class="chart-scroll"><div class="cwrap h260"><canvas id="chMoraCA"></canvas></div></div>
     </div>
   </div>
   <!-- Paneles de detalle -->
@@ -1022,7 +1024,7 @@ function renderMoraDetalleSP(){
     <span style="font-weight:600;color:#c0392b;font-size:.88rem">Mora Sin Arrastre — Clasificación FEBOR por crédito</span></div>
   <div class="crow">
     <div class="ccard"><div class="ctop"><div><div class="ctitle">Participación por categoría</div></div></div>
-      <div class="cwrap h260"><canvas id="chCatSP"></canvas></div></div>
+      <div class="chart-scroll"><div class="cwrap h260"><canvas id="chCatSP"></canvas></div></div></div>
     <div class="ccard"><div class="ctop"><div><div class="ctitle">Evolución cartera</div></div></div>
       <div style="overflow-x:auto"><div class="cwrap h260" style="min-width:500px"><canvas id="chEvolSP"></canvas></div></div></div>
   </div>
@@ -1084,7 +1086,7 @@ function renderMoraDetalleCA(){
     <span style="font-weight:600;color:#8b0000;font-size:.88rem">Mora Con Arrastre — Agrupado por cliente</span></div>
   <div class="crow">
     <div class="ccard"><div class="ctop"><div><div class="ctitle">Participación por categoría</div><div class="csub">% sobre cartera total · último día</div></div></div>
-      <div class="cwrap h260"><canvas id="chCatCA"></canvas></div></div>
+      <div class="chart-scroll"><div class="cwrap h260"><canvas id="chCatCA"></canvas></div></div></div>
     <div class="ccard"><div class="ctop"><div><div class="ctitle">Evolución índice mora con arrastre</div><div class="csub">% sobre cartera total · histórico</div></div></div>
       <div style="overflow-x:auto"><div class="cwrap h260" style="min-width:500px"><canvas id="chEvolCA"></canvas></div></div></div>
   </div>`;
