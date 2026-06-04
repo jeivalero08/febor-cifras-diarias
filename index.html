@@ -198,6 +198,16 @@ select,input{font-family:var(--ff)}
 #spModalBox .modal-hdr{display:flex;justify-content:space-between;align-items:flex-start;padding:.9rem 1.1rem .7rem;border-bottom:1px solid var(--bd);}
 #spModalBox .modal-body{padding:.9rem 1.1rem;}
 .spCatBtn{padding:3px 11px;border-radius:6px;border:0.5px solid var(--bd);background:var(--bg2);cursor:pointer;font-size:.78rem;font-weight:500;color:var(--tx);}
+.sp-date-chip{display:inline-flex;align-items:center;gap:4px;padding:2px 8px 2px 6px;border-radius:20px;border:1px solid #005648;background:#e8f5f0;cursor:pointer;font-size:.7rem;font-weight:500;color:#005648;}
+.sp-trend-btn{display:inline-flex;align-items:center;gap:5px;padding:4px 11px;border-radius:6px;border:0.5px solid var(--bord);background:var(--bg2);cursor:pointer;font-size:.75rem;color:var(--tx3);font-weight:500;margin-top:.7rem;}
+.sp-trend-btn:hover{background:var(--surf);}
+.sp-tpanel{border:0.5px solid var(--bord);border-radius:8px;padding:.9rem;margin-top:.6rem;background:var(--bg);}
+.sp-pchip{display:inline-flex;align-items:center;padding:2px 10px;border-radius:20px;border:1px solid #005648;background:transparent;cursor:pointer;font-size:.73rem;font-weight:500;color:#005648;transition:background .15s;}
+.sp-pchip.on{background:#005648;color:#fff;}
+.sp-mcard{background:var(--surf);border-radius:6px;padding:.55rem .7rem;border:0.5px solid var(--bord);}
+.sp-ml{font-size:.62rem;color:var(--tx3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:3px;}
+.sp-mv{font-size:.83rem;font-weight:600;color:var(--tx);}
+.sp-ms{font-size:.62rem;color:var(--tx3);margin-top:1px;}
 .cat-leg-chip{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:8px;border:1.5px solid #ccc;background:var(--bg2);cursor:pointer;font-size:.78rem;font-weight:500;color:var(--tx);transition:opacity .15s;}
 .cat-leg-chip:hover{opacity:.8;}
 .cat-leg-dot{width:10px;height:10px;border-radius:50%;display:inline-block;flex-shrink:0;}
@@ -869,6 +879,12 @@ function closeSPModal(){
   document.getElementById('spModalOverlay').classList.remove('active');
   document.body.style.overflow='';
   _SP_OPEN_CAT=null;
+  _spTrendOpen=false;
+  if(_spTrendChart){_spTrendChart.destroy();_spTrendChart=null;}
+  var _tp=document.getElementById('spTrendPanel');
+  if(_tp)_tp.style.display='none';
+  var _tc=document.getElementById('spTrendChev');
+  if(_tc)_tc.style.transform='';
 }
 function showDrillDown(cat){
   _SP_OPEN_CAT=cat;
@@ -882,7 +898,7 @@ function showDrillDown(cat){
   const _fDia=l.Fecha?l.Fecha.slice(8,10)+'/'+l.Fecha.slice(5,7)+'/'+l.Fecha.slice(0,4):'';
   const _catCols2={A:'#005648',B:'#FAC616',C:'#e67e22',D:'#c0392b',E:'#8b0000'};
   const _mt2=document.getElementById('spModalTitle');
-  if(_mt2) _mt2.innerHTML='<span style="font-weight:600;color:var(--ac)">Detalle Categoría '+cat+' — '+_CAT_LBL2[cat]+'</span> <span style="font-size:.72rem;color:var(--tx3)">· '+_fDia+'</span> <input type="date" value="'+(l.Fecha||'')+'" style="font-size:.7rem;border:0.5px solid var(--bd);border-radius:4px;padding:1px 4px;background:var(--bg);color:var(--tx);margin-left:4px" onchange="var d=this.value;if(d){_CAR_SELECTED_DATE=d;showDrillDown(\''+cat+'\')}">';
+  if(_mt2) _mt2.innerHTML='<span style="font-weight:600;color:var(--ac)">Detalle Categoría '+cat+' — '+_CAT_LBL2[cat]+'</span> <span style="font-size:.72rem;color:var(--tx3)">· '+_fDia+'</span> <label class="sp-date-chip" title="Cambiar fecha">&#128197; '+(_CAR_SELECTED_DATE||l.Fecha||'')+'</label>';
   const _mc2=document.getElementById('spMCats');
   const _catCols={A:'#005648',B:'#FAC616',C:'#e67e22',D:'#c0392b',E:'#8b0000'};
   if(_mc2) _mc2.innerHTML=['A','B','C','D','E'].map(function(c){var s=c===cat?'background:'+_catCols[c]+';':'';return '<button class="spCatBtn'+(c===cat?' on':'')+'" style="'+s+'" onclick="showDrillDown(\''+c+'\')">' +c+'</button>';}).join('');
@@ -925,7 +941,7 @@ function showDrillDown(cat){
 
   const _mc=document.getElementById('spModalContent');
   const _mt=document.getElementById('spModalTitle');
-  if(_mt) _mt.innerHTML='<span style="font-weight:600;color:var(--ac)">Detalle Categoría '+cat+' — '+CAT_LABEL[cat]+'</span> <span style="font-size:.72rem;color:var(--tx3)">· '+_fDia+'</span> <input type="date" value="'+(l.Fecha||'')+'" style="font-size:.7rem;border:0.5px solid var(--bd);border-radius:4px;padding:1px 4px;background:var(--bg);color:var(--tx);margin-left:4px" onchange="var d=this.value;if(d){_CAR_SELECTED_DATE=d;showDrillDown(\''+cat+'\')}">'
+  if(_mt) _mt.innerHTML='<span style="font-weight:600;color:var(--ac)">Detalle Categoría '+cat+' — '+CAT_LABEL[cat]+'</span> <span style="font-size:.72rem;color:var(--tx3)">· '+_fDia+'</span> <label class="sp-date-chip" title="Cambiar fecha">&#128197; '+(_CAR_SELECTED_DATE||l.Fecha||'')+'</label>'
   panel.style.display='none';
   if(_mc) _mc.innerHTML=`
   <div class="ccard span2" style="margin-top:.8rem;border-left:4px solid ${CAT_COLOR[cat]}">
@@ -979,6 +995,26 @@ function showDrillDown(cat){
     <div style="padding:.4rem 1rem .8rem;text-align:right">
       <button onclick="document.getElementById('drillDownSP').style.display='none';_SP_OPEN_CAT=null;"
         style="font-size:.72rem;color:var(--tx3);background:none;border:none;cursor:pointer">✕ Cerrar detalle</button>
+    </div>
+  </div>
+  <div class="ccard span2" style="margin-top:.7rem">
+    <button class="sp-trend-btn" id="spTrendBtn" onclick="_spToggleTrend('${cat}',data)">
+      &#128200; Ver tendencia del período
+      <span id="spTrendChev" style="transition:transform .2s;display:inline-block">&#9660;</span>
+    </button>
+    <div class="sp-tpanel" id="spTrendPanel" style="display:none">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:.7rem">
+        <span style="font-size:.72rem;font-weight:600;color:var(--tx3)">Rango de análisis</span>
+        <div style="display:flex;gap:5px;flex-wrap:wrap" id="spPchips">
+          <span class="sp-pchip" onclick="_spSetPeriod(this,'1M')">1M</span>
+          <span class="sp-pchip on" onclick="_spSetPeriod(this,'3M')">3M</span>
+          <span class="sp-pchip" onclick="_spSetPeriod(this,'6M')">6M</span>
+          <span class="sp-pchip" onclick="_spSetPeriod(this,'1A')">1A</span>
+          <span class="sp-pchip" onclick="_spSetPeriod(this,'Todo')">Todo</span>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin-bottom:.8rem" id="spTrendMets"></div>
+      <div style="position:relative;width:100%;height:150px"><canvas id="spTrendChart"></canvas></div>
     </div>
   </div>`;
   // Resumen alertas deterioro — día seleccionado (o último si no hay selección)
@@ -1288,6 +1324,72 @@ function renderMoraDetalleCA(){
         y:{ticks:{callback:v=>v.toFixed(1)+'%',font:{size:9}},grid:{color:'#e8ede9'},suggestedMin:0}}}});
 }
 
+// ── Panel tendencia modal ─────────────────────
+var _spTrendOpen=false,_spTrendChart=null,_spTrendCat=null,_spTrendData=null,_spTrendPeriod='3M';
+function _spToggleTrend(cat,data){
+  _spTrendOpen=!_spTrendOpen;_spTrendCat=cat;_spTrendData=data;
+  var panel=document.getElementById('spTrendPanel');
+  var chev=document.getElementById('spTrendChev');
+  if(!panel)return;
+  panel.style.display=_spTrendOpen?'':'none';
+  if(chev)chev.style.transform=_spTrendOpen?'rotate(180deg)':'';
+  if(_spTrendOpen)_spBuildTrend(_spTrendPeriod,cat,data);
+}
+function _spSetPeriod(el,p){
+  _spTrendPeriod=p;
+  document.querySelectorAll('#spPchips .sp-pchip').forEach(function(c){c.classList.remove('on');});
+  el.classList.add('on');
+  _spBuildTrend(p,_spTrendCat,_spTrendData);
+}
+function _spFD(s){if(!s)return'';return s.slice(8,10)+'/'+s.slice(5,7)+'/'+s.slice(0,4);}
+function _spBuildTrend(period,cat,data){
+  if(!data||!data.length||!cat)return;
+  var key='Cat'+cat;
+  var last=data[data.length-1];
+  var days={'1M':30,'3M':90,'6M':180,'1A':365,'Todo':99999}[period]||90;
+  var cutDate=new Date(last.Fecha);cutDate.setDate(cutDate.getDate()-days);
+  var slice=data.filter(function(r){return new Date(r.Fecha)>=cutDate;});
+  if(!slice.length)slice=data;
+  var vals=slice.map(function(r){return parseFloat(((r[key]||0)/1e6).toFixed(2));});
+  var ini=vals[0],fin=vals[vals.length-1],varAbs=fin-ini;
+  var varPct=ini>0?(varAbs/ini*100):0;
+  var max=Math.max.apply(null,vals),min=Math.min.apply(null,vals);
+  var prom=vals.reduce(function(s,v){return s+v;},0)/vals.length;
+  var maxIdx=vals.indexOf(max),minIdx=vals.indexOf(min);
+  var varCol=varAbs>=0?'#1a7a42':'#c0392b',sign=varAbs>=0?'+':'';
+  var tots=slice.map(function(r){return r.CarteraTotal||0;});
+  var promTot=tots.reduce(function(s,v){return s+v;},0)/tots.length;
+  var promPct=promTot>0?(slice.reduce(function(s,r){return s+(r[key]||0);},0)/slice.length/promTot*100):0;
+  var mets=[
+    {l:'Inicio período',v:'$'+ini.toFixed(2)+' M',s:_spFD(slice[0].Fecha)},
+    {l:'Fin período',v:'$'+fin.toFixed(2)+' M',s:_spFD(slice[slice.length-1].Fecha)},
+    {l:'Variación',v:sign+'$'+Math.abs(varAbs).toFixed(2)+' M',s:sign+varPct.toFixed(2)+'%',c:varCol},
+    {l:'Promedio',v:'$'+prom.toFixed(2)+' M',s:'en el período'},
+    {l:'Máximo',v:'$'+max.toFixed(2)+' M',s:_spFD(slice[maxIdx]?slice[maxIdx].Fecha:'')},
+    {l:'Mínimo',v:'$'+min.toFixed(2)+' M',s:_spFD(slice[minIdx]?slice[minIdx].Fecha:'')},
+    {l:'% cartera prom.',v:promPct.toFixed(1)+'%',s:'participación media'},
+    {l:'Días analizados',v:''+slice.length,s:'con datos'}
+  ];
+  var mDiv=document.getElementById('spTrendMets');
+  if(mDiv)mDiv.innerHTML=mets.map(function(m){
+    var cv2=m.c?' style="color:'+m.c+'"':'';
+    return '<div class="sp-mcard"><div class="sp-ml">'+m.l+'</div><div class="sp-mv"'+cv2+'>'+m.v+'</div><div class="sp-ms"'+cv2+'>'+m.s+'</div></div>';
+  }).join('');
+  var skip=Math.max(1,Math.floor(slice.length/8));
+  var labels=slice.map(function(r,i){return i%skip===0?_spFD(r.Fecha).slice(0,5):'';});
+  var col2={A:'#005648',B:'#FAC616',C:'#e67e22',D:'#c0392b',E:'#8b0000'}[cat]||'#005648';
+  if(_spTrendChart){_spTrendChart.destroy();_spTrendChart=null;}
+  var cv=document.getElementById('spTrendChart');
+  if(!cv)return;
+  _spTrendChart=new Chart(cv,{
+    type:'line',
+    data:{labels:labels,datasets:[{data:vals,borderColor:col2,backgroundColor:col2+'18',borderWidth:2,fill:true,tension:0.35,pointRadius:0,pointHoverRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:function(t){return ' $'+t.parsed.y.toFixed(2)+' M';}}}},
+      scales:{x:{ticks:{font:{size:9},maxRotation:0,color:'#5a8a7a'},grid:{display:false}},
+        y:{ticks:{font:{size:9},color:'#5a8a7a',callback:function(v){return '$'+v.toFixed(1)+' M';}},grid:{color:'#e8ede9'}}}}
+  });
+}
 // BOOT
 document.addEventListener('DOMContentLoaded',function(){
   try{
