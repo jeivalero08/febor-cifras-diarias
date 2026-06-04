@@ -197,6 +197,9 @@ select,input{font-family:var(--ff)}
 #spModalBox{background:var(--bg);border-radius:12px;border:1px solid var(--bd);width:100%;max-width:680px;max-height:90vh;overflow-y:auto;box-sizing:border-box;}
 #spModalBox .modal-hdr{display:flex;justify-content:space-between;align-items:flex-start;padding:.9rem 1.1rem .7rem;border-bottom:1px solid var(--bd);}
 #spModalBox .modal-body{padding:.9rem 1.1rem;}
+.spCatBtn{padding:3px 11px;border-radius:6px;border:0.5px solid var(--bd);background:var(--bg2);cursor:pointer;font-size:.78rem;font-weight:500;color:var(--tx);}
+.spCatBtn.on{color:#fff;border-color:transparent;}
+#spMCats{display:flex;gap:5px;flex-wrap:wrap;padding:.5rem 1.1rem .4rem;border-bottom:0.5px solid var(--bd);}
 </style>
 <script>
 (function(){
@@ -410,6 +413,7 @@ select,input{font-family:var(--ff)}
       <div id="spModalTitle" style="font-size:.88rem;font-weight:600;color:var(--ac)"></div>
       <button onclick="closeSPModal()" style="background:none;border:none;cursor:pointer;font-size:1.1rem;color:var(--tx3);line-height:1;">✕</button>
     </div>
+    <div id="spMCats"></div>
     <div class="modal-body" id="spModalContent"></div>
   </div>
 </div>
@@ -869,6 +873,15 @@ function showDrillDown(cat){
   // Usar el último día del período filtrado
   const idx=_CAR_SELECTED_DATE?data.findIndex(r=>r.Fecha===_CAR_SELECTED_DATE):-1;
   const l=idx>=0?data[idx]:data[data.length-1];
+  // Título con fecha y botones de categoría
+  const _CAT_LBL2={A:'Riesgo Normal',B:'Riesgo Aceptable',C:'Riesgo Apreciable',D:'Riesgo Significativo',E:'Riesgo de Incobrabilidad'};
+  const _fDia=l.Fecha?l.Fecha.slice(8,10)+'/'+l.Fecha.slice(5,7)+'/'+l.Fecha.slice(0,4):'';
+  const _catCols2={A:'#005648',B:'#FAC616',C:'#e67e22',D:'#c0392b',E:'#8b0000'};
+  const _mt2=document.getElementById('spModalTitle');
+  if(_mt2) _mt2.innerHTML='<span style="font-weight:600;color:var(--ac)">Detalle Categoría '+cat+' — '+_CAT_LBL2[cat]+'</span> <span style="font-size:.72rem;color:var(--tx3)">· '+_fDia+'</span> <input type="date" value="'+(l.Fecha||'')+'" style="font-size:.7rem;border:0.5px solid var(--bd);border-radius:4px;padding:1px 4px;background:var(--bg);color:var(--tx);margin-left:4px" onchange="var d=this.value;if(d){_CAR_SELECTED_DATE=d;showDrillDown(\''+cat+'\')}">';
+  const _mc2=document.getElementById('spMCats');
+  const _catCols={A:'#005648',B:'#FAC616',C:'#e67e22',D:'#c0392b',E:'#8b0000'};
+  if(_mc2) _mc2.innerHTML=['A','B','C','D','E'].map(function(c){var s=c===cat?'background:'+_catCols[c]+';':'';return '<button class="spCatBtn'+(c===cat?' on':'')+'" style="'+s+'" onclick="showDrillDown(\''+c+'\')">' +c+'</button>';}).join('');
   const _tot=l.CarteraTotal||1;
   // Usar DetalleCat si existe para ese día, si no construir desde CatX del mismo día
   let det=l.DetalleCat?.[cat];
@@ -911,7 +924,7 @@ function showDrillDown(cat){
   if(_mt) _mt.textContent='Detalle Categoría '+cat+' — '+CAT_LABEL[cat];
   panel.style.display='none';
   if(_mc) _mc.innerHTML=`
-  <div class="ccard span2" style="margin-top:.8rem;border-left:4px solid ${CAT_COLOR[cat]};animation:fadeIn .2s ease">
+  <div class="ccard span2" style="margin-top:.8rem;border-left:4px solid ${CAT_COLOR[cat]}">
     <div class="shdr">
       <div class="shdr-t" style="color:${CAT_COLOR[cat]}">🔍 Detalle Categoría ${cat} — ${CAT_LABEL[cat]}</div>
       <div class="shdr-s">${det.num} créditos · ${fK(tot)} de capital expuesto</div>
