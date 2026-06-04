@@ -214,15 +214,6 @@ select,input{font-family:var(--ff)}
 .cat-leg-lupa{font-size:.7rem;}
 .spCatBtn.on{color:#fff;border-color:transparent;}
 #spMCats{display:flex;gap:5px;flex-wrap:wrap;padding:.5rem 1.1rem .4rem;border-bottom:0.5px solid var(--bd);}
-
-/* ── CHART SLIDERS ── */
-.ch-slider-wrap{display:flex;align-items:center;gap:.6rem;padding:.35rem .4rem .1rem;user-select:none}
-.ch-slider-wrap input[type=range]{
-  flex:1;height:4px;border-radius:4px;
-  accent-color:var(--g2);cursor:pointer;
-  background:linear-gradient(to right,var(--g2) 0%,var(--g2) 50%,var(--bord) 50%,var(--bord) 100%);
-}
-.ch-slider-lbl{font-size:.63rem;color:var(--tx3);white-space:nowrap;font-family:var(--fm);min-width:82px;text-align:right}
 </style>
 <script>
 (function(){
@@ -622,13 +613,6 @@ function renderHist(data){
       onClick:(e,els)=>{if(els.length)goProd(PRODS[els[0].datasetIndex].k);}
     }
   });
-  // SLIDER chHist
-  (function(){
-    rmSlider('chHist');
-    var _allL=data.map(r=>r.Fecha);
-    var _allDS=PRODS.map(p=>({data:data.map(r=>r[p.k]!=null?+(r[p.k]/1e6).toFixed(3):null)}));
-    mkSlider('chHist',_allL,_allDS,365);
-  })();
 }
 
 function renderVar(data){
@@ -646,13 +630,6 @@ function renderVar(data){
       scales:{x:{ticks:{maxTicksLimit:18,font:{size:9},maxRotation:45},grid:{display:false}},
         y:{ticks:{font:{size:10},callback:v=>v.toLocaleString('es-CO',{maximumFractionDigits:0})+' M'},grid:{color:'#e8ede9'}}}}
   });
-  // SLIDER chVar
-  (function(){
-    rmSlider('chVar');
-    var _allL=mks.map(k=>MS[parseInt(k.slice(5,7))]+' '+k.slice(2,4));
-    var _allDS=[{data:mavg}];
-    mkSlider('chVar',_allL,_allDS,12);
-  })();
 }
 
 function renderDonut(data){
@@ -730,13 +707,6 @@ function renderProd(prod){
       scales:{x:{ticks:{maxTicksLimit:12,font:{size:10},callback:(v,i)=>{const d=data[i]?.Fecha;return d?`${d.slice(8,10)}/${d.slice(5,7)}/${d.slice(2,4)}`:'';}},grid:{display:false}},
         y:{ticks:{font:{size:10},callback:v=>v.toLocaleString('es-CO',{maximumFractionDigits:0})+' M'},grid:{color:'#e8ede9'}}}}
   });
-  // SLIDER chDetLine
-  (function(){
-    rmSlider('chDetLine');
-    var _allL=data.map(r=>r.Fecha);
-    var _allDS=[{data:data.map(r=>+(r[prod]/1e6).toFixed(3))}];
-    mkSlider('chDetLine',_allL,_allDS,30);
-  })();
   const bM={};data.forEach(r=>{const k=r.Fecha.slice(0,7);if(!bM[k]){bM[k]={s:0,n:0};}bM[k].s+=r[prod];bM[k].n++;});
   const mks=Object.keys(bM).sort();dC('chDetBar');
   new Chart(document.getElementById('chDetBar'),{type:'bar',
@@ -746,13 +716,6 @@ function renderProd(prod){
       scales:{x:{ticks:{maxTicksLimit:14,font:{size:10},maxRotation:45},grid:{display:false}},
         y:{ticks:{font:{size:10},callback:v=>v.toLocaleString('es-CO',{maximumFractionDigits:0})+' M'},grid:{color:'#e8ede9'}}}}
   });
-  // SLIDER chDetBar
-  (function(){
-    rmSlider('chDetBar');
-    var _allL=mks.map(k=>MS[parseInt(k.slice(5,7))]+' '+k.slice(2,4));
-    var _allDS=[{data:mks.map(k=>+(bM[k].s/bM[k].n/1e6).toFixed(3))}];
-    mkSlider('chDetBar',_allL,_allDS,12);
-  })();
   const t12=data.length>=12?((data[data.length-1][prod]-data[data.length-12][prod])/data[data.length-12][prod]*100):null;
   const rows=[
     ['Saldo actual',fK(l[prod])],['Saldo inicial período',fK(f[prod])],
@@ -876,9 +839,6 @@ function renderCartera(){
         scales:{
           x:{ticks:{maxTicksLimit:9,font:{size:9},callback:(v,i)=>{const d=data[i]?.Fecha;return d?`${d.slice(8,10)}/${d.slice(5,7)}`:'';}},grid:{display:false}},
           y:{ticks:{font:{size:9},callback:v=>v.toFixed(1)+'%'},grid:{color:'#e8ede9'},suggestedMin:0}}}});
-    // SLIDER mini
-    rmSlider(id);
-    mkSlider(id,data.map(r=>r.Fecha),[{data:data.map(r=>+((getVal(r)||0)).toFixed(3))}],30);
   };
   mkMini('chMoraSP',r=>r.IndiceMora,'#c0392b');
   mkMini('chMoraCA',r=>r.IndiceMoraCA,'#8b0000');
@@ -891,6 +851,18 @@ function renderCartera(){
         _CAR_SELECTED_DATE=data[pts[0].index]?.Fecha||null;
         renderCartera();
         showMoraDetalle('sp');
+      }
+    };
+  }
+  // Clic en punto de mora CA → actualiza detalle con ese día
+  const caChart=Chart.getChart(document.getElementById('chMoraCA'));
+  if(caChart){
+    document.getElementById('chMoraCA').onclick=function(e){
+      const pts=caChart.getElementsAtEventForMode(e,'nearest',{intersect:false},true);
+      if(pts.length){
+        _CAR_SELECTED_DATE=data[pts[0].index]?.Fecha||null;
+        renderCartera();
+        showMoraDetalle('ca');
       }
     };
   }
@@ -1144,6 +1116,8 @@ function closeMoraDetalle(){
   const pCA=document.getElementById('pgMoraCA');
   if(pSP){pSP.style.display='none';pSP.innerHTML='';}
   if(pCA){pCA.style.display='none';pCA.innerHTML='';}
+  _closeRadarModal();
+  window._radarGrupos=null;
 }
 
 function _tblCred(creds,showFaltan){
@@ -1220,13 +1194,6 @@ function renderMoraDetalleSP(){
       onClick:(e,els)=>{if(els.length){_CAR_SELECTED_DATE=data[els[0].index]?.Fecha||null;renderCartera();renderMoraDetalleSP();}},
       scales:{x:{ticks:{autoSkip:true,maxTicksLimit:10,font:{size:9},callback:(v,i)=>{const d=data[i]?.Fecha;return d?`${d.slice(8,10)}/${d.slice(5,7)}`:'';}},grid:{display:false}},
         y:{ticks:{font:{size:9},callback:v=>v+' M'},grid:{color:'#e8ede9'},stacked:true}}}});
-  // SLIDER chCatSP
-  (function(){
-    rmSlider('chCatSP');
-    var _allL=data.map(r=>r.Fecha);
-    var _allDS=[{data:data.map(r=>+((r.CatA||0)/1e6).toFixed(2))}];
-    mkSlider('chCatSP',_allL,_allDS,30);
-  })();
   (function(){var lg=document.getElementById('legCatSP');if(!lg)return;
     lg.innerHTML='<span class="cat-leg-chip cat-pill-anim" style="border-color:'+CAT_COLORS['A']+';outline-color:'+CAT_COLORS['A']+'44" onclick="showDrillDown(\'A\')"><span class="cat-leg-dot" style="background:'+CAT_COLORS['A']+'"></span>Cat A <span class="cat-leg-lupa">\uD83D\uDD0D</span></span>';
   })();
@@ -1246,13 +1213,6 @@ function renderMoraDetalleSP(){
       },
       scales:{x:{ticks:{autoSkip:false,maxRotation:45,font:{size:9},callback:(v,i)=>{const d=data[i]?.Fecha;return d?`${d.slice(8,10)}/${d.slice(5,7)}`:'';}},grid:{display:false}},
         y:{ticks:{font:{size:9},callback:v=>v+' M'},grid:{color:'#e8ede9'},stacked:true}}}});
-  // SLIDER chEvolSP
-  (function(){
-    rmSlider('chEvolSP');
-    var _allL=data.map(r=>r.Fecha);
-    var _allDS=cats.filter(c=>c!=='A').map(c=>({data:data.map(r=>+((r['Cat'+c]||0)/1e6).toFixed(2))}));
-    mkSlider('chEvolSP',_allL,_allDS,30);
-  })();
   (function(){var lg=document.getElementById('legEvolSP');if(!lg)return;
     lg.innerHTML=cats.filter(c=>c!=='A').map(c=>'<span class="cat-leg-chip" style="border-color:'+CAT_COLORS[c]+'" onclick="showDrillDown(\''+c+'\')"><span class="cat-leg-dot" style="background:'+CAT_COLORS[c]+'"></span>Cat '+c+' <span class="cat-leg-lupa">🔍</span></span>').join('');
   })();
@@ -1318,17 +1278,26 @@ function renderMoraDetalleSP(){
 
 function renderMoraDetalleCA(){
   const data=filtrarCar(CAR_F);if(!data.length)return;
-  const l=data[data.length-1],tot=l.CarteraTotal;
+  // Usar día seleccionado igual que SP; si no hay, el último del período
+  const _idxCA=_CAR_SELECTED_DATE?data.findIndex(r=>r.Fecha===_CAR_SELECTED_DATE):-1;
+  const lIdx=_idxCA>=0?_idxCA:data.length-1;
+  const l=data[lIdx],tot=l.CarteraTotal;
+  renderCartera();
+  // Chip de fecha
+  const _fmtFechaCA=function(f){return f?f.slice(8,10)+'/'+f.slice(5,7)+'/'+f.slice(0,4):'';};
+  const _fechaChip=l.Fecha?'<span style="display:inline-flex;align-items:center;padding:2px 9px;border-radius:20px;background:#e8f5ee;color:#1a7a42;font-size:.68rem;font-weight:600;font-family:var(--fm);margin-left:.4rem">📅 '+_fmtFechaCA(l.Fecha)+'</span>':'';
   const cats=['A','B','C','D','E'],catColors=cats.map(c=>CAT_COLORS[c]);
   const hasDetalle=(l.CA_B||0)+(l.CA_C||0)+(l.CA_D||0)>0;
   let h=`<div style="display:flex;align-items:center;gap:.8rem;margin:.6rem 0 .8rem;flex-wrap:wrap">
     <button class="det-back" style="position:static;margin:0" onclick="closeMoraDetalle()">← Volver a Cartera</button>
-    <span style="font-weight:600;color:#8b0000;font-size:.88rem">Mora Con Arrastre — Agrupado por cliente</span></div>
+    <span style="font-weight:600;color:#8b0000;font-size:.88rem">Mora Con Arrastre — Agrupado por cliente</span>${_fechaChip}</div>
   <div class="crow">
-    <div class="ccard"><div class="ctop"><div><div class="ctitle">Participación por categoría</div><div class="csub">% sobre cartera total · último día</div></div></div>
-      <div class="cwrap h260"><canvas id="chCatCA"></canvas></div></div>
-    <div class="ccard"><div class="ctop"><div><div class="ctitle">Evolución índice mora con arrastre</div><div class="csub">% sobre cartera total · histórico</div></div></div>
-      <div style="overflow-x:auto"><div class="cwrap h260" style="min-width:500px"><canvas id="chEvolCA"></canvas></div></div></div>
+    <div class="ccard"><div class="ctop"><div><div class="ctitle">Evolución Cat A — Con arrastre</div></div></div>
+      <div class="cwrap h260"><canvas id="chCatCA"></canvas></div>
+      <div id="legCatCA" style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;padding:.4rem 0 .2rem"></div></div>
+    <div class="ccard"><div class="ctop"><div><div class="ctitle">Evolución cartera — Con arrastre</div></div></div>
+      <div style="overflow-x:auto"><div class="cwrap h260" style="min-width:500px"><canvas id="chEvolCA"></canvas></div></div>
+      <div id="legEvolCA" style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;padding:.4rem 0 .2rem"></div></div>
   </div>`;
   let rowsCA='';
   if(hasDetalle){
@@ -1344,41 +1313,236 @@ function renderMoraDetalleCA(){
   }
   rowsCA+=`<tr style="font-weight:700;border-top:2px solid var(--bord)"><td colspan="2">TOTAL</td><td style="font-family:var(--fm);text-align:right">${fK(tot)}</td><td style="text-align:right">100%</td></tr>`;
   h+=`<div class="ccard span2" style="margin-bottom:.9rem">
-    <div class="shdr"><div class="shdr-t">Resumen — Con arrastre</div></div>
+    <div class="shdr"><div class="shdr-t">Resumen — Con arrastre ${_fechaChip}</div></div>
     <div class="stbl-wrap"><table class="stbl"><thead><tr><th>CAT</th><th>DESCRIPCIÓN</th><th style="text-align:right">SALDO</th><th style="text-align:right">PART.</th></tr></thead>
     <tbody>${rowsCA}</tbody></table></div></div>`;
+  // ── Radar de Asociados en Riesgo de Rodamiento ──
   const prox=l.ProximosAB||[];
   if(prox.length){
-    const totalProx=prox.reduce((s,p)=>s+(p.Saldo||0),0);
+    // Agrupar por asociado (Identificacion)
+    const _byAso={};
+    prox.forEach(function(p){
+      const id=p.Identificacion||'';
+      if(!_byAso[id]) _byAso[id]={Cliente:p.Cliente||'—',Identificacion:id,creditos:[],saldoTotal:0,minDias:9999};
+      _byAso[id].creditos.push(p);
+      _byAso[id].saldoTotal+=(p.Saldo||0);
+      if((p.DiasRestantes||0)<_byAso[id].minDias) _byAso[id].minDias=p.DiasRestantes||0;
+    });
+    const _asos=Object.values(_byAso);
+    // Semáforo: basado en el crédito más crítico del asociado
+    const _semaforo=function(minD){return minD<=5?'critico':minD<=15?'alerta':'monitoreo';};
+    const _semConfig={
+      critico:{col:'#c0392b',bg:'#fdecea',label:'Crítico',ico:'🔴',desc:'0 – 5 días'},
+      alerta: {col:'#e67e22',bg:'#fef5e7',label:'Alerta',  ico:'🟡',desc:'6 – 15 días'},
+      monitoreo:{col:'#27ae60',bg:'#e8f8f0',label:'Monitoreo',ico:'🟢',desc:'≥ 16 días'}
+    };
+    // Ordenar: críticos primero, luego alerta, luego monitoreo;
+    // dentro de cada grupo: ascendente por minDias (los más prontos a vencer primero)
+    const _orden={critico:0,alerta:1,monitoreo:2};
+    _asos.sort(function(a,b){
+      const sa=_orden[_semaforo(a.minDias)],sb=_orden[_semaforo(b.minDias)];
+      return sa!==sb?sa-sb:a.minDias-b.minDias;
+    });
+    // Totales por grupo
+    const _grupos={critico:[],alerta:[],monitoreo:[]};
+    _asos.forEach(function(a){_grupos[_semaforo(a.minDias)].push(a);});
+    const _sGrupo=function(arr){return arr.reduce(function(s,a){return s+a.saldoTotal;},0);};
+    const _totCrit=_sGrupo(_grupos.critico),_totAlerta=_sGrupo(_grupos.alerta),_totMon=_sGrupo(_grupos.monitoreo);
+    const _totalRiesgo=_totCrit+_totAlerta+_totMon;
+    const _nCred=prox.length;
+
+    // ── Chips resumen superiores — clicables, abren modal flotante ──
+    const _chipsSummary=['critico','alerta','monitoreo'].filter(function(g){return _grupos[g].length>0;}).map(function(g){
+      const cfg=_semConfig[g],n=_grupos[g].length,nc=_grupos[g].reduce(function(s,a){return s+a.creditos.length;},0);
+      return '<span onclick="_openRadarModal(\''+g+'\')" style="display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:8px;border:1.5px solid '+cfg.col+';background:'+cfg.bg+';font-size:.77rem;font-weight:600;color:'+cfg.col+';cursor:pointer;transition:opacity .15s" onmouseenter="this.style.opacity=\'.75\'" onmouseleave="this.style.opacity=\'1\'">'
+        +cfg.ico+' '+cfg.label+' <span style="font-weight:400;color:inherit;opacity:.8">'+n+' asoc · '+nc+' créd · '+fK(_sGrupo(_grupos[g]))+'</span>'
+        +' <span style="font-size:.65rem;opacity:.6">▶</span></span>';
+    }).join('');
+
+    // ── Filas de la tabla de asociados ──
+    const _filas=_asos.map(function(a,idx){
+      const sem=_semaforo(a.minDias);
+      const cfg=_semConfig[sem];
+      const nc=a.creditos.length;
+      const minCred=a.creditos.reduce(function(mn,p){return p.DiasRestantes<mn.DiasRestantes?p:mn;},a.creditos[0]);
+      const nCrit=a.creditos.filter(function(p){return p.DiasRestantes<=5;}).length;
+      const nAlert=a.creditos.filter(function(p){return p.DiasRestantes>5&&p.DiasRestantes<=15;}).length;
+      // mini indicadores de créditos por semáforo
+      const miniIcos=(nCrit>0?'<span style="font-size:.68rem;margin-right:2px">🔴×'+nCrit+'</span>':'')
+        +(nAlert>0?'<span style="font-size:.68rem;margin-right:2px">🟡×'+nAlert+'</span>':'');
+      const rowId='_caRad_'+idx;
+      return '<tr style="cursor:pointer;transition:background .13s" onclick="_toggleRadarRow(\''+rowId+'\')" onmouseenter="this.style.background=\'#f0f7f5\'" onmouseleave="this.style.background=\'\'">'
+        +'<td style="padding:.45rem .65rem">'
+          +'<span style="display:inline-flex;align-items:center;gap:4px;padding:2px 7px;border-radius:20px;font-size:.68rem;font-weight:700;background:'+cfg.bg+';color:'+cfg.col+'">'+cfg.ico+' '+cfg.label+'</span>'
+        +'</td>'
+        +'<td style="padding:.45rem .65rem;font-size:.78rem;font-weight:600;color:var(--g1)">'+a.Cliente+'</td>'
+        +'<td style="padding:.45rem .65rem;font-size:.72rem;color:var(--tx3);font-family:var(--fm)">'+a.Identificacion+'</td>'
+        +'<td style="padding:.45rem .65rem;text-align:center;font-size:.8rem;font-weight:700;color:var(--tx)">'+nc+'</td>'
+        +'<td style="padding:.45rem .65rem;text-align:center;font-size:.78rem">'+miniIcos+'</td>'
+        +'<td style="padding:.45rem .65rem;text-align:right;font-family:var(--fm);font-size:.78rem;font-weight:700;color:'+cfg.col+'">'+fK(a.saldoTotal)+'</td>'
+        +'<td style="padding:.45rem .65rem;text-align:center;font-size:.75rem;font-weight:700;color:'+cfg.col+'">'+a.minDias+'d</td>'
+        +'<td style="padding:.45rem .65rem;text-align:center;font-size:.8rem;color:var(--tx3)">▼</td>'
+        +'</tr>'
+        // Fila expandible con detalle de créditos del asociado
+        +'<tr id="'+rowId+'" style="display:none"><td colspan="8" style="padding:0 .65rem .65rem 2rem;background:#fafcfb">'
+          +'<div style="overflow-x:auto;border-top:1px solid var(--bord);padding-top:.4rem">'
+          +'<table style="width:100%;border-collapse:collapse;font-size:.73rem">'
+          +'<thead><tr style="border-bottom:1px solid var(--bord)">'
+            +'<th style="padding:.22rem .4rem;text-align:left;font-size:.62rem;font-weight:600;color:var(--tx3)">PRODUCTO</th>'
+            +'<th style="padding:.22rem .4rem;text-align:right;font-size:.62rem;font-weight:600;color:var(--tx3)">SALDO</th>'
+            +'<th style="padding:.22rem .4rem;text-align:center;font-size:.62rem;font-weight:600;color:var(--tx3)">DÍAS MORA</th>'
+            +'<th style="padding:.22rem .4rem;text-align:center;font-size:.62rem;font-weight:600;color:var(--tx3)">FALTAN A→B</th>'
+            +'<th style="padding:.22rem .4rem;text-align:center;font-size:.62rem;font-weight:600;color:var(--tx3)">TIPO</th>'
+          +'</tr></thead><tbody>'
+          +a.creditos.map(function(p){
+            const psem=_semaforo(p.DiasRestantes);const pcfg=_semConfig[psem];
+            return '<tr style="border-bottom:1px solid #f0f0f0">'
+              +'<td style="padding:.22rem .4rem;color:var(--tx)">'+p.Producto+'</td>'
+              +'<td style="padding:.22rem .4rem;text-align:right;font-family:var(--fm)">'+fK(p.Saldo)+'</td>'
+              +'<td style="padding:.22rem .4rem;text-align:center;font-weight:700;color:#e67e22">'+p.DiasActual+'d</td>'
+              +'<td style="padding:.22rem .4rem;text-align:center;font-weight:700;color:'+pcfg.col+'">'+p.DiasRestantes+'d</td>'
+              +'<td style="padding:.22rem .4rem;text-align:center;color:var(--tx3)">'+p.TipoProducto+'</td>'
+              +'</tr>';
+          }).join('')
+          +'</tbody></table></div>'
+        +'</td></tr>';
+    }).join('');
+
     h+=`<div class="ccard span2" style="margin-bottom:.9rem">
       <div class="shdr">
-        <div class="shdr-t">⚠️ Próximos a entrar en mora — ${prox.length} créditos · ${fK(totalProx)} en riesgo</div>
-        <div class="shdr-s">Créditos en cat A con 1-7 días para cambiar — genera arrastre al cliente completo</div>
-      </div>${_tblCred(prox,true)}</div>`;
+        <div class="shdr-t">🚨 Radar de Asociados — Riesgo de Rodamiento A → B ${_fechaChip}</div>
+        <div class="shdr-s">${_asos.length} asociados · ${_nCred} créditos · ${fK(_totalRiesgo)} en riesgo de arrastre · Clic en chip para ver grupo</div>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:.45rem;margin-bottom:.5rem">${_chipsSummary}</div>
+      <div style="font-size:.67rem;color:var(--tx3);margin-bottom:.4rem">🔴 Crítico 0–5d · 🟡 Alerta 6–15d · 🟢 Monitoreo ≥16d</div>
+    </div>
+    <div id="_radarModal" onclick="if(event.target===this)_closeRadarModal()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:900;align-items:flex-start;justify-content:center;padding:2rem 1rem;overflow-y:auto">
+      <div style="background:var(--surf);border-radius:14px;width:100%;max-width:820px;box-shadow:0 12px 48px rgba(0,0,0,.22);padding:1.4rem 1.5rem;position:relative">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;gap:.8rem;flex-wrap:wrap">
+          <div>
+            <div id="_radarModalTitle" style="font-size:.92rem;font-weight:700;color:var(--g1)"></div>
+            <div id="_radarModalSub" style="font-size:.68rem;color:var(--tx3);margin-top:2px"></div>
+          </div>
+          <button onclick="_closeRadarModal()" style="background:none;border:none;cursor:pointer;font-size:1.1rem;color:var(--tx3);line-height:1;flex-shrink:0">✕</button>
+        </div>
+        <div id="_radarModalBody"></div>
+      </div>
+    </div>`;
+    // Guardar grupos en window para que _openRadarModal los acceda
+    window._radarGrupos=_grupos;
+    window._radarSemConfig=_semConfig;
+    window._radarSemaforo=_semaforo;
+    window._radarFmtK=fK;
   }
   document.getElementById('pgMoraCA').innerHTML=h;
-  const caLabels=hasDetalle?cats.map(c=>`${c}`):['A – Sana','B-E – Mora'];
-  const caData=hasDetalle?cats.map(c=>+((l['CA_'+c]||0)/tot*100).toFixed(2)):[+((l.CA_A||0)/tot*100).toFixed(2),+((l.MoraCA||0)/tot*100).toFixed(2)];
-  const caBg=hasDetalle?catColors:['#005648cc','#8b0000cc'];
+  // ── Gráfica izquierda: Cat A con arrastre (barras apiladas, igual que SP) ──
   dC('chCatCA');
-  new Chart(document.getElementById('chCatCA'),{type:'bar',data:{labels:caLabels,datasets:[{data:caData,backgroundColor:caBg,borderRadius:4,borderSkipped:false}]},
-    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` ${ctx.parsed.x.toFixed(2)}%`}}},
-      scales:{x:{ticks:{callback:v=>v+'%',font:{size:10}},grid:{color:'#e8ede9'}},y:{ticks:{font:{size:10}},grid:{display:false}}}}});
-  dC('chEvolCA');
-  new Chart(document.getElementById('chEvolCA'),{type:'line',data:{labels:data.map(r=>r.Fecha),datasets:[{
-    data:data.map(r=>+((r.IndiceMoraCA||0)).toFixed(3)),borderColor:'#8b0000',backgroundColor:'rgba(139,0,0,.1)',borderWidth:2.5,fill:true,tension:0.4,
-    pointRadius:data.length>30?0:3,pointHoverRadius:5}]},
+  new Chart(document.getElementById('chCatCA'),{type:'bar',
+    data:{labels:data.map(r=>r.Fecha),
+      datasets:[{label:'Cat A (CA)',data:data.map(r=>+((r.CA_A||0)/1e6).toFixed(2)),
+        backgroundColor:CAT_COLORS['A']+'cc',stack:'s'}]},
     options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
-      plugins:{legend:{display:false},tooltip:{callbacks:{title:t=>fDt(t[0].label),label:t=>` Mora CA: ${t.parsed.y.toFixed(2)}%`}}},
-      scales:{x:{ticks:{autoSkip:false,maxRotation:45,font:{size:9},callback:(v,i)=>{const d=data[i]?.Fecha;return d?`${d.slice(8,10)}/${d.slice(5,7)}`:'';}},grid:{display:false}},
-        y:{ticks:{callback:v=>v.toFixed(1)+'%',font:{size:9}},grid:{color:'#e8ede9'},suggestedMin:0}}}});
-  // SLIDER chEvolCA
-  (function(){
-    rmSlider('chEvolCA');
-    var _allL=data.map(r=>r.Fecha);
-    var _allDS=[{data:data.map(r=>+((r.IndiceMoraCA||0)).toFixed(3))}];
-    mkSlider('chEvolCA',_allL,_allDS,30);
+      plugins:{legend:{display:false},
+        tooltip:{callbacks:{title:t=>fDt(t[0].label),label:t=>` ${t.dataset.label}: ${t.parsed.y.toLocaleString('es-CO',{minimumFractionDigits:2})} M`}}},
+      onClick:(e,els)=>{if(els.length){_CAR_SELECTED_DATE=data[els[0].index]?.Fecha||null;renderCartera();renderMoraDetalleCA();}},
+      scales:{x:{ticks:{autoSkip:true,maxTicksLimit:10,font:{size:9},callback:(v,i)=>{const d=data[i]?.Fecha;return d?`${d.slice(8,10)}/${d.slice(5,7)}`:'';}},grid:{display:false}},
+        y:{ticks:{font:{size:9},callback:v=>v+' M'},grid:{color:'#e8ede9'},stacked:true}}}});
+  (function(){var lg=document.getElementById('legCatCA');if(!lg)return;
+    lg.innerHTML='<span class="cat-leg-chip cat-pill-anim" style="border-color:'+CAT_COLORS['A']+';outline-color:'+CAT_COLORS['A']+'44"><span class="cat-leg-dot" style="background:'+CAT_COLORS['A']+'"></span>Cat A (arrastre)</span>';
   })();
+  // ── Gráfica derecha: Cat B/C/D/E con arrastre (barras apiladas, igual que SP) ──
+  dC('chEvolCA');
+  new Chart(document.getElementById('chEvolCA'),{type:'bar',
+    data:{labels:data.map(r=>r.Fecha),datasets:cats.filter(c=>c!=='A').map(c=>({
+      label:'Cat '+c+' (CA)',data:data.map(r=>+((r['CA_'+c]||0)/1e6).toFixed(2)),backgroundColor:CAT_COLORS[c]+'cc',stack:'s'}))},
+    options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+      plugins:{legend:{display:false},
+        tooltip:{callbacks:{title:t=>fDt(t[0].label),label:t=>` ${t.dataset.label}: ${t.parsed.y.toLocaleString('es-CO',{minimumFractionDigits:2})} M`}}},
+      onClick:(e,els)=>{if(els.length){_CAR_SELECTED_DATE=data[els[0].index]?.Fecha||null;renderCartera();renderMoraDetalleCA();}},
+      scales:{x:{ticks:{autoSkip:false,maxRotation:45,font:{size:9},callback:(v,i)=>{const d=data[i]?.Fecha;return d?`${d.slice(8,10)}/${d.slice(5,7)}`:'';}},grid:{display:false}},
+        y:{ticks:{font:{size:9},callback:v=>v+' M'},grid:{color:'#e8ede9'},stacked:true}}}});
+  (function(){var lg=document.getElementById('legEvolCA');if(!lg)return;
+    lg.innerHTML=cats.filter(c=>c!=='A').map(c=>'<span class="cat-leg-chip" style="border-color:'+CAT_COLORS[c]+'"><span class="cat-leg-dot" style="background:'+CAT_COLORS[c]+'"></span>Cat '+c+' <span class="cat-leg-lupa">🔍</span></span>').join('');
+  })();
+}
+
+// ── Helper Radar CA ─────────────
+function _toggleRadarRow(id){
+  var row=document.getElementById(id);if(!row)return;
+  var open=row.style.display!=='none';
+  row.style.display=open?'none':'';
+  var prev=row.previousElementSibling;
+  if(prev){var chev=prev.querySelector('td:last-child');if(chev)chev.textContent=open?'▼':'▲';}
+}
+function _closeRadarModal(){
+  var m=document.getElementById('_radarModal');if(m)m.style.display='none';
+  document.body.style.overflow='';
+}
+function _openRadarModal(grupo){
+  var m=document.getElementById('_radarModal');if(!m)return;
+  var grupos=window._radarGrupos||{};
+  var cfg=(window._radarSemConfig||{})[grupo];
+  var sem=window._radarSemaforo||function(){return 'monitoreo';};
+  var fK=window._radarFmtK||function(v){return v;};
+  var asos=grupos[grupo]||[];
+  if(!asos.length){return;}
+  // Título
+  document.getElementById('_radarModalTitle').innerHTML=cfg.ico+' '+cfg.label+' — Asociados en riesgo de rodamiento';
+  var nc=asos.reduce(function(s,a){return s+a.creditos.length;},0);
+  var st=asos.reduce(function(s,a){return s+a.saldoTotal;},0);
+  document.getElementById('_radarModalSub').textContent=asos.length+' asociados · '+nc+' créditos · '+fK(st)+' saldo total en riesgo';
+  // Tabla de asociados del grupo con expansión inline
+  var rows=asos.map(function(a,idx){
+    var rowId='_rm_'+grupo+'_'+idx;
+    var nCrit=a.creditos.filter(function(p){return p.DiasRestantes<=5;}).length;
+    var nAlert=a.creditos.filter(function(p){return p.DiasRestantes>5&&p.DiasRestantes<=15;}).length;
+    var miniIcos=(nCrit>0?'<span style="font-size:.68rem;margin-right:2px">🔴×'+nCrit+'</span>':'')
+      +(nAlert>0?'<span style="font-size:.68rem;margin-right:2px">🟡×'+nAlert+'</span>':'');
+    var detRows=a.creditos.map(function(p){
+      var pcfg=(window._radarSemConfig||{})[sem(p.DiasRestantes)]||{col:'#888'};
+      return '<tr style="border-bottom:1px solid #f0f0f0">'
+        +'<td style="padding:.22rem .5rem;font-size:.72rem;color:var(--tx)">'+p.Producto+'</td>'
+        +'<td style="padding:.22rem .5rem;font-size:.72rem;text-align:right;font-family:var(--fm)">'+fK(p.Saldo)+'</td>'
+        +'<td style="padding:.22rem .5rem;font-size:.72rem;text-align:center;font-weight:700;color:#e67e22">'+p.DiasActual+'d</td>'
+        +'<td style="padding:.22rem .5rem;font-size:.72rem;text-align:center;font-weight:700;color:'+pcfg.col+'">'+p.DiasRestantes+'d</td>'
+        +'<td style="padding:.22rem .5rem;font-size:.72rem;text-align:center;color:var(--tx3)">'+p.TipoProducto+'</td>'
+        +'</tr>';
+    }).join('');
+    return '<tr style="cursor:pointer;transition:background .13s;border-bottom:1px solid var(--bord)" onclick="_toggleRadarRow(\''+rowId+'\')" onmouseenter="this.style.background=\'#f0f7f5\'" onmouseleave="this.style.background=\'\'">'
+      +'<td style="padding:.5rem .65rem;font-size:.78rem;font-weight:600;color:var(--g1)">'+a.Cliente+'</td>'
+      +'<td style="padding:.5rem .65rem;font-size:.72rem;color:var(--tx3);font-family:var(--fm)">'+a.Identificacion+'</td>'
+      +'<td style="padding:.5rem .65rem;text-align:center;font-size:.8rem;font-weight:700">'+a.creditos.length+'</td>'
+      +'<td style="padding:.5rem .65rem;text-align:center">'+miniIcos+'</td>'
+      +'<td style="padding:.5rem .65rem;text-align:right;font-family:var(--fm);font-size:.78rem;font-weight:700;color:'+cfg.col+'">'+fK(a.saldoTotal)+'</td>'
+      +'<td style="padding:.5rem .65rem;text-align:center;font-size:.75rem;font-weight:700;color:'+cfg.col+'">'+a.minDias+'d</td>'
+      +'<td style="padding:.5rem .65rem;text-align:center;font-size:.8rem;color:var(--tx3)">▼</td>'
+      +'</tr>'
+      +'<tr id="'+rowId+'" style="display:none"><td colspan="7" style="padding:0 .65rem .65rem 2rem;background:#fafcfb">'
+        +'<div style="overflow-x:auto;border-top:1px solid var(--bord);padding-top:.4rem">'
+        +'<table style="width:100%;border-collapse:collapse">'
+        +'<thead><tr style="border-bottom:1px solid var(--bord)">'
+          +'<th style="padding:.22rem .5rem;text-align:left;font-size:.61rem;font-weight:600;color:var(--tx3)">PRODUCTO</th>'
+          +'<th style="padding:.22rem .5rem;text-align:right;font-size:.61rem;font-weight:600;color:var(--tx3)">SALDO</th>'
+          +'<th style="padding:.22rem .5rem;text-align:center;font-size:.61rem;font-weight:600;color:var(--tx3)">DÍAS MORA</th>'
+          +'<th style="padding:.22rem .5rem;text-align:center;font-size:.61rem;font-weight:600;color:var(--tx3)">FALTAN A→B</th>'
+          +'<th style="padding:.22rem .5rem;text-align:center;font-size:.61rem;font-weight:600;color:var(--tx3)">TIPO</th>'
+        +'</tr></thead><tbody>'+detRows+'</tbody></table></div>'
+      +'</td></tr>';
+  }).join('');
+  document.getElementById('_radarModalBody').innerHTML=
+    '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse">'
+    +'<thead><tr style="border-bottom:2px solid var(--bord)">'
+      +'<th style="padding:.4rem .65rem;text-align:left;font-size:.63rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--tx3)">ASOCIADO</th>'
+      +'<th style="padding:.4rem .65rem;text-align:left;font-size:.63rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--tx3)">IDENTIFICACIÓN</th>'
+      +'<th style="padding:.4rem .65rem;text-align:center;font-size:.63rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--tx3)">CRÉD.</th>'
+      +'<th style="padding:.4rem .65rem;text-align:center;font-size:.63rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--tx3)">ALERTAS</th>'
+      +'<th style="padding:.4rem .65rem;text-align:right;font-size:.63rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--tx3)">SALDO RIESGO</th>'
+      +'<th style="padding:.4rem .65rem;text-align:center;font-size:.63rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--tx3)">MÍN. DÍAS</th>'
+      +'<th style="padding:.4rem .65rem;text-align:center"></th>'
+    +'</tr></thead>'
+    +'<tbody>'+rows+'</tbody></table></div>';
+  m.style.display='flex';
+  document.body.style.overflow='hidden';
 }
 
 // ── Panel tendencia ─────────────
@@ -1448,72 +1612,6 @@ function _spBuildTrend(period){
         y:{ticks:{font:{size:9},color:'#5a8a7a',callback:function(v){return '$'+v.toFixed(1)+' M';}},grid:{color:'#e8ede9'}}}}
   });
 }
-
-/* ── SLIDER HELPERS ─────────────────────────────────────────────────────── */
-// mkSlider(chartId, allLabels, allDatasets, windowSize)
-// Inserta un slider debajo del canvas y actualiza el chart al moverlo.
-// allDatasets: [{data:[...],...}, ...]  — los arrays completos originales.
-function mkSlider(chartId, allLabels, allDatasets, windowSize){
-  var cv = document.getElementById(chartId);
-  if(!cv) return;
-  var chart = Chart.getChart(cv);
-  if(!chart) return;
-  var total = allLabels.length;
-  // Si los datos son menores o iguales a la ventana no hace falta slider
-  if(total <= windowSize){ return; }
-
-  // Contenedor del slider (se inserta inmediatamente después del cwrap que contiene el canvas)
-  var wrap = cv.closest('.cwrap') || cv.parentElement;
-  var sliderWrap = document.createElement('div');
-  sliderWrap.className = 'ch-slider-wrap';
-  sliderWrap.id = 'slw_' + chartId;
-
-  var lbl = document.createElement('span');
-  lbl.className = 'ch-slider-lbl';
-
-  var inp = document.createElement('input');
-  inp.type = 'range';
-  inp.min  = 0;
-  inp.max  = total - windowSize;   // posición del inicio de la ventana
-  inp.value = total - windowSize;  // arranca mostrando los datos más recientes
-  inp.step = 1;
-
-  function applyWindow(){
-    var start = parseInt(inp.value);
-    var end   = start + windowSize;
-    var slice = allLabels.slice(start, end);
-    chart.data.labels = slice;
-    allDatasets.forEach(function(ds, i){
-      chart.data.datasets[i].data = ds.data.slice(start, end);
-    });
-    chart.update('none');  // sin animación para fluidez
-    // Etiqueta: rango visible
-    var f = slice[0] || '';
-    var l = slice[slice.length-1] || '';
-    var fmt = function(d){ return d ? d.slice(8,10)+'/'+d.slice(5,7)+'/'+d.slice(2,4) : ''; };
-    lbl.textContent = fmt(f) + ' – ' + fmt(l);
-    // Actualizar degradado del track
-    var pct = total > windowSize ? (start / (total - windowSize) * 100).toFixed(1) : 100;
-    inp.style.background = 'linear-gradient(to right,var(--g2) 0%,var(--g2) '+pct+'%,var(--bord) '+pct+'%,var(--bord) 100%)';
-  }
-
-  inp.addEventListener('input', applyWindow);
-  sliderWrap.appendChild(inp);
-  sliderWrap.appendChild(lbl);
-  // Insertar después del wrap del canvas
-  if(wrap.parentElement){
-    wrap.parentElement.insertBefore(sliderWrap, wrap.nextSibling);
-  }
-  applyWindow();  // aplicar posición inicial
-}
-
-// Elimina slider previo si existe (para re-renders)
-function rmSlider(chartId){
-  var el = document.getElementById('slw_' + chartId);
-  if(el) el.parentElement.removeChild(el);
-}
-/* ── FIN SLIDER HELPERS ─────────────────────────────────────────────────── */
-
 // BOOT
 document.addEventListener('DOMContentLoaded',function(){
   try{
