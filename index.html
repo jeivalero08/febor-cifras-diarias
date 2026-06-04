@@ -198,6 +198,10 @@ select,input{font-family:var(--ff)}
 #spModalBox .modal-hdr{display:flex;justify-content:space-between;align-items:flex-start;padding:.9rem 1.1rem .7rem;border-bottom:1px solid var(--bd);}
 #spModalBox .modal-body{padding:.9rem 1.1rem;}
 .spCatBtn{padding:3px 11px;border-radius:6px;border:0.5px solid var(--bd);background:var(--bg2);cursor:pointer;font-size:.78rem;font-weight:500;color:var(--tx);}
+.cat-leg-chip{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:8px;border:1.5px solid #ccc;background:var(--bg2);cursor:pointer;font-size:.78rem;font-weight:500;color:var(--tx);transition:opacity .15s;}
+.cat-leg-chip:hover{opacity:.8;}
+.cat-leg-dot{width:10px;height:10px;border-radius:50%;display:inline-block;flex-shrink:0;}
+.cat-leg-lupa{font-size:.7rem;}
 .spCatBtn.on{color:#fff;border-color:transparent;}
 #spMCats{display:flex;gap:5px;flex-wrap:wrap;padding:.5rem 1.1rem .4rem;border-bottom:0.5px solid var(--bd);}
 </style>
@@ -1106,9 +1110,11 @@ function renderMoraDetalleSP(){
   <div id="comparativaSP" style="margin-bottom:.8rem"></div>
   <div class="crow">
     <div class="ccard"><div class="ctop"><div><div class="ctitle">Evolución Cat A — Riesgo Normal</div></div></div>
-      <div class="cwrap h260"><canvas id="chCatSP"></canvas></div></div>
+      <div class="cwrap h260"><canvas id="chCatSP"></canvas></div>
+      <div id="legCatSP" style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;padding:.4rem 0 .2rem"></div></div>
     <div class="ccard"><div class="ctop"><div><div class="ctitle">Evolución cartera</div></div></div>
-      <div style="overflow-x:auto"><div class="cwrap h260" style="min-width:500px"><canvas id="chEvolSP"></canvas></div></div></div>
+      <div style="overflow-x:auto"><div class="cwrap h260" style="min-width:500px"><canvas id="chEvolSP"></canvas></div></div>
+      <div id="legEvolSP" style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;padding:.4rem 0 .2rem"></div></div>
   </div>
   <div id="drillDownSP" style="display:none"></div>`;
   const tRows=cats.map(c=>{
@@ -1137,22 +1143,20 @@ function renderMoraDetalleSP(){
       datasets:[{label:'Cat A',data:data.map(r=>+((r.CatA||0)/1e6).toFixed(2)),
         backgroundColor:CAT_COLORS['A']+'cc',stack:'s'}]},
     options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
-      plugins:{legend:{position:'bottom',labels:{boxWidth:10,font:{size:10},generateLabels:function(ch){var lb=Chart.defaults.plugins.legend.labels.generateLabels(ch);lb.forEach(function(l){l.text='[+] '+l.text;});return lb;}},
-        onClick:function(){showDrillDown('A');}},
+      plugins:{legend:{display:false},
         tooltip:{callbacks:{title:t=>fDt(t[0].label),label:t=>` ${t.dataset.label}: ${t.parsed.y.toLocaleString('es-CO',{minimumFractionDigits:2})} M`}}},
       onClick:(e,els)=>{if(els.length){_CAR_SELECTED_DATE=data[els[0].index]?.Fecha||null;renderCartera();renderMoraDetalleSP();}},
       scales:{x:{ticks:{autoSkip:true,maxTicksLimit:10,font:{size:9},callback:(v,i)=>{const d=data[i]?.Fecha;return d?`${d.slice(8,10)}/${d.slice(5,7)}`:'';}},grid:{display:false}},
         y:{ticks:{font:{size:9},callback:v=>v+' M'},grid:{color:'#e8ede9'},stacked:true}}}});
+  (function(){var lg=document.getElementById('legCatSP');if(!lg)return;
+    lg.innerHTML='<span class="cat-leg-chip cat-pill-anim" style="border-color:'+CAT_COLORS['A']+';outline-color:'+CAT_COLORS['A']+'44" onclick="showDrillDown(\'A\')"><span class="cat-leg-dot" style="background:'+CAT_COLORS['A']+'"></span>Cat A <span class="cat-leg-lupa">\uD83D\uDD0D</span></span>';
+  })();
   dC('chEvolSP');
   new Chart(document.getElementById('chEvolSP'),{type:'bar',
     data:{labels:data.map(r=>r.Fecha),datasets:cats.filter(c=>c!=='A').map(c=>({
       label:'Cat '+c,data:data.map(r=>+((r['Cat'+c]||0)/1e6).toFixed(2)),backgroundColor:CAT_COLORS[c]+'cc',stack:'s'}))},
     options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
-      plugins:{legend:{position:'bottom',labels:{boxWidth:10,font:{size:10},generateLabels:function(ch){var lb=Chart.defaults.plugins.legend.labels.generateLabels(ch);lb.forEach(function(l){l.text='[+] '+l.text;});return lb;}},
-        onClick:function(e,item){
-          var cat=(item.text||'').replace('Cat ','').trim();
-          if(['B','C','D','E'].includes(cat)) showDrillDown(cat);
-        }},
+      plugins:{legend:{display:false},
         tooltip:{callbacks:{title:t=>fDt(t[0].label),label:t=>` ${t.dataset.label}: ${t.parsed.y.toLocaleString('es-CO',{minimumFractionDigits:2})} M`}}},
       onClick:(e,els)=>{
         if(els.length){
@@ -1163,6 +1167,9 @@ function renderMoraDetalleSP(){
       },
       scales:{x:{ticks:{autoSkip:false,maxRotation:45,font:{size:9},callback:(v,i)=>{const d=data[i]?.Fecha;return d?`${d.slice(8,10)}/${d.slice(5,7)}`:'';}},grid:{display:false}},
         y:{ticks:{font:{size:9},callback:v=>v+' M'},grid:{color:'#e8ede9'},stacked:true}}}});
+  (function(){var lg=document.getElementById('legEvolSP');if(!lg)return;
+    lg.innerHTML=cats.filter(c=>c!=='A').map(c=>'<span class="cat-leg-chip" style="border-color:'+CAT_COLORS[c]+'" onclick="showDrillDown(\''+c+'\')"><span class="cat-leg-dot" style="background:'+CAT_COLORS[c]+'"></span>Cat '+c+' <span class="cat-leg-lupa">🔍</span></span>').join('');
+  })();
   // ── Comparativa temporal ──
   (function(){
     var _cDiv=document.getElementById('comparativaSP');
