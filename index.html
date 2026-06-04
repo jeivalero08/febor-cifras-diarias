@@ -921,7 +921,7 @@ function showDrillDown(cat){
 
   const _mc=document.getElementById('spModalContent');
   const _mt=document.getElementById('spModalTitle');
-  if(_mt) _mt.textContent='Detalle Categoría '+cat+' — '+CAT_LABEL[cat];
+  if(_mt) _mt.innerHTML='<span style="font-weight:600;color:var(--ac)">Detalle Categoría '+cat+' — '+CAT_LABEL[cat]+'</span> <span style="font-size:.72rem;color:var(--tx3)">· '+_fDia+'</span> <input type="date" value="'+(l.Fecha||'')+'" style="font-size:.7rem;border:0.5px solid var(--bd);border-radius:4px;padding:1px 4px;background:var(--bg);color:var(--tx);margin-left:4px" onchange="var d=this.value;if(d){_CAR_SELECTED_DATE=d;showDrillDown(\''+cat+'\')}">'
   panel.style.display='none';
   if(_mc) _mc.innerHTML=`
   <div class="ccard span2" style="margin-top:.8rem;border-left:4px solid ${CAT_COLOR[cat]}">
