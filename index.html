@@ -190,6 +190,13 @@ select,input{font-family:var(--ff)}
   .det-back{font-size:.75rem;padding:.3rem .6rem;}
   #wrapMoraCharts{grid-template-columns:1fr!important;}
 }
+@keyframes pulse-border{0%,100%{outline-color:rgba(0,196,140,.15);border-color:#00c48c;}50%{outline-color:rgba(0,196,140,.55);border-color:#00ffb3;}}
+.cat-pill-anim{animation:pulse-border 1.8s ease-in-out infinite;border:1.5px solid #00c48c!important;outline:3px solid rgba(0,196,140,.25);outline-offset:2px;border-radius:8px!important;}
+#spModalOverlay{display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.5);align-items:center;justify-content:center;padding:1rem;}
+#spModalOverlay.active{display:flex;}
+#spModalBox{background:var(--bg);border-radius:12px;border:1px solid var(--bd);width:100%;max-width:680px;max-height:90vh;overflow-y:auto;box-sizing:border-box;}
+#spModalBox .modal-hdr{display:flex;justify-content:space-between;align-items:flex-start;padding:.9rem 1.1rem .7rem;border-bottom:1px solid var(--bd);}
+#spModalBox .modal-body{padding:.9rem 1.1rem;}
 </style>
 <script>
 (function(){
@@ -397,6 +404,15 @@ select,input{font-family:var(--ff)}
   <div id="pgMoraCA" style="display:none"></div>
 </div>
 
+<div id="spModalOverlay" onclick="if(event.target===this){closeSPModal();}">
+  <div id="spModalBox">
+    <div class="modal-hdr">
+      <div id="spModalTitle" style="font-size:.88rem;font-weight:600;color:var(--ac)"></div>
+      <button onclick="closeSPModal()" style="background:none;border:none;cursor:pointer;font-size:1.1rem;color:var(--tx3);line-height:1;">✕</button>
+    </div>
+    <div class="modal-body" id="spModalContent"></div>
+  </div>
+</div>
 <div class="footer" id="footer">Dashboard FEBOR · Evolución de Depósitos · Jeisson Alirio Valero Núñez</div>
 
 <script>
@@ -837,8 +853,18 @@ function showMoraDetalle(tipo){
   else renderMoraDetalleCA();
 }
 
+function openSPModal(){
+  document.getElementById('spModalOverlay').classList.add('active');
+  document.body.style.overflow='hidden';
+}
+function closeSPModal(){
+  document.getElementById('spModalOverlay').classList.remove('active');
+  document.body.style.overflow='';
+  _SP_OPEN_CAT=null;
+}
 function showDrillDown(cat){
   _SP_OPEN_CAT=cat;
+  openSPModal();
   const data=filtrarCar(CAR_F);if(!data.length)return;
   // Usar el último día del período filtrado
   const idx=_CAR_SELECTED_DATE?data.findIndex(r=>r.Fecha===_CAR_SELECTED_DATE):-1;
@@ -880,8 +906,11 @@ function showDrillDown(cat){
   const bar=(p,c)=>`<div style="height:6px;border-radius:3px;background:#e8ede9;margin:.3rem 0">
     <div style="width:${p}%;height:100%;border-radius:3px;background:${c}"></div></div>`;
 
-  panel.style.display='';
-  panel.innerHTML=`
+  const _mc=document.getElementById('spModalContent');
+  const _mt=document.getElementById('spModalTitle');
+  if(_mt) _mt.textContent='Detalle Categoría '+cat+' — '+CAT_LABEL[cat];
+  panel.style.display='none';
+  if(_mc) _mc.innerHTML=`
   <div class="ccard span2" style="margin-top:.8rem;border-left:4px solid ${CAT_COLOR[cat]};animation:fadeIn .2s ease">
     <div class="shdr">
       <div class="shdr-t" style="color:${CAT_COLOR[cat]}">🔍 Detalle Categoría ${cat} — ${CAT_LABEL[cat]}</div>
@@ -978,7 +1007,7 @@ function showDrillDown(cat){
         +'<div style="padding-left:.8rem;">'+rows+'</div>'
         +'</div>';
     };
-    panel.innerHTML+='<div style="margin-top:.8rem;padding:.7rem 1rem;background:var(--bg2);border-radius:8px;border-left:4px solid #c0392b">'
+    if(_mc) _mc.innerHTML+='<div style="margin-top:.8rem;padding:.7rem 1rem;background:var(--bg2);border-radius:8px;border-left:4px solid #c0392b">'
       +'<div style="font-size:.72rem;font-weight:700;color:#c0392b;margin-bottom:.5rem">⚠️ Alerta de vencimientos · '+_lastFecha+'</div>'
       +'<div style="font-size:.68rem;color:var(--tx3);font-style:italic;margin-bottom:.5rem">Créditos con 0 días de mora no se muestran</div>'
       +_alertas.map(function(a){return a.segs?_rowSeg(a):_rowSimple(a);}).join('')
@@ -1095,7 +1124,7 @@ function renderMoraDetalleSP(){
       datasets:[{label:'Cat A',data:data.map(r=>+((r.CatA||0)/1e6).toFixed(2)),
         backgroundColor:CAT_COLORS['A']+'cc',stack:'s'}]},
     options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
-      plugins:{legend:{position:'bottom',labels:{boxWidth:10,font:{size:10}},
+      plugins:{legend:{position:'bottom',labels:{boxWidth:10,font:{size:10},generateLabels:function(ch){var lb=Chart.defaults.plugins.legend.labels.generateLabels(ch);lb.forEach(function(l){l.text='[+] '+l.text;});return lb;}},
         onClick:function(){showDrillDown('A');}},
         tooltip:{callbacks:{title:t=>fDt(t[0].label),label:t=>` ${t.dataset.label}: ${t.parsed.y.toLocaleString('es-CO',{minimumFractionDigits:2})} M`}}},
       onClick:(e,els)=>{if(els.length){_CAR_SELECTED_DATE=data[els[0].index]?.Fecha||null;renderCartera();renderMoraDetalleSP();}},
@@ -1106,7 +1135,7 @@ function renderMoraDetalleSP(){
     data:{labels:data.map(r=>r.Fecha),datasets:cats.filter(c=>c!=='A').map(c=>({
       label:'Cat '+c,data:data.map(r=>+((r['Cat'+c]||0)/1e6).toFixed(2)),backgroundColor:CAT_COLORS[c]+'cc',stack:'s'}))},
     options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
-      plugins:{legend:{position:'bottom',labels:{boxWidth:10,font:{size:10}},
+      plugins:{legend:{position:'bottom',labels:{boxWidth:10,font:{size:10},generateLabels:function(ch){var lb=Chart.defaults.plugins.legend.labels.generateLabels(ch);lb.forEach(function(l){l.text='[+] '+l.text;});return lb;}},
         onClick:function(e,item){
           var cat=(item.text||'').replace('Cat ','').trim();
           if(['B','C','D','E'].includes(cat)) showDrillDown(cat);
@@ -1178,6 +1207,7 @@ function renderMoraDetalleSP(){
   })();
 
   if(_SP_OPEN_CAT) showDrillDown(_SP_OPEN_CAT);
+  if(document.getElementById('spModalOverlay').classList.contains('active')) openSPModal();
 }
 
 function renderMoraDetalleCA(){
