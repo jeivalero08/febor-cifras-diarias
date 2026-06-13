@@ -42,6 +42,24 @@ function aplicarScrollGrafica(canvasId){
     const sc=inner.parentNode;sc.scrollLeft=sc.scrollWidth;
   }catch(e){console.warn('scroll chart',canvasId,e);}
 }
+function quitarScrollGrafica(canvasId){
+  try{
+    const cv=document.getElementById(canvasId);
+    if(!cv)return;
+    const inner=cv.closest('.chart-scroll-inner');
+    if(!inner)return; // no tenía scroll
+    const scroll=inner.parentNode;            // .chart-scroll
+    const host=inner.querySelector('.cwrap')||inner.firstChild;
+    if(host){host.style.width='';host.style.height='';}
+    // devolver el host al lugar del .chart-scroll y eliminar envoltorios + pista
+    scroll.parentNode.insertBefore(host,scroll);
+    const hint=scroll.nextSibling;
+    if(hint&&hint.classList&&hint.classList.contains('chart-scroll-hint'))hint.remove();
+    scroll.remove();
+    const ch=Chart.getChart(cv);
+    if(ch)ch.resize();
+  }catch(e){console.warn('quitar scroll',canvasId,e);}
+}
 function aplicarScrollTodas(){['chDetLine','chMoraSP','chMoraCA'].forEach(aplicarScrollGrafica);}
 </script>
 
@@ -314,7 +332,11 @@ select,input{font-family:var(--ff)}
 #spMCats{display:flex;gap:5px;flex-wrap:wrap;padding:.6rem 1.2rem .5rem;border-bottom:1px solid rgba(255,255,255,.16);}
 
 /* Scroll horizontal en gráficas de detalle/mora */
-.chart-scroll{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;width:100%}
+.chart-scroll{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;width:100%;max-width:100%}
+.ccard{min-width:0}
+.cwrap{min-width:0;max-width:100%}
+.chart-scroll-inner .cwrap{max-width:none}
+.pg{min-width:0;max-width:100%;overflow-x:hidden}
 .chart-scroll::-webkit-scrollbar{height:9px}
 .chart-scroll::-webkit-scrollbar-track{background:rgba(255,255,255,.08);border-radius:6px}
 .chart-scroll::-webkit-scrollbar-thumb{background:rgba(255,255,255,.32);border-radius:6px}
@@ -818,7 +840,8 @@ function renderProd(prod){
       scales:{x:{ticks:{maxTicksLimit:12,font:{size:10},callback:(v,i)=>{const d=data[i]?.Fecha;return d?`${d.slice(8,10)}/${d.slice(5,7)}/${d.slice(2,4)}`:'';}},grid:{display:false}},
         y:{ticks:{font:{size:10},callback:v=>v.toLocaleString('es-CO',{maximumFractionDigits:0})+' M'},grid:{color:'rgba(255,255,255,0.16)'}}}}
   });
-  setTimeout(()=>aplicarScrollGrafica('chDetLine'),50);
+  if(prod!=='Aportes'){setTimeout(()=>aplicarScrollGrafica('chDetLine'),50);}
+  else{quitarScrollGrafica('chDetLine');}
   const bM={};data.forEach(r=>{const k=r.Fecha.slice(0,7);if(!bM[k]){bM[k]={s:0,n:0};}bM[k].s+=r[prod];bM[k].n++;});
   const mks=Object.keys(bM).sort();dC('chDetBar');
   new Chart(document.getElementById('chDetBar'),{type:'bar',
