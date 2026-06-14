@@ -7,7 +7,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
 /* === Scroll horizontal con eje Y fijo (técnica de dos contenedores) === */
-window.__SCROLL_CHARTS={chDetLine:{px:14,vis:60}, chVar:{px:42,vis:24}, chDetBar:{px:34,vis:18}};
+window.__SCROLL_CHARTS={chDetLine:{px:14,vis:60}, chVar:{px:42,vis:24}, chDetBar:{px:34,vis:18}, chMoraSP:{px:22,vis:30}, chMoraCA:{px:22,vis:30}};
 function aplicarScrollGrafica(canvasId){
   try{
     const cv=document.getElementById(canvasId);
@@ -259,7 +259,7 @@ select,input{font-family:var(--ff)}
 .ctitle{font-size:.9rem;font-weight:600;color:#fff;text-shadow:var(--tsh)}
 .csub{font-size:.67rem;color:var(--tx3);margin-top:3px}
 .cwrap{position:relative;overflow:hidden}.cwrap canvas{max-width:100%}
-.h340{height:340px}.h280{height:280px}.h260{height:260px}
+.h340{height:340px}.h280{height:280px}.h260{height:200px}
 .cleg{display:flex;flex-wrap:wrap;gap:10px;margin-top:.9rem}
 .cleg-i{display:flex;align-items:center;gap:5px;font-size:.7rem;color:var(--tx2);cursor:pointer;transition:opacity .14s}
 .cleg-i:hover{opacity:.65}
@@ -556,7 +556,9 @@ select,input{font-family:var(--ff)}
       <div class="cwrap h280"><canvas id="chDetBar"></canvas></div>
     </div>
     <div class="ccard">
-      <div class="ctop"><div><div class="ctitle">Estadísticas del período</div><div class="csub">Análisis descriptivo</div></div></div>
+      <div class="ctop" style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;flex-wrap:wrap"><div><div class="ctitle">Estadísticas del período</div><div class="csub">Análisis descriptivo</div></div>
+        <button id="btnCmpProd" onclick="abrirComparadorProd()" style="display:none;align-items:center;gap:6px;padding:7px 15px;border-radius:10px;background:linear-gradient(135deg,#fdd84e,#FAC616);color:#003d32;font-weight:700;font-size:.74rem;border:none;cursor:pointer;box-shadow:0 4px 14px -3px rgba(250,198,22,.5);white-space:nowrap">⇄ Comparar periodos →</button>
+      </div>
       <div id="detStats" style="padding:.2rem 0"></div>
     </div>
   </div>
@@ -641,6 +643,30 @@ select,input{font-family:var(--ff)}
         <div class="stbl-wrap"><table class="stbl">
           <thead><tr><th>Producto</th><th id="thIni">Periodo A</th><th id="thFin">Periodo B</th><th>Variación $</th><th>Variación %</th></tr></thead>
           <tbody id="cmpBody"><tr><td colspan="5" style="color:var(--tx3);padding:1rem .9rem">Selecciona dos meses y pulsa Comparar.</td></tr></tbody>
+        </table></div>
+      </div>
+    </div>
+<div id="_cmpProdModal" onclick="if(event.target===this)cerrarComparadorProd()" style="display:none;position:fixed;inset:0;background:rgba(0,18,14,.78);backdrop-filter:blur(14px);z-index:900;align-items:flex-start;justify-content:center;padding:2rem 1rem;overflow-y:auto">
+      <div style="background:linear-gradient(150deg,#0a3d33,#062a22 60%,#04211b);border-radius:14px;width:100%;max-width:620px;max-height:88vh;overflow-y:auto;box-shadow:0 24px 60px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.12);border:1px solid var(--glass-bord);padding:1.4rem 1.5rem;position:relative">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1rem;gap:.8rem;flex-wrap:wrap">
+          <div>
+            <div id="cmpProdTitle" style="font-size:.95rem;font-weight:700;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.3)">⇄ Comparador de periodos</div>
+            <div style="font-size:.68rem;color:var(--tx3);margin-top:2px">Elige dos meses y compara su saldo de cierre</div>
+          </div>
+          <button onclick="cerrarComparadorProd()" style="background:none;border:none;cursor:pointer;font-size:1.2rem;color:var(--tx3);line-height:1">✕</button>
+        </div>
+        <div style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin-bottom:1.1rem;padding:.8rem 1rem;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);border-radius:12px">
+          <span style="font-size:.66rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--tx3)">Comparar</span>
+          <select id="cmpProdMesA" class="cmp-sel"></select>
+          <select id="cmpProdAnoA" class="cmp-sel"></select>
+          <span style="color:var(--gold);font-weight:700;font-size:.85rem">vs</span>
+          <select id="cmpProdMesB" class="cmp-sel"></select>
+          <select id="cmpProdAnoB" class="cmp-sel"></select>
+          <button class="btn-apply" style="padding:6px 16px" onclick="aplicarComparacionProd()">Comparar</button>
+        </div>
+        <div class="stbl-wrap"><table class="stbl">
+          <thead><tr><th>Periodo</th><th id="thProdIni">Periodo A</th><th id="thProdFin">Periodo B</th><th>Variación $</th><th>Variación %</th></tr></thead>
+          <tbody id="cmpProdBody"><tr><td colspan="5" style="color:var(--tx3);padding:1rem .9rem">Selecciona dos meses y pulsa Comparar.</td></tr></tbody>
         </table></div>
       </div>
     </div>
@@ -740,6 +766,7 @@ function goProd(prod){
   clearQ('qpDet');document.querySelector('#qpDet .qpill:last-child').classList.add('on');
   showPg('pgProd');setBc('prod',prod);renderProd(prod);
   setExcelBtn(prod==='Aportes');
+  const bcp=document.getElementById('btnCmpProd');if(bcp)bcp.style.display=(prod==='Aportes')?'inline-flex':'none';
 }
 function setBc(v,prod){
   const bc=document.getElementById('bcNav');
@@ -862,6 +889,7 @@ function renderVar(data){
   const vMin=Math.min(...mavg), vMax=Math.max(...mavg);
   const vMargen=(vMax-vMin)*0.25||vMax*0.1||1;
   const yMinV=Math.max(0,vMin-vMargen*2), yMaxV=vMax+vMargen;
+  const usaScrollVar=mks.length>(window.__SCROLL_CHARTS['chVar']?.vis||24);
   // Etiquetas de mes en letras: "Ene 23"
   const MESL=['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
   new Chart(document.getElementById('chVar'),{
@@ -875,7 +903,7 @@ function renderVar(data){
     options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
       plugins:{legend:{display:false},tooltip:{filter:item=>item.datasetIndex===0,callbacks:{label:t=>`Saldo promedio: ${t.parsed.y.toLocaleString('es-CO',{minimumFractionDigits:2,maximumFractionDigits:2})} M`}}},
       scales:{x:{ticks:{maxTicksLimit:24,font:{size:9},maxRotation:45},grid:{display:false}},
-        y:{min:yMinV,max:yMaxV,afterFit:(s)=>{s.width=0;},ticks:{display:false,font:{size:10},callback:v=>v.toLocaleString('es-CO',{maximumFractionDigits:0})+' M'},grid:{color:'rgba(255,255,255,0.16)'}}}}
+        y:usaScrollVar?{min:yMinV,max:yMaxV,afterFit:(s)=>{s.width=0;},ticks:{display:false,font:{size:10},callback:v=>v.toLocaleString('es-CO',{maximumFractionDigits:0})+' M'},grid:{color:'rgba(255,255,255,0.16)'}}:{min:yMinV,max:yMaxV,ticks:{font:{size:10},callback:v=>v.toLocaleString('es-CO',{maximumFractionDigits:0})+' M'},grid:{color:'rgba(255,255,255,0.16)'}}}}
   });
   setTimeout(()=>aplicarScrollGrafica('chVar'),50);
 }
@@ -955,6 +983,45 @@ function aplicarComparacion(){
   document.getElementById('cmpBody').innerHTML=h;
 }
 
+// ===== Comparador de periodos por PRODUCTO (Aportes) =====
+function poblarCmpProdSelectores(){
+  if(!ALL.length||document.getElementById('cmpProdMesA').options.length)return;
+  const meses=[['1','Ene'],['2','Feb'],['3','Mar'],['4','Abr'],['5','May'],['6','Jun'],['7','Jul'],['8','Ago'],['9','Sep'],['10','Oct'],['11','Nov'],['12','Dic']];
+  const anos=[...new Set(ALL.map(r=>r.Fecha.slice(0,4)))].sort();
+  const optM=meses.map(m=>`<option value="${m[0]}">${m[1]}</option>`).join('');
+  const optA=anos.map(a=>`<option value="${a}">${a}</option>`).join('');
+  document.getElementById('cmpProdMesA').innerHTML=optM;
+  document.getElementById('cmpProdMesB').innerHTML=optM;
+  document.getElementById('cmpProdAnoA').innerHTML=optA;
+  document.getElementById('cmpProdAnoB').innerHTML=optA;
+  const first=ALL[0].Fecha,last=ALL[ALL.length-1].Fecha;
+  document.getElementById('cmpProdMesA').value=String(parseInt(first.slice(5,7)));
+  document.getElementById('cmpProdAnoA').value=first.slice(0,4);
+  document.getElementById('cmpProdMesB').value=String(parseInt(last.slice(5,7)));
+  document.getElementById('cmpProdAnoB').value=last.slice(0,4);
+}
+function abrirComparadorProd(){
+  poblarCmpProdSelectores();
+  document.getElementById('cmpProdTitle').textContent=`⇄ Comparador de periodos · ${CUR}`;
+  document.getElementById('_cmpProdModal').style.display='flex';
+}
+function cerrarComparadorProd(){document.getElementById('_cmpProdModal').style.display='none';}
+function aplicarComparacionProd(){
+  const mA=+document.getElementById('cmpProdMesA').value,aA=document.getElementById('cmpProdAnoA').value;
+  const mB=+document.getElementById('cmpProdMesB').value,aB=document.getElementById('cmpProdAnoB').value;
+  const f=cierreMes(aA,mA),l=cierreMes(aB,mB);
+  if(!f||!l){document.getElementById('cmpProdBody').innerHTML='<tr><td colspan="5" style="color:var(--red);padding:1rem .9rem">No hay datos para uno de los meses seleccionados.</td></tr>';return;}
+  document.getElementById('thProdIni').textContent=`${MS_AB[mA]} ${aA}`;
+  document.getElementById('thProdFin').textContent=`${MS_AB[mB]} ${aB}`;
+  const k=CUR; const p=PM[k]||{c:'#34d399'};
+  const v0=f[k],v1=l[k];const d=(v0!=null&&v1!=null)?v1-v0:null,pct=(v0&&d!=null)?(d/v0*100):null;
+  let h=`<tr><td><span class="dc"><span class="dm" style="background:${p.c}"></span>${k}</span></td>
+    <td>${v0!=null?fK(v0):'—'}</td><td>${v1!=null?fK(v1):'—'}</td>
+    <td class="${d==null?'':d>=0?'cup':'cdn'}">${d!=null?(d>=0?'+':'')+fK(d):'—'}</td>
+    <td class="${pct==null?'':pct>=0?'cup':'cdn'}">${pct!=null?fP(pct):'—'}</td></tr>`;
+  document.getElementById('cmpProdBody').innerHTML=h;
+}
+
 function renderTable(data){
   const f=data[0],l=data[data.length-1];let h='',tF=0,tL=0,tA=0;
   PRODS.forEach(p=>{
@@ -1021,6 +1088,7 @@ function renderProd(prod){
   const sMin=Math.min(...serie), sMax=Math.max(...serie);
   const margen=(sMax-sMin)*0.12||Math.abs(sMax)*0.1||1;
   const yMin=sMin-margen, yMax=sMax+margen;
+  const usaScrollDet=data.length>(window.__SCROLL_CHARTS['chDetLine']?.vis||60);
   // Hitos = PRIMER día de cada mes
   const hitos=new Set(); const primPorMes={};
   data.forEach((r,i)=>{const mk=r.Fecha.slice(0,7);if(primPorMes[mk]===undefined)primPorMes[mk]=i;});
@@ -1033,6 +1101,13 @@ function renderProd(prod){
       ctx.save();
       ds.forEach((pt,i)=>{
         if(!hitos.has(i))return;
+        // En Aportes: solo la bolita grande, sin globito de texto (el valor sale al hover)
+        if(prod==='Aportes'){
+          ctx.beginPath();ctx.arc(pt.x,pt.y,5,0,Math.PI*2);
+          ctx.fillStyle=p.c;ctx.fill();
+          ctx.lineWidth=2.5;ctx.strokeStyle='#0a3d33';ctx.stroke();
+          return;
+        }
         const val=serie[i];
         const txt=val.toLocaleString('es-CO',{maximumFractionDigits:0});
         ctx.font="600 10px 'IBM Plex Mono',monospace";
@@ -1065,18 +1140,19 @@ function renderProd(prod){
     options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:28,left:8,right:8}},plugins:{legend:{display:false},
       tooltip:{callbacks:{title:t=>fDt(t[0].label),label:t=>` ${t.parsed.y.toLocaleString('es-CO',{minimumFractionDigits:3,maximumFractionDigits:3})} M`}}},
       scales:{x:{ticks:{autoSkip:false,maxRotation:45,font:{size:9},callback:(v,i)=>{const d=data[i]?.Fecha;if(!d)return '';const mk=d.slice(0,7);const esPrimeroDelMes=(i===0)||(data[i-1]&&data[i-1].Fecha.slice(0,7)!==mk);if(!esPrimeroDelMes)return '';const ML=['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];return `${d.slice(8,10)} ${ML[parseInt(d.slice(5,7))]}`;}},grid:{display:false}},
-        y:{min:yMin,max:yMax,afterFit:(s)=>{s.width=0;},ticks:{display:false,font:{size:10},callback:v=>v.toLocaleString('es-CO',{maximumFractionDigits:0})+' M'},grid:{color:'rgba(255,255,255,0.16)'}}}}
+        y:usaScrollDet?{min:yMin,max:yMax,afterFit:(s)=>{s.width=0;},ticks:{display:false,font:{size:10},callback:v=>v.toLocaleString('es-CO',{maximumFractionDigits:0})+' M'},grid:{color:'rgba(255,255,255,0.16)'}}:{min:yMin,max:yMax,ticks:{font:{size:10},callback:v=>v.toLocaleString('es-CO',{maximumFractionDigits:0})+' M'},grid:{color:'rgba(255,255,255,0.16)'}}}}
   });
   if(prod!=='Aportes'){setTimeout(()=>aplicarScrollGrafica('chDetLine'),50);}
   else{quitarScrollGrafica('chDetLine');}
   const bM={};data.forEach(r=>{const k=r.Fecha.slice(0,7);if(!bM[k]){bM[k]={s:0,n:0};}bM[k].s+=r[prod];bM[k].n++;});
   const mks=Object.keys(bM).sort();dC('chDetBar');
+  const usaScrollBar=mks.length>(window.__SCROLL_CHARTS['chDetBar']?.vis||18);
   new Chart(document.getElementById('chDetBar'),{type:'bar',
     data:{labels:mks.map(k=>`${MS[parseInt(k.slice(5,7))]} ${k.slice(2,4)}`),
       datasets:[{label:'Prom',data:mks.map(k=>+(bM[k].s/bM[k].n/1e6).toFixed(3)),backgroundColor:p.c+'99',borderColor:p.c,borderWidth:1,borderRadius:4}]},
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:t=>` ${t.parsed.y.toLocaleString('es-CO',{minimumFractionDigits:2,maximumFractionDigits:2})} M`}}},
       scales:{x:{ticks:{maxTicksLimit:14,font:{size:10},maxRotation:45},grid:{display:false}},
-        y:{afterFit:(s)=>{s.width=0;},ticks:{display:false,font:{size:10},callback:v=>v.toLocaleString('es-CO',{maximumFractionDigits:0})+' M'},grid:{color:'rgba(255,255,255,0.16)'}}}}
+        y:usaScrollBar?{afterFit:(s)=>{s.width=0;},ticks:{display:false,font:{size:10},callback:v=>v.toLocaleString('es-CO',{maximumFractionDigits:0})+' M'},grid:{color:'rgba(255,255,255,0.16)'}}:{ticks:{font:{size:10},callback:v=>v.toLocaleString('es-CO',{maximumFractionDigits:0})+' M'},grid:{color:'rgba(255,255,255,0.16)'}}}}
   });
   setTimeout(()=>aplicarScrollGrafica('chDetBar'),50);
   const t12=data.length>=12?((data[data.length-1][prod]-data[data.length-12][prod])/data[data.length-12][prod]*100):null;
@@ -1191,20 +1267,68 @@ function renderCartera(){
   const mkMini=(id,getVal,color)=>{
     dC(id);
     if(!document.getElementById(id))return;
+    const serie=data.map(r=>+((getVal(r)||0)).toFixed(3));
+    const sMin=Math.min(...serie),sMax=Math.max(...serie);
+    const mg=(sMax-sMin)*0.35||sMax*0.1||1;
+    const yMn=Math.max(0,sMin-mg),yMx=sMax+mg;
+    // ¿Hay suficientes datos para activar scroll? (umbral igual al config)
+    const cfg=window.__SCROLL_CHARTS[id]||{vis:50};
+    const usaScroll=data.length>cfg.vis;
+    const ML=['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+    // Hitos: si hay scroll, primer día de cada mes; si no (pocos datos), TODOS los días
+    const hits=new Set();
+    if(usaScroll){const pm={};data.forEach((r,i)=>{const mk=r.Fecha.slice(0,7);if(pm[mk]===undefined)pm[mk]=i;});Object.values(pm).forEach(i=>hits.add(i));}
+    else{data.forEach((r,i)=>hits.add(i));}
+    const globMora={
+      id:'glob'+id,
+      afterDatasetsDraw(chart){
+        const {ctx}=chart;const ds=chart.getDatasetMeta(0).data;const area=chart.chartArea;
+        ctx.save();
+        ds.forEach((pt,i)=>{
+          if(!hits.has(i))return;
+          // siempre dibuja la bolita
+          ctx.beginPath();ctx.arc(pt.x,pt.y,4,0,Math.PI*2);ctx.fillStyle=color;ctx.fill();
+          ctx.lineWidth=2;ctx.strokeStyle='#0a3d33';ctx.stroke();
+          // globito con % solo si hay scroll (en hitos mensuales). Con pocos datos, el valor sale al hover
+          if(!usaScroll)return;
+          const txt=serie[i].toFixed(2)+'%';
+          ctx.font="600 9px 'IBM Plex Mono',monospace";
+          const w=ctx.measureText(txt).width+12;
+          let cxg=pt.x;
+          if(cxg-w/2<area.left+2)cxg=area.left+2+w/2;
+          if(cxg+w/2>area.right-2)cxg=area.right-2-w/2;
+          const bx=cxg-w/2,by=pt.y-22,h=16;
+          ctx.fillStyle='rgba(255,255,255,.92)';
+          ctx.beginPath();if(ctx.roundRect)ctx.roundRect(bx,by,w,h,8);else ctx.rect(bx,by,w,h);ctx.fill();
+          ctx.fillStyle='#0a3d33';ctx.textAlign='center';ctx.textBaseline='middle';
+          ctx.fillText(txt,cxg,by+h/2+1);
+        });
+        ctx.restore();
+      }
+    };
+    // El eje Y solo se oculta si va a haber panel fijo (scroll). Si no, eje Y normal.
+    const yScale=usaScroll
+      ? {min:yMn,max:yMx,afterFit:(s)=>{s.width=0;},ticks:{display:false,font:{size:9},callback:v=>v.toFixed(1)+'%'},grid:{color:'rgba(255,255,255,0.16)'}}
+      : {min:yMn,max:yMx,ticks:{font:{size:9},callback:v=>v.toFixed(1)+'%'},grid:{color:'rgba(255,255,255,0.16)'}};
+    // Eje X: con scroll = primer día de cada mes; sin scroll = pocas etiquetas auto
+    const xTicks=usaScroll
+      ? {autoSkip:false,maxRotation:45,font:{size:9},callback:(v,i)=>{const d=data[i]?.Fecha;if(!d)return '';const mk=d.slice(0,7);const esP=(i===0)||(data[i-1]&&data[i-1].Fecha.slice(0,7)!==mk);if(!esP)return '';return `${d.slice(8,10)} ${ML[parseInt(d.slice(5,7))]}`;}}
+      : {autoSkip:false,maxRotation:45,minRotation:45,font:{size:9},callback:(v,i)=>{const d=data[i]?.Fecha;if(!d)return '';const paso=data.length<=16?1:(data.length<=30?2:3);if(i%paso!==0&&i!==data.length-1)return '';return `${d.slice(8,10)}/${d.slice(5,7)}`;}};
     new Chart(document.getElementById(id),{type:'line',
       data:{labels:data.map(r=>r.Fecha),datasets:[{
-        data:data.map(r=>+((getVal(r)||0)).toFixed(3)),
-        borderColor:color,backgroundColor:color+'22',borderWidth:2.5,
+        data:serie,
+        borderColor:color,borderWidth:3,
+        backgroundColor:(c)=>{const{ctx,chartArea}=c.chart;if(!chartArea)return color+'22';const g=ctx.createLinearGradient(0,chartArea.top,0,chartArea.bottom);g.addColorStop(0,color+'55');g.addColorStop(1,color+'05');return g;},
         pointRadius:0,pointHoverRadius:7,pointHitRadius:14,pointBackgroundColor:color,pointBorderColor:'#fff',pointBorderWidth:2.5,tension:0.4,fill:true}]},
-      options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+      plugins:[globMora],
+      options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},layout:{padding:{top:24,left:6,right:6}},
         plugins:{legend:{display:false},tooltip:{callbacks:{
           title:t=>fDt(t[0].label),label:t=>` ${t.parsed.y.toFixed(2)}%`}}},
-        scales:{
-          x:{ticks:{maxTicksLimit:9,font:{size:9},callback:(v,i)=>{const d=data[i]?.Fecha;return d?`${d.slice(8,10)}/${d.slice(5,7)}`:'';}},grid:{display:false}},
-          y:{ticks:{font:{size:9},callback:v=>v.toFixed(1)+'%'},grid:{color:'rgba(255,255,255,0.16)'},suggestedMin:0}}}});
-    setTimeout(()=>{if(window.__SCROLL_CHARTS[id])aplicarScrollGrafica(id);else quitarScrollGrafica(id);},50);
+        scales:{x:{ticks:xTicks,grid:{display:false}},y:yScale}}});
+    if(usaScroll)setTimeout(()=>aplicarScrollGrafica(id),50);
+    else quitarScrollGrafica(id);
   };
-  mkMini('chMoraSP',r=>r.IndiceMora,'#fb7185');
+  mkMini('chMoraSP',r=>r.IndiceMora,'#fb4d63');
   mkMini('chMoraCA',r=>r.IndiceMoraCA,'#f43f5e');
   // Clic en punto de mora SP → actualiza detalle con ese día
   const spChart=Chart.getChart(document.getElementById('chMoraSP'));
@@ -1556,7 +1680,7 @@ function renderMoraDetalleSP(){
       plugins:{legend:{display:false},
         tooltip:{callbacks:{title:t=>fDt(t[0].label),label:t=>` ${t.dataset.label}: ${t.parsed.y.toLocaleString('es-CO',{minimumFractionDigits:2})} M`}}},
       onClick:(e,els)=>{if(els.length){_CAR_SELECTED_DATE=data[els[0].index]?.Fecha||null;renderCartera();renderMoraDetalleSP();}},
-      scales:{x:{ticks:{autoSkip:true,maxTicksLimit:10,font:{size:9},callback:(v,i)=>{const d=data[i]?.Fecha;return d?`${d.slice(8,10)}/${d.slice(5,7)}`:'';}},grid:{display:false}},
+      scales:{x:{ticks:{autoSkip:false,maxRotation:45,minRotation:45,font:{size:8},callback:(v,i)=>{const d=data[i]?.Fecha;if(!d)return '';const paso=data.length<=16?1:(data.length<=35?2:3);if(i%paso!==0&&i!==data.length-1)return '';return `${d.slice(8,10)}/${d.slice(5,7)}`;}},grid:{display:false}},
         y:{ticks:{font:{size:9},callback:v=>v+' M'},grid:{color:'rgba(255,255,255,0.16)'},stacked:true}}}});
   (function(){var lg=document.getElementById('legCatSP');if(!lg)return;
     lg.innerHTML='<span class="cat-leg-chip cat-pill-anim" style="border-color:'+CAT_COLORS['A']+';outline-color:'+CAT_COLORS['A']+'44" onclick="showDrillDown(\'A\')"><span class="cat-leg-dot" style="background:'+CAT_COLORS['A']+'"></span>Cat A <span class="cat-leg-lupa">\uD83D\uDD0D</span></span>';
@@ -1606,25 +1730,26 @@ function renderMoraDetalleSP(){
         +(d>=0?'+':'')+d+'pp</span>';
     };
     var _card=function(titulo,d,accentColor,dashed,refMora){
-      var border=dashed?'border:0.5px dashed var(--color-border-tertiary)':'border:0.5px solid var(--color-border-tertiary)';
+      var border=dashed?'border:1px dashed rgba(255,255,255,.3)':'border:1px solid rgba(255,255,255,.18)';
       var cats=['A','B','C','D','E'];
-      var catColors={A:'var(--color-text-primary)',B:'#B7950B',C:'#D35400',D:'#c0392b',E:'#8b0000'};
+      var catColors={A:'#fff',B:'#FAC616',C:'#e67e22',D:'#fb7185',E:'#ff8a8a'};
       var catHtml=cats.map(function(c){
         var span=c==='E'?'grid-column:1/-1':'';
         var val=d?_fmtM(d['Cat'+c]):'—';
-        return '<div style="background:var(--color-background-secondary);border-radius:6px;padding:4px 7px;'+span+'">'
-          +'<div style="font-size:10px;color:var(--color-text-tertiary)">Cat '+c+'</div>'
-          +'<div style="font-size:11px;font-weight:500;color:'+catColors[c]+'">'+val+'</div>'
+        return '<div style="background:rgba(255,255,255,.08);border-radius:6px;padding:4px 7px;'+span+'">'
+          +'<div style="font-size:10px;color:rgba(255,255,255,.6)">Cat '+c+'</div>'
+          +'<div style="font-size:11px;font-weight:600;color:'+catColors[c]+'">'+val+'</div>'
           +'</div>';
       }).join('');
       var mora=d?(d.IndiceMora||0).toFixed(2)+'%':'—';
       var delta=refMora!==undefined&&d?_deltaTag(d.IndiceMora||0,refMora):'';
-      return '<div style="background:var(--color-background-primary);'+border+';border-radius:var(--border-radius-lg);padding:.9rem 1rem;border-top:3px solid '+accentColor+'">'
-        +'<div style="font-size:10px;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">'+titulo+'</div>'
-        +'<div style="font-size:13px;font-weight:500;color:var(--color-text-primary);margin-bottom:8px">'+_fmtFecha(d?d.Fecha:'')+'</div>'
-        +'<div style="font-size:22px;font-weight:500;color:'+accentColor+';margin-bottom:1px">'+mora+'</div>'
-        +'<div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:3px">índice mora SP '+delta+'</div>'
-        +'<div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:8px">'+_fmtM(d?d.CarteraTotal:0)+'</div>'
+      var accTxt=(accentColor==='#005648')?'#34d399':'#fff';
+      return '<div style="background:linear-gradient(150deg,#0a3d33,#062a22 70%);'+border+';border-radius:14px;padding:.9rem 1rem;border-top:3px solid '+(accentColor==='#005648'?'#34d399':accentColor)+';box-shadow:0 8px 24px -6px rgba(0,0,0,.4)">'
+        +'<div style="font-size:10px;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">'+titulo+'</div>'
+        +'<div style="font-size:13px;font-weight:600;color:#fff;margin-bottom:8px">'+_fmtFecha(d?d.Fecha:'')+'</div>'
+        +'<div style="font-size:22px;font-weight:700;color:'+accTxt+';margin-bottom:1px">'+mora+'</div>'
+        +'<div style="font-size:11px;color:rgba(255,255,255,.7);margin-bottom:3px">índice mora SP '+delta+'</div>'
+        +'<div style="font-size:11px;color:rgba(255,255,255,.7);margin-bottom:8px">'+_fmtM(d?d.CarteraTotal:0)+'</div>'
         +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:3px">'+catHtml+'</div>'
         +'</div>';
     };
@@ -1649,7 +1774,7 @@ function renderMoraDetalleCA(){
   renderCartera();
   // Chip de fecha
   const _fmtFechaCA=function(f){return f?f.slice(8,10)+'/'+f.slice(5,7)+'/'+f.slice(0,4):'';};
-  const _fechaChip=l.Fecha?'<span style="display:inline-flex;align-items:center;padding:2px 9px;border-radius:20px;background:#e8f5ee;color:#1a7a42;font-size:.68rem;font-weight:600;font-family:var(--fm);margin-left:.4rem">📅 '+_fmtFechaCA(l.Fecha)+'</span>':'';
+  const _fechaChip=l.Fecha?'<span style="display:inline-flex;align-items:center;padding:2px 9px;border-radius:20px;background:rgba(52,211,153,.18);color:#34d399;font-size:.68rem;font-weight:600;font-family:var(--fm);margin-left:.4rem;border:1px solid rgba(52,211,153,.3)">📅 '+_fmtFechaCA(l.Fecha)+'</span>':'';
   const cats=['A','B','C','D','E'],catColors=cats.map(c=>CAT_COLORS[c]);
   const hasDetalle=(l.CA_B||0)+(l.CA_C||0)+(l.CA_D||0)>0;
   let h=`<div style="display:flex;align-items:center;gap:.8rem;margin:.6rem 0 .8rem;flex-wrap:wrap">
@@ -1735,7 +1860,7 @@ function renderMoraDetalleCA(){
       const miniIcos=(nCrit>0?'<span style="font-size:.68rem;margin-right:2px">🔴×'+nCrit+'</span>':'')
         +(nAlert>0?'<span style="font-size:.68rem;margin-right:2px">🟡×'+nAlert+'</span>':'');
       const rowId='_caRad_'+idx;
-      return '<tr style="cursor:pointer;transition:background .13s" onclick="_toggleRadarRow(\''+rowId+'\')" onmouseenter="this.style.background=\'#f0f7f5\'" onmouseleave="this.style.background=\'\'">'
+      return '<tr style="cursor:pointer;transition:background .13s" onclick="_toggleRadarRow(\''+rowId+'\')" onmouseenter="this.style.background=\'rgba(255,255,255,.06)\'" onmouseleave="this.style.background=\'\'">'
         +'<td style="padding:.45rem .65rem">'
           +'<span style="display:inline-flex;align-items:center;gap:4px;padding:2px 7px;border-radius:20px;font-size:.68rem;font-weight:700;background:'+cfg.bg+';color:'+cfg.col+'">'+cfg.ico+' '+cfg.label+'</span>'
         +'</td>'
@@ -1748,7 +1873,7 @@ function renderMoraDetalleCA(){
         +'<td style="padding:.45rem .65rem;text-align:center;font-size:.8rem;color:var(--tx3)">▼</td>'
         +'</tr>'
         // Fila expandible con detalle de créditos del asociado
-        +'<tr id="'+rowId+'" style="display:none"><td colspan="8" style="padding:0 .65rem .65rem 2rem;background:#fafcfb">'
+        +'<tr id="'+rowId+'" style="display:none"><td colspan="8" style="padding:0 .65rem .65rem 2rem;background:rgba(255,255,255,.04)">'
           +'<div style="overflow-x:auto;border-top:1px solid var(--bord);padding-top:.4rem">'
           +'<table style="width:100%;border-collapse:collapse;font-size:.73rem">'
           +'<thead><tr style="border-bottom:1px solid var(--bord)">'
@@ -1810,7 +1935,7 @@ function renderMoraDetalleCA(){
       plugins:{legend:{display:false},
         tooltip:{callbacks:{title:t=>fDt(t[0].label),label:t=>` ${t.dataset.label}: ${t.parsed.y.toLocaleString('es-CO',{minimumFractionDigits:2})} M`}}},
       onClick:(e,els)=>{if(els.length){_CAR_SELECTED_DATE=data[els[0].index]?.Fecha||null;renderCartera();renderMoraDetalleCA();}},
-      scales:{x:{ticks:{autoSkip:true,maxTicksLimit:10,font:{size:9},callback:(v,i)=>{const d=data[i]?.Fecha;return d?`${d.slice(8,10)}/${d.slice(5,7)}`:'';}},grid:{display:false}},
+      scales:{x:{ticks:{autoSkip:false,maxRotation:45,minRotation:45,font:{size:8},callback:(v,i)=>{const d=data[i]?.Fecha;if(!d)return '';const paso=data.length<=16?1:(data.length<=35?2:3);if(i%paso!==0&&i!==data.length-1)return '';return `${d.slice(8,10)}/${d.slice(5,7)}`;}},grid:{display:false}},
         y:{ticks:{font:{size:9},callback:v=>v+' M'},grid:{color:'rgba(255,255,255,0.16)'},stacked:true}}}});
   (function(){var lg=document.getElementById('legCatCA');if(!lg)return;
     lg.innerHTML='<span class="cat-leg-chip cat-pill-anim" style="border-color:'+CAT_COLORS['A']+';outline-color:'+CAT_COLORS['A']+'44"><span class="cat-leg-dot" style="background:'+CAT_COLORS['A']+'"></span>Cat A (arrastre)</span>';
@@ -1873,7 +1998,7 @@ function _openRadarModal(grupo){
         +'<td style="padding:.22rem .5rem;font-size:.72rem;text-align:center;color:var(--tx3)">'+p.TipoProducto+'</td>'
         +'</tr>';
     }).join('');
-    return '<tr style="cursor:pointer;transition:background .13s;border-bottom:1px solid var(--bord)" onclick="_toggleRadarRow(\''+rowId+'\')" onmouseenter="this.style.background=\'#f0f7f5\'" onmouseleave="this.style.background=\'\'">'
+    return '<tr style="cursor:pointer;transition:background .13s;border-bottom:1px solid var(--bord)" onclick="_toggleRadarRow(\''+rowId+'\')" onmouseenter="this.style.background=\'rgba(255,255,255,.06)\'" onmouseleave="this.style.background=\'\'">'
       +'<td style="padding:.5rem .65rem;font-size:.78rem;font-weight:600;color:var(--g1)">'+a.Cliente+'</td>'
       +'<td style="padding:.5rem .65rem;font-size:.72rem;color:var(--tx3);font-family:var(--fm)">'+a.Identificacion+'</td>'
       +'<td style="padding:.5rem .65rem;text-align:center;font-size:.8rem;font-weight:700">'+a.creditos.length+'</td>'
@@ -1882,7 +2007,7 @@ function _openRadarModal(grupo){
       +'<td style="padding:.5rem .65rem;text-align:center;font-size:.75rem;font-weight:700;color:'+cfg.col+'">'+a.minDias+'d</td>'
       +'<td style="padding:.5rem .65rem;text-align:center;font-size:.8rem;color:var(--tx3)">▼</td>'
       +'</tr>'
-      +'<tr id="'+rowId+'" style="display:none"><td colspan="7" style="padding:0 .65rem .65rem 2rem;background:#fafcfb">'
+      +'<tr id="'+rowId+'" style="display:none"><td colspan="7" style="padding:0 .65rem .65rem 2rem;background:rgba(255,255,255,.04)">'
         +'<div style="overflow-x:auto;border-top:1px solid var(--bord);padding-top:.4rem">'
         +'<table style="width:100%;border-collapse:collapse">'
         +'<thead><tr style="border-bottom:1px solid var(--bord)">'
