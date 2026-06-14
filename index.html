@@ -6,56 +6,88 @@
 <title>FEBOR · Evolución Diaria de Saldos</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
-/* === Scroll horizontal para gráficas seleccionadas === */
-/* Por gráfica: {px: ancho por punto, vis: puntos visibles antes de activar scroll} */
-window.__SCROLL_CHARTS={chDetLine:{px:14,vis:60}, chVar:{px:42,vis:24}};
+/* === Scroll horizontal con eje Y fijo (técnica de dos contenedores) === */
+window.__SCROLL_CHARTS={chDetLine:{px:14,vis:60}, chVar:{px:42,vis:24}, chDetBar:{px:34,vis:18}};
 function aplicarScrollGrafica(canvasId){
   try{
     const cv=document.getElementById(canvasId);
     const cfg=window.__SCROLL_CHARTS[canvasId];
     if(!cv||!cfg)return;
+    const card=cv.closest('.ccard');
+    // limpiar restos de versiones anteriores
+    if(card){card.querySelectorAll('.yaxis-fijo').forEach(y=>y.remove());}
+    // si el canvas NO está en un chart-row pero hay uno huérfano en la tarjeta, quitarlo
+    if(card && !cv.closest('.chart-row')){
+      card.querySelectorAll('.chart-row').forEach(r=>{
+        const h=r.querySelector('.cwrap');
+        if(h){h.style.width='';h.style.height='';r.parentNode.insertBefore(h,r);}
+        r.remove();
+      });
+      card.querySelectorAll('.chart-scroll-hint').forEach(h=>h.remove());
+    }
     const ch=Chart.getChart(cv);
     if(!ch)return;
     const nPts=(ch.data&&ch.data.labels)?ch.data.labels.length:0;
     if(nPts<=cfg.vis)return; // si caben, no hace falta scroll
-    // Envolver el canvas en un contenedor scrollable (una sola vez)
-    let inner=cv.parentNode;
-    if(!inner.classList.contains('chart-scroll-inner')){
+    // Envolver una sola vez: [ ejeYfijo | área-scroll(canvas) ]
+    let row=cv.closest('.chart-row');
+    if(!row){
       const host=cv.closest('.cwrap')||cv.parentNode;
+      if(card)card.querySelectorAll('.chart-scroll-hint').forEach(h=>h.remove());
+      row=document.createElement('div');row.className='chart-row';
+      const yfix=document.createElement('div');yfix.className='yfix';
       const scroll=document.createElement('div');scroll.className='chart-scroll';
       const innerDiv=document.createElement('div');innerDiv.className='chart-scroll-inner';
-      host.parentNode.insertBefore(scroll,host);
+      host.parentNode.insertBefore(row,host);
+      row.appendChild(yfix);row.appendChild(scroll);
       scroll.appendChild(innerDiv);innerDiv.appendChild(host);
-      // pista visual
+      host.style.height='100%';host.style.width='100%';
       const hint=document.createElement('div');hint.className='chart-scroll-hint';
       hint.textContent='Desplázate horizontalmente para ver más períodos →';
-      scroll.parentNode.insertBefore(hint,scroll.nextSibling);
-      inner=innerDiv;host.style.height='100%';
+      row.parentNode.insertBefore(hint,row.nextSibling);
     }
-    // Ancho dinámico según px por punto de esta gráfica
-    const anchoTotal=Math.max(nPts*cfg.px, inner.parentNode.clientWidth);
-    inner.style.width=anchoTotal+'px';
-    const host=inner.querySelector('.cwrap')||inner.firstChild;
+    const innerDiv=row.querySelector('.chart-scroll-inner');
+    const anchoTotal=Math.max(nPts*cfg.px, innerDiv.parentNode.clientWidth);
+    innerDiv.style.width=anchoTotal+'px';
+    const host=innerDiv.querySelector('.cwrap')||innerDiv.firstChild;
     if(host)host.style.width=anchoTotal+'px';
     ch.resize();
-    // posicionar el scroll al final (datos más recientes)
-    const sc=inner.parentNode;sc.scrollLeft=sc.scrollWidth;
+    // dibujar el eje Y fijo a partir de la escala real
+    setTimeout(()=>dibujarEjeYFijo(canvasId,ch),40);
+    const sc=innerDiv.parentNode;sc.scrollLeft=sc.scrollWidth;
   }catch(e){console.warn('scroll chart',canvasId,e);}
+}
+function dibujarEjeYFijo(canvasId,ch){
+  try{
+    const cv=document.getElementById(canvasId);
+    const row=cv.closest('.chart-row');if(!row)return;
+    const yfix=row.querySelector('.yfix');if(!yfix)return;
+    const yScale=ch.scales.y;
+    const area=ch.chartArea;
+    const cv_h=ch.height; // alto del canvas
+    yfix.style.height=cv_h+'px';
+    let html='';
+    yScale.ticks.forEach(t=>{
+      const yPix=yScale.getPixelForValue(t.value);
+      const txt=t.value.toLocaleString('es-CO',{maximumFractionDigits:0})+' M';
+      html+=`<div style="position:absolute;right:7px;top:${yPix}px;transform:translateY(-50%);font-size:10px;color:rgba(255,255,255,.72);font-family:monospace;white-space:nowrap">${txt}</div>`;
+    });
+    yfix.innerHTML=html;
+  }catch(e){console.warn('eje Y fijo',e);}
 }
 function quitarScrollGrafica(canvasId){
   try{
     const cv=document.getElementById(canvasId);
     if(!cv)return;
-    const inner=cv.closest('.chart-scroll-inner');
-    if(!inner)return; // no tenía scroll
-    const scroll=inner.parentNode;            // .chart-scroll
-    const host=inner.querySelector('.cwrap')||inner.firstChild;
+    const row=cv.closest('.chart-row');
+    if(!row)return; // no tenía scroll
+    const host=cv.closest('.cwrap')||cv.parentNode;
     if(host){host.style.width='';host.style.height='';}
-    // devolver el host al lugar del .chart-scroll y eliminar envoltorios + pista
-    scroll.parentNode.insertBefore(host,scroll);
-    const hint=scroll.nextSibling;
+    // devolver el host a su lugar original y eliminar el row + pista + eje fijo
+    row.parentNode.insertBefore(host,row);
+    const hint=row.nextSibling;
     if(hint&&hint.classList&&hint.classList.contains('chart-scroll-hint'))hint.remove();
-    scroll.remove();
+    row.remove();
     const ch=Chart.getChart(cv);
     if(ch)ch.resize();
   }catch(e){console.warn('quitar scroll',canvasId,e);}
@@ -116,6 +148,13 @@ select,input{font-family:var(--ff)}
 .hdr-date{font-size:.67rem;color:rgba(255,255,255,.6);font-family:var(--fm)}
 .btn-h{display:flex;align-items:center;gap:5px;padding:7px 15px;border-radius:var(--r-sm);font-size:.74rem;font-weight:500;transition:all .18s;white-space:nowrap;backdrop-filter:blur(10px)}
 .btn-h.gold{background:linear-gradient(135deg,var(--gold-l),var(--gold));color:var(--g0);font-weight:700;box-shadow:0 4px 16px -2px var(--gold-glow)}
+.btn-h-inicio{display:inline-flex;align-items:center;gap:5px;padding:7px 16px;border-radius:20px;font-family:var(--ff);font-size:.78rem;font-weight:800;cursor:pointer;color:#003d32;background:linear-gradient(135deg,#fdd84e,#FAC616);border:1.5px solid rgba(255,255,255,.5);white-space:nowrap;animation:inicioPulso 1.8s ease-in-out infinite;transition:transform .15s}
+.btn-h-inicio:hover{transform:scale(1.05);animation-play-state:paused}
+@keyframes inicioPulso{
+  0%{box-shadow:0 0 0 0 rgba(250,198,22,.7),0 0 10px 1px rgba(250,198,22,.45)}
+  50%{box-shadow:0 0 0 8px rgba(250,198,22,0),0 0 18px 5px rgba(250,198,22,.8)}
+  100%{box-shadow:0 0 0 0 rgba(250,198,22,0),0 0 10px 1px rgba(250,198,22,.45)}
+}
 .btn-h.gold:hover{transform:translateY(-1px);box-shadow:0 7px 22px -2px var(--gold-glow)}
 .btn-h.outline{background:rgba(255,255,255,.16);color:#fff;border:1px solid rgba(255,255,255,.32)}
 .btn-h.outline:hover{background:rgba(255,255,255,.26)}
@@ -129,6 +168,16 @@ select,input{font-family:var(--ff)}
 .cmp-sel{padding:5px 9px;border:1px solid rgba(255,255,255,.28);border-radius:9px;font-size:.74rem;color:#fff;background:rgba(255,255,255,.12);font-family:var(--ff);cursor:pointer;outline:none}
 .cmp-sel:focus{border-color:var(--gold)}
 .cmp-sel option{background:#0a3d33;color:#fff}
+
+@media(max-width:640px){}
+
+
+
+@media(max-width:640px){}
+.chart-row{display:flex;align-items:stretch;width:100%}
+.yfix{position:relative;flex-shrink:0;width:62px;border-right:1px solid rgba(255,255,255,.12)}
+.chart-row .chart-scroll{flex:1;min-width:0}
+.yaxis-fijo{transition:none}
 .pg{display:none;padding:1.9rem 2rem 4rem}
 #pgMenu.on{display:flex;min-height:calc(100vh - 130px);align-items:center}
 .menu-wrap{margin:auto;width:100%;max-width:1180px;padding:1rem 0}
@@ -381,12 +430,13 @@ select,input{font-family:var(--ff)}
     </div>
   </div>
   <div class="hdr-r">
+    <button class="btn-h-inicio" id="btnInicio" onclick="goMenu()" style="display:none">⌂ Inicio</button>
     <span class="hdr-date" id="hdrDate">—</span>
     <button class="btn-h gold" id="btnExcel" onclick="downloadExcel()" style="display:none">⬇ Descargar Excel</button>
   </div>
 </header>
 
-<nav class="bc" id="bcNav"><span class="bc-item on" onclick="goMenu()">Inicio</span></nav>
+<nav class="bc" id="bcNav"><span class="bc-item on" onclick="goMenu()">Inicio</span><div id="prodTabs" style="display:flex;gap:.4rem;flex-wrap:wrap;margin-left:auto"></div></nav>
 
 <!-- MENU -->
 <div class="pg on" id="pgMenu">
@@ -677,7 +727,7 @@ function applyDetDate(){const f=document.getElementById('dFrom').value,t=documen
 function clearDetDate(){D={days:0,from:ALL[0]?.Fecha||'',to:ALL[ALL.length-1]?.Fecha||''};document.getElementById('dFrom').value=D.from;document.getElementById('dTo').value=D.to;clearQ('qpDet');document.querySelector('#qpDet .qpill:last-child').classList.add('on');renderProd(CUR);}
 
 // NAV
-function showPg(id){document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));document.getElementById(id).classList.add('on');}
+function showPg(id){document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));document.getElementById(id).classList.add('on');const bi=document.getElementById('btnInicio');if(bi)bi.style.display=(id==='pgMenu')?'none':'inline-flex';const tb=document.getElementById('prodTabs');if(tb&&id!=='pgProd')tb.innerHTML='';window.scrollTo({top:0,behavior:'smooth'});}
 function setExcelBtn(v){const b=document.getElementById('btnExcel');if(b)b.style.display=v?'':'none';}
 function goMenu(){showPg('pgMenu');setBc('menu');setExcelBtn(false);}
 function goGeneral(){showPg('pgGeneral');setBc('gen');renderGeneral();setExcelBtn(true);}
@@ -693,10 +743,12 @@ function goProd(prod){
 }
 function setBc(v,prod){
   const bc=document.getElementById('bcNav');
-  if(v==='menu'){bc.innerHTML='<span class="bc-item on" onclick="goMenu()">Inicio</span>';return;}
-  if(v==='gen'){bc.innerHTML='<span class="bc-item" onclick="goMenu()">Inicio</span><span class="bc-sep">›</span><span class="bc-item on">Vista General</span>';return;}
-  if(v==='cartera'){bc.innerHTML='<span class="bc-item" onclick="goMenu()">Inicio</span><span class="bc-sep">›</span><span class="bc-item on">Cartera de Créditos</span>';return;}
-  bc.innerHTML=`<span class="bc-item" onclick="goMenu()">Inicio</span><span class="bc-sep">›</span><span class="bc-item" onclick="goGeneral()">Vista General</span><span class="bc-sep">›</span><span class="bc-item on">${prod}</span>`;
+  let crumb='';
+  if(v==='menu'){crumb='<span class="bc-item on" onclick="goMenu()">Inicio</span>';}
+  else if(v==='gen'){crumb='<span class="bc-item" onclick="goMenu()">Inicio</span><span class="bc-sep">›</span><span class="bc-item on">Vista General</span>';}
+  else if(v==='cartera'){crumb='<span class="bc-item" onclick="goMenu()">Inicio</span><span class="bc-sep">›</span><span class="bc-item on">Cartera de Créditos</span>';}
+  else{crumb=`<span class="bc-item" onclick="goMenu()">Inicio</span><span class="bc-sep">›</span><span class="bc-item" onclick="goGeneral()">Vista General</span><span class="bc-sep">›</span><span class="bc-item on">${prod}</span>`;}
+  bc.innerHTML=crumb+'<div id="prodTabs" style="display:flex;gap:.4rem;flex-wrap:wrap;margin-left:auto"></div>';
 }
 
 // MENU HERO
@@ -806,19 +858,24 @@ function renderVar(data){
   const mavg=mks.map(k=>+(byM[k].s/byM[k].n/1e6).toFixed(2));
   const colors=mavg.map((v,i)=>i===0?'#34d399cc':v>=mavg[i-1]?'#34d399cc':'#fb7185cc');
   dC('chVar');
+  // Rango Y ajustado para que las barras llenen el alto (no desde cero)
+  const vMin=Math.min(...mavg), vMax=Math.max(...mavg);
+  const vMargen=(vMax-vMin)*0.25||vMax*0.1||1;
+  const yMinV=Math.max(0,vMin-vMargen*2), yMaxV=vMax+vMargen;
+  // Etiquetas de mes en letras: "Ene 23"
+  const MESL=['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
   new Chart(document.getElementById('chVar'),{
-    data:{labels:mks.map(k=>`${MS[parseInt(k.slice(5,7))]} ${k.slice(2,4)}`),
+    data:{labels:mks.map(k=>`${MESL[parseInt(k.slice(5,7))]} ${k.slice(2,4)}`),
       datasets:[
-        {type:'bar',label:'Promedio',data:mavg,backgroundColor:colors,borderRadius:4,order:2},
+        {type:'bar',label:'Saldo promedio',data:mavg,backgroundColor:colors,borderRadius:4,order:2},
         {type:'line',label:'Tendencia',data:mavg,borderColor:'#FAC616',borderWidth:2.5,
          pointRadius:0,pointHoverRadius:5,pointBackgroundColor:'#FAC616',pointBorderColor:'#fff',pointBorderWidth:2,
-         tension:0.4,fill:false,order:1,
-         borderCapStyle:'round'}
+         tension:0.4,fill:false,order:1,borderCapStyle:'round'}
       ]},
     options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
-      plugins:{legend:{display:false},tooltip:{callbacks:{label:t=>`${t.dataset.label}: ${t.parsed.y.toLocaleString('es-CO',{minimumFractionDigits:2,maximumFractionDigits:2})} M`}}},
+      plugins:{legend:{display:false},tooltip:{filter:item=>item.datasetIndex===0,callbacks:{label:t=>`Saldo promedio: ${t.parsed.y.toLocaleString('es-CO',{minimumFractionDigits:2,maximumFractionDigits:2})} M`}}},
       scales:{x:{ticks:{maxTicksLimit:24,font:{size:9},maxRotation:45},grid:{display:false}},
-        y:{ticks:{font:{size:10},callback:v=>v.toLocaleString('es-CO',{maximumFractionDigits:0})+' M'},grid:{color:'rgba(255,255,255,0.16)'}}}}
+        y:{min:yMinV,max:yMaxV,afterFit:(s)=>{s.width=0;},ticks:{display:false,font:{size:10},callback:v=>v.toLocaleString('es-CO',{maximumFractionDigits:0})+' M'},grid:{color:'rgba(255,255,255,0.16)'}}}}
   });
   setTimeout(()=>aplicarScrollGrafica('chVar'),50);
 }
@@ -921,6 +978,18 @@ function renderProd(prod){
   const btn=document.getElementById('detBackBtn');
   if(btn){if(prod==='Aportes'){btn.textContent='← Volver al menú';btn.onclick=goMenu;}
   else{btn.textContent='← Volver a vista general';btn.onclick=goGeneral;}}
+  // Tabs de productos (solo para productos de depósitos, no Aportes)
+  const tabsBox=document.getElementById('prodTabs');
+  if(tabsBox){
+    if(prod==='Aportes'){tabsBox.innerHTML='';}
+    else{
+      tabsBox.innerHTML=PRODS.map(pp=>{
+        const act=pp.k===prod;
+        return `<button onclick="goProd('${pp.k}')" title="${pp.k}" style="display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:14px;font-size:.66rem;font-weight:${act?'700':'500'};cursor:pointer;border:1px solid ${act?pp.c:'rgba(255,255,255,.22)'};background:${act?pp.c+'33':'rgba(255,255,255,.07)'};color:${act?'#fff':'var(--tx2)'};white-space:nowrap;transition:all .15s">
+          <span style="width:7px;height:7px;border-radius:50%;background:${pp.c};flex-shrink:0"></span>${pp.k}</button>`;
+      }).join('');
+    }
+  }
   const data=filtrarProd(D,prod);
   if(!data.length)return;
   document.getElementById('detBarTitle').textContent=prod;
@@ -948,13 +1017,55 @@ function renderProd(prod){
     </div>
   </div>`;
   const dense=data.length>90;dC('chDetLine');
+  const serie=data.map(r=>+(r[prod]/1e6).toFixed(3));
+  const sMin=Math.min(...serie), sMax=Math.max(...serie);
+  const margen=(sMax-sMin)*0.12||Math.abs(sMax)*0.1||1;
+  const yMin=sMin-margen, yMax=sMax+margen;
+  // Hitos = PRIMER día de cada mes
+  const hitos=new Set(); const primPorMes={};
+  data.forEach((r,i)=>{const mk=r.Fecha.slice(0,7);if(primPorMes[mk]===undefined)primPorMes[mk]=i;});
+  Object.values(primPorMes).forEach(i=>hitos.add(i));
+  const globitosPlugin={
+    id:'globitos'+prod,
+    afterDatasetsDraw(chart){
+      const {ctx}=chart;
+      const ds=chart.getDatasetMeta(0).data;
+      ctx.save();
+      ds.forEach((pt,i)=>{
+        if(!hitos.has(i))return;
+        const val=serie[i];
+        const txt=val.toLocaleString('es-CO',{maximumFractionDigits:0});
+        ctx.font="600 10px 'IBM Plex Mono',monospace";
+        const w=ctx.measureText(txt).width+16;
+        const area=chart.chartArea;
+        // centro X del globito, ajustado para que no se salga del área
+        let cxg=pt.x;
+        if(cxg-w/2<area.left+2)cxg=area.left+2+w/2;
+        if(cxg+w/2>area.right-2)cxg=area.right-2-w/2;
+        const bx=cxg-w/2, by=pt.y-26, h=18;
+        ctx.fillStyle='rgba(255,255,255,.92)';
+        ctx.beginPath();
+        if(ctx.roundRect)ctx.roundRect(bx,by,w,h,9);else ctx.rect(bx,by,w,h);
+        ctx.fill();
+        ctx.fillStyle='#0a3d33';ctx.textAlign='center';ctx.textBaseline='middle';
+        ctx.fillText(txt,cxg,by+h/2+1);
+        ctx.beginPath();ctx.arc(pt.x,pt.y,4,0,Math.PI*2);
+        ctx.fillStyle=p.c;ctx.fill();
+        ctx.lineWidth=2;ctx.strokeStyle='#0a3d33';ctx.stroke();
+      });
+      ctx.restore();
+    }
+  };
   new Chart(document.getElementById('chDetLine'),{type:'line',
-    data:{labels:data.map(r=>r.Fecha),datasets:[{label:prod,data:data.map(r=>+(r[prod]/1e6).toFixed(3)),
-      borderColor:p.c,backgroundColor:p.c+'22',borderWidth:2.5,pointRadius:0,pointHoverRadius:7,pointHitRadius:14,pointBackgroundColor:p.c,pointBorderColor:'#fff',pointBorderWidth:2.5,tension:0.4,fill:true}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},
+    data:{labels:data.map(r=>r.Fecha),datasets:[{label:prod,data:serie,
+      borderColor:p.c,borderWidth:2.5,
+      backgroundColor:(c)=>{const{ctx,chartArea}=c.chart;if(!chartArea)return p.c+'22';const g=ctx.createLinearGradient(0,chartArea.top,0,chartArea.bottom);g.addColorStop(0,p.c+'66');g.addColorStop(1,p.c+'05');return g;},
+      pointRadius:0,pointHoverRadius:7,pointHitRadius:14,pointBackgroundColor:p.c,pointBorderColor:'#fff',pointBorderWidth:2.5,tension:0.4,fill:true}]},
+    plugins:[globitosPlugin],
+    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:28,left:8,right:8}},plugins:{legend:{display:false},
       tooltip:{callbacks:{title:t=>fDt(t[0].label),label:t=>` ${t.parsed.y.toLocaleString('es-CO',{minimumFractionDigits:3,maximumFractionDigits:3})} M`}}},
-      scales:{x:{ticks:{maxTicksLimit:12,font:{size:10},callback:(v,i)=>{const d=data[i]?.Fecha;return d?`${d.slice(8,10)}/${d.slice(5,7)}/${d.slice(2,4)}`:'';}},grid:{display:false}},
-        y:{ticks:{font:{size:10},callback:v=>v.toLocaleString('es-CO',{maximumFractionDigits:0})+' M'},grid:{color:'rgba(255,255,255,0.16)'}}}}
+      scales:{x:{ticks:{autoSkip:false,maxRotation:45,font:{size:9},callback:(v,i)=>{const d=data[i]?.Fecha;if(!d)return '';const mk=d.slice(0,7);const esPrimeroDelMes=(i===0)||(data[i-1]&&data[i-1].Fecha.slice(0,7)!==mk);if(!esPrimeroDelMes)return '';const ML=['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];return `${d.slice(8,10)} ${ML[parseInt(d.slice(5,7))]}`;}},grid:{display:false}},
+        y:{min:yMin,max:yMax,afterFit:(s)=>{s.width=0;},ticks:{display:false,font:{size:10},callback:v=>v.toLocaleString('es-CO',{maximumFractionDigits:0})+' M'},grid:{color:'rgba(255,255,255,0.16)'}}}}
   });
   if(prod!=='Aportes'){setTimeout(()=>aplicarScrollGrafica('chDetLine'),50);}
   else{quitarScrollGrafica('chDetLine');}
@@ -965,8 +1076,9 @@ function renderProd(prod){
       datasets:[{label:'Prom',data:mks.map(k=>+(bM[k].s/bM[k].n/1e6).toFixed(3)),backgroundColor:p.c+'99',borderColor:p.c,borderWidth:1,borderRadius:4}]},
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:t=>` ${t.parsed.y.toLocaleString('es-CO',{minimumFractionDigits:2,maximumFractionDigits:2})} M`}}},
       scales:{x:{ticks:{maxTicksLimit:14,font:{size:10},maxRotation:45},grid:{display:false}},
-        y:{ticks:{font:{size:10},callback:v=>v.toLocaleString('es-CO',{maximumFractionDigits:0})+' M'},grid:{color:'rgba(255,255,255,0.16)'}}}}
+        y:{afterFit:(s)=>{s.width=0;},ticks:{display:false,font:{size:10},callback:v=>v.toLocaleString('es-CO',{maximumFractionDigits:0})+' M'},grid:{color:'rgba(255,255,255,0.16)'}}}}
   });
+  setTimeout(()=>aplicarScrollGrafica('chDetBar'),50);
   const t12=data.length>=12?((data[data.length-1][prod]-data[data.length-12][prod])/data[data.length-12][prod]*100):null;
   const rows=[
     ['Saldo actual',fK(l[prod])],['Saldo inicial período',fK(f[prod])],
