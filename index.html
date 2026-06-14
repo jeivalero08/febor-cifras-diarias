@@ -6,18 +6,18 @@
 <title>FEBOR · Evolución Diaria de Saldos</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
-/* === Scroll horizontal por días para gráficas seleccionadas === */
-window.__SCROLL_CHARTS={chDetLine:1};
-window.__PX_POR_DIA=14;      // ancho por día
-window.__DIAS_VISIBLES=60;   // ventana objetivo
+/* === Scroll horizontal para gráficas seleccionadas === */
+/* Por gráfica: {px: ancho por punto, vis: puntos visibles antes de activar scroll} */
+window.__SCROLL_CHARTS={chDetLine:{px:14,vis:60}, chVar:{px:42,vis:24}};
 function aplicarScrollGrafica(canvasId){
   try{
     const cv=document.getElementById(canvasId);
-    if(!cv||!window.__SCROLL_CHARTS[canvasId])return;
+    const cfg=window.__SCROLL_CHARTS[canvasId];
+    if(!cv||!cfg)return;
     const ch=Chart.getChart(cv);
     if(!ch)return;
     const nPts=(ch.data&&ch.data.labels)?ch.data.labels.length:0;
-    if(nPts<=window.__DIAS_VISIBLES)return; // si caben, no hace falta scroll
+    if(nPts<=cfg.vis)return; // si caben, no hace falta scroll
     // Envolver el canvas en un contenedor scrollable (una sola vez)
     let inner=cv.parentNode;
     if(!inner.classList.contains('chart-scroll-inner')){
@@ -32,8 +32,8 @@ function aplicarScrollGrafica(canvasId){
       scroll.parentNode.insertBefore(hint,scroll.nextSibling);
       inner=innerDiv;host.style.height='100%';
     }
-    // Ancho dinámico
-    const anchoTotal=Math.max(nPts*window.__PX_POR_DIA, inner.parentNode.clientWidth);
+    // Ancho dinámico según px por punto de esta gráfica
+    const anchoTotal=Math.max(nPts*cfg.px, inner.parentNode.clientWidth);
     inner.style.width=anchoTotal+'px';
     const host=inner.querySelector('.cwrap')||inner.firstChild;
     if(host)host.style.width=anchoTotal+'px';
@@ -75,7 +75,7 @@ function aplicarScrollTodas(){['chDetLine','chMoraSP','chMoraCA'].forEach(aplica
   --g1:#005648;--g2:#00927A;--g0:#003d32;
   --g-grad:linear-gradient(135deg,rgba(0,113,92,.92),rgba(0,86,72,.92) 55%,rgba(0,61,50,.94));
   --gold:#FAC616;--gold-l:#fdd84e;--gold-ll:#fff8e1;--gold-glow:rgba(250,198,22,.55);
-  --red:#ff6b6b;--red-l:rgba(220,38,38,.22);--grn:#86efac;--grn-l:rgba(34,197,94,.24);
+  --red:#ff5a5a;--red-l:rgba(255,70,70,.32);--grn:#86efac;--grn-l:rgba(34,197,94,.24);
   /* Vidrio luminoso */
   --glass:rgba(255,255,255,.18);--glass-2:rgba(255,255,255,.14);--glass-3:rgba(255,255,255,.24);
   --glass-bord:rgba(255,255,255,.34);--glass-bord-s:rgba(255,255,255,.5);
@@ -126,7 +126,13 @@ select,input{font-family:var(--ff)}
 .bc-item:hover,.bc-item.on{color:#fff;text-shadow:var(--tsh)}
 .bc-sep{opacity:.4}
 
+.cmp-sel{padding:5px 9px;border:1px solid rgba(255,255,255,.28);border-radius:9px;font-size:.74rem;color:#fff;background:rgba(255,255,255,.12);font-family:var(--ff);cursor:pointer;outline:none}
+.cmp-sel:focus{border-color:var(--gold)}
+.cmp-sel option{background:#0a3d33;color:#fff}
 .pg{display:none;padding:1.9rem 2rem 4rem}
+#pgMenu.on{display:flex;min-height:calc(100vh - 130px);align-items:center}
+.menu-wrap{margin:auto;width:100%;max-width:1180px;padding:1rem 0}
+.mcard h3{font-size:1.35rem}
 .pg.on{display:block}
 
 /* MENU / PORTADA */
@@ -153,7 +159,7 @@ select,input{font-family:var(--ff)}
 .mcard:hover{transform:translateY(-3px);box-shadow:var(--sh-lg);border-color:var(--glass-bord-s);background:var(--glass-3)}
 .mcard-stripe{position:absolute;top:0;left:0;width:4px;height:100%;background:linear-gradient(180deg,var(--gold),var(--gold-l));opacity:0;transition:opacity .2s}
 .mcard:hover .mcard-stripe{opacity:1}
-.mcard-ico{width:42px;height:42px;background:rgba(250,198,22,.85);border:1px solid rgba(255,255,255,.3);border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;font-size:1.25rem;margin-bottom:.9rem;box-shadow:0 4px 14px -2px var(--gold-glow)}
+.mcard-ico{width:68px;height:68px;background:linear-gradient(135deg,#0a4a3c,#003d32);border:1px solid rgba(250,198,22,.25);border-radius:18px;display:flex;align-items:center;justify-content:center;margin-bottom:.9rem;box-shadow:0 6px 18px -4px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.1)}
 .mcard h3{font-size:.92rem;font-weight:600;color:#fff;margin-bottom:.28rem;text-shadow:var(--tsh)}
 .mcard p{font-size:.74rem;color:var(--tx2);line-height:1.55}
 .mcard-arr{position:absolute;right:1rem;bottom:1rem;font-size:1rem;color:var(--gold);transition:transform .2s}
@@ -187,8 +193,8 @@ select,input{font-family:var(--ff)}
 .kpi-val{font-family:var(--fm);font-size:1.2rem;font-weight:600;color:#fff;line-height:1.1;letter-spacing:-.3px;text-shadow:var(--tsh)}
 .kpi-unit{font-size:.62rem;color:var(--tx3);margin-top:.12rem}
 .kpi-d{display:inline-flex;align-items:center;font-size:.67rem;font-weight:600;padding:3px 9px;border-radius:20px;margin-top:.32rem}
-.kpi-d.up{background:var(--grn-l);color:var(--grn)}
-.kpi-d.dn{background:var(--red-l);color:var(--red)}
+.kpi-d.up{background:rgba(52,211,153,.28);color:#bbf7d0;border:1px solid rgba(52,211,153,.5);font-weight:700}
+.kpi-d.dn{background:rgba(255,70,70,.32);color:#ffd0d0;border:1px solid rgba(255,90,90,.55);font-weight:700}
 .kpi-tot{background:var(--g-grad);backdrop-filter:var(--blur);border-color:rgba(255,255,255,.3);cursor:default;box-shadow:var(--sh-md);position:relative}
 .kpi-tot::after{content:"";position:absolute;top:-40px;right:-20px;width:120px;height:120px;background:radial-gradient(circle,var(--gold-glow),transparent 70%);opacity:.55;pointer-events:none}
 .kpi-tot .kpi-lbl{color:rgba(255,255,255,.6)}
@@ -376,8 +382,7 @@ select,input{font-family:var(--ff)}
   </div>
   <div class="hdr-r">
     <span class="hdr-date" id="hdrDate">—</span>
-    <button class="btn-h outline" onclick="downloadHTML()">↗ Compartir</button>
-    <button class="btn-h gold" id="btnExcel" onclick="downloadExcel()">⬇ Descargar Excel</button>
+    <button class="btn-h gold" id="btnExcel" onclick="downloadExcel()" style="display:none">⬇ Descargar Excel</button>
   </div>
 </header>
 
@@ -385,32 +390,34 @@ select,input{font-family:var(--ff)}
 
 <!-- MENU -->
 <div class="pg on" id="pgMenu">
-  <div class="menu-hdr">
+  <div class="menu-wrap">
+  <div class="menu-hdr" style="text-align:center">
     <h1>Evolución diara de Saldos</h1>
     <p>Seguimiento diario de saldos por producto · Dirección de Riesgos SARL</p>
   </div>
-  <div class="mgrid mgrid-portada" style="max-width:900px;margin:1.5rem auto 0">
-    <div class="mcard" onclick="goGeneral()" style="padding:2rem">
+  <div class="mgrid mgrid-portada" style="max-width:1180px;margin:2.2rem auto 0">
+    <div class="mcard" onclick="goGeneral()" style="padding:2.8rem 2.4rem">
       <div class="mcard-stripe" style="background:#00927A"></div>
-      <div class="mcard-ico" style="font-size:2rem;width:52px;height:52px"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="#004538" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V10"/><path d="M19 21V10"/><path d="M9 21v-6h6v6"/><path d="M4 10l8-6 8 6"/><path d="M4 10h16"/></svg></div>
-      <h3 style="font-size:1.1rem;margin:.8rem 0 .4rem">Depósitos</h3>
+      <div class="mcard-ico" style="width:68px;height:68px"><svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="#FAC616" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10l9-5 9 5"/><path d="M5 10v8M19 10v8M9.5 18v-5h5v5"/><path d="M3 21h18"/></svg></div>
+      <h3 style="font-size:1.35rem;margin:1.1rem 0 .5rem">Depósitos</h3>
       <p style="font-size:.82rem">Ahorro Voluntario · CDAT · Daes · Ahorro Contractual · Bolsillo Rentable</p>
       <span class="mcard-arr">→</span>
     </div>
-    <div class="mcard" onclick="goProd('Aportes')" style="padding:2rem">
+    <div class="mcard" onclick="goProd('Aportes')" style="padding:2.8rem 2.4rem">
       <div class="mcard-stripe" style="background:#7ab8a8"></div>
-      <div class="mcard-ico" style="font-size:2rem;width:52px;height:52px"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="#004538" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3 2.5-5 6-5s6 2 6 5"/><path d="M16 5.5a3 3 0 0 1 0 5.2"/><path d="M18 14.5c2 .6 3.3 2.2 3.3 4.5"/></svg></div>
-      <h3 style="font-size:1.1rem;margin:.8rem 0 .4rem">Aportes Sociales</h3>
-      <p style="font-size:.82rem">Cuentas 3105 + 311005 · Evolución histórica y variaciones</p>
+      <div class="mcard-ico" style="width:68px;height:68px"><svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="#FAC616" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="7" r="3"/><path d="M3 20c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5"/><path d="M16 4.5a3 3 0 0 1 0 5.5"/><path d="M18.5 14c2.2.5 3.5 2.3 3.5 4.8"/></svg></div>
+      <h3 style="font-size:1.35rem;margin:1.1rem 0 .5rem">Aportes Sociales</h3>
+      <p style="font-size:.82rem">Evolución histórica y variaciones</p>
       <span class="mcard-arr">→</span>
     </div>
-    <div class="mcard" onclick="goCartera()" style="padding:2rem">
+    <div class="mcard" onclick="goCartera()" style="padding:2.8rem 2.4rem">
       <div class="mcard-stripe" style="background:#c0392b"></div>
-      <div class="mcard-ico" style="font-size:2rem;width:52px;height:52px"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="#004538" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V4"/><path d="M4 20h16"/><rect x="7" y="12" width="2.6" height="5" rx=".4"/><rect x="12" y="9" width="2.6" height="8" rx=".4"/><rect x="17" y="6" width="2.6" height="11" rx=".4"/></svg></div>
-      <h3 style="font-size:1.1rem;margin:.8rem 0 .4rem">Cartera de Créditos</h3>
+      <div class="mcard-ico" style="width:68px;height:68px"><svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="#FAC616" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4v16h16"/><path d="M7 15l3.5-3.5 2.5 2.5L20 7"/><path d="M16 7h4v4"/></svg></div>
+      <h3 style="font-size:1.35rem;margin:1.1rem 0 .5rem">Cartera de Créditos</h3>
       <p style="font-size:.82rem">Índice de mora sin y con arrastre · Categorías A/B/C/D/E</p>
       <span class="mcard-arr">→</span>
     </div>
+  </div>
   </div>
 </div>
 
@@ -449,16 +456,15 @@ select,input{font-family:var(--ff)}
       <div class="cwrap h280"><canvas id="chVar"></canvas></div>
     </div>
     <div class="ccard">
-      <div class="ctop"><div><div class="ctitle">Composición actual</div><div class="csub">Participación % por producto en el último día</div></div></div>
-      <div class="cwrap h280 donut-wrap">
-        <canvas id="chDonut"></canvas>
-        <div class="donut-ctr"><div class="donut-ctr-val" id="donutTotal">—</div><div class="donut-ctr-lbl">Total M</div></div>
-      </div>
-      <div class="cleg" id="legDonut"></div>
+      <div class="ctop"><div><div class="ctitle">Composición actual</div><div class="csub">Participación por producto en el último día</div></div></div>
+      <div id="compBars" style="padding:.3rem 0 .2rem"></div>
     </div>
   </div>
   <div class="ccard span2" style="margin-bottom:.9rem">
-    <div class="shdr"><div class="shdr-t">Resumen comparativo</div><div class="shdr-s">Saldo inicial → final y variación en el período</div></div>
+    <div class="shdr" style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;flex-wrap:wrap">
+      <div><div class="shdr-t">Resumen comparativo</div><div class="shdr-s">Saldo inicial → final y variación en el período · ¿quieres comparar dos periodos?</div></div>
+      <button onclick="abrirComparador()" style="display:inline-flex;align-items:center;gap:6px;padding:7px 15px;border-radius:10px;background:linear-gradient(135deg,#fdd84e,#FAC616);color:#003d32;font-weight:700;font-size:.74rem;border:none;cursor:pointer;box-shadow:0 4px 14px -3px rgba(250,198,22,.5);white-space:nowrap">⇄ Comparar periodos →</button>
+    </div>
     <div class="stbl-wrap"><table class="stbl">
       <thead><tr><th>Producto</th><th>Saldo inicial</th><th>Saldo actual</th><th>Variación $</th><th>Variación %</th><th>Promedio</th></tr></thead>
       <tbody id="stblBody"></tbody>
@@ -564,6 +570,30 @@ select,input{font-family:var(--ff)}
     <div class="modal-body" id="spModalContent"></div>
   </div>
 </div>
+<div id="_cmpModal" onclick="if(event.target===this)cerrarComparador()" style="display:none;position:fixed;inset:0;background:rgba(0,18,14,.78);backdrop-filter:blur(14px);z-index:900;align-items:flex-start;justify-content:center;padding:2rem 1rem;overflow-y:auto">
+      <div style="background:linear-gradient(150deg,#0a3d33,#062a22 60%,#04211b);border-radius:14px;width:100%;max-width:760px;max-height:88vh;overflow-y:auto;box-shadow:0 24px 60px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.12);border:1px solid var(--glass-bord);padding:1.4rem 1.5rem;position:relative">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1rem;gap:.8rem;flex-wrap:wrap">
+          <div>
+            <div style="font-size:.95rem;font-weight:700;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.3)">⇄ Comparador de periodos</div>
+            <div style="font-size:.68rem;color:var(--tx3);margin-top:2px">Elige dos meses y compara su saldo de cierre</div>
+          </div>
+          <button onclick="cerrarComparador()" style="background:none;border:none;cursor:pointer;font-size:1.2rem;color:var(--tx3);line-height:1">✕</button>
+        </div>
+        <div style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin-bottom:1.1rem;padding:.8rem 1rem;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);border-radius:12px">
+          <span style="font-size:.66rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--tx3)">Comparar</span>
+          <select id="cmpMesA" class="cmp-sel"></select>
+          <select id="cmpAnoA" class="cmp-sel"></select>
+          <span style="color:var(--gold);font-weight:700;font-size:.85rem">vs</span>
+          <select id="cmpMesB" class="cmp-sel"></select>
+          <select id="cmpAnoB" class="cmp-sel"></select>
+          <button class="btn-apply" style="padding:6px 16px" onclick="aplicarComparacion()">Comparar</button>
+        </div>
+        <div class="stbl-wrap"><table class="stbl">
+          <thead><tr><th>Producto</th><th id="thIni">Periodo A</th><th id="thFin">Periodo B</th><th>Variación $</th><th>Variación %</th></tr></thead>
+          <tbody id="cmpBody"><tr><td colspan="5" style="color:var(--tx3);padding:1rem .9rem">Selecciona dos meses y pulsa Comparar.</td></tr></tbody>
+        </table></div>
+      </div>
+    </div>
 <div class="footer" id="footer">Dashboard FEBOR · Evolución diaria de Saldos · Jeisson Alirio Valero Núñez</div>
 
 <script>
@@ -615,7 +645,7 @@ function initData(raw){
   G={days:0,from:minD,to:maxD};
   if(ALL.length){
     document.getElementById('hdrDate').textContent='Último: '+fDt(ALL[ALL.length-1].Fecha);
-    document.getElementById('footer').textContent=`FEBOR · Evolución de Depósitos · ${ALL.length} registros · ${fDt(ALL[ALL.length-1].Fecha)} · Jeisson Alirio Valero Núñez`;
+    document.getElementById('footer').textContent=`FEBOR · Evolución diaria de Saldos · ${ALL.length} registros · ${fDt(ALL[ALL.length-1].Fecha)} · Jeisson Alirio Valero Núñez`;
   }
   renderMenuHero();
   setLoad(100,'¡Listo!');
@@ -648,8 +678,9 @@ function clearDetDate(){D={days:0,from:ALL[0]?.Fecha||'',to:ALL[ALL.length-1]?.F
 
 // NAV
 function showPg(id){document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));document.getElementById(id).classList.add('on');}
-function goMenu(){showPg('pgMenu');setBc('menu');}
-function goGeneral(){showPg('pgGeneral');setBc('gen');renderGeneral();}
+function setExcelBtn(v){const b=document.getElementById('btnExcel');if(b)b.style.display=v?'':'none';}
+function goMenu(){showPg('pgMenu');setBc('menu');setExcelBtn(false);}
+function goGeneral(){showPg('pgGeneral');setBc('gen');renderGeneral();setExcelBtn(true);}
 function goProd(prod){
   CUR=prod;
   const minD=ALL[0]?.Fecha||'',maxD=ALL[ALL.length-1]?.Fecha||'';
@@ -658,6 +689,7 @@ function goProd(prod){
   document.getElementById('dTo').value=maxD;
   clearQ('qpDet');document.querySelector('#qpDet .qpill:last-child').classList.add('on');
   showPg('pgProd');setBc('prod',prod);renderProd(prod);
+  setExcelBtn(prod==='Aportes');
 }
 function setBc(v,prod){
   const bc=document.getElementById('bcNav');
@@ -712,15 +744,34 @@ function renderKPIs(data){
   const tF=PRODS.reduce((s,p)=>s+(f[p.k]||0),0);
   const tL=PRODS.reduce((s,p)=>s+(l[p.k]||0),0);
   const tp=tF?(tL-tF)/tF*100:0;
+  const tpM=(tL-tF)/1e6;const tpSg=tpM>=0?'+':'−';
+  const tpMontoTxt=`${tpSg}${Math.abs(tpM).toLocaleString('es-CO',{maximumFractionDigits:0})} M`;
   let h=`<div class="kpi kpi-tot"><div class="kpi-bar" style="background:var(--gold)"></div>
     <div class="kpi-lbl">Total portafolio</div><div class="kpi-val">${fK(tL)}</div>
     <div class="kpi-unit">millones COP · ${fDt(l.Fecha)}</div>
-    <span class="kpi-d ${tp>=0?'up':'dn'}" style="background:rgba(255,255,255,.1);color:${tp>=0?'#8ff5b0':'#ffaaaa'}">${fP(tp)}</span></div>`;
+    <span class="kpi-d ${tp>=0?'up':'dn'}" style="background:rgba(255,255,255,.12);color:${tp>=0?'#bbf7d0':'#ffd0d0'};font-weight:700">${fP(tp)} · ${tpMontoTxt}</span></div>`;
   PRODS.forEach(p=>{
-    const v0=f[p.k],v1=l[p.k];const d=v0&&v1?((v1-v0)/v0*100):null;
+    const v1=l[p.k];
+    // Primer día con valor válido del producto en el periodo
+    let v0=null;
+    for(let i=0;i<data.length;i++){const x=data[i][p.k];if(x!=null){v0=x;break;}}
+    // Si el inicial es positivo, mostramos % del periodo. Si es 0 o negativo
+    // (el % no tiene sentido matemático), mostramos el cambio en monto (M).
+    let badge='';
+    if(v0!=null&&v1!=null){
+      const dm=(v1-v0)/1e6;
+      const sgM=dm>=0?'+':'−';
+      const montoTxt=`${sgM}${Math.abs(dm).toLocaleString('es-CO',{maximumFractionDigits:0})} M`;
+      if(v0>0){
+        const d=(v1-v0)/v0*100;
+        badge=`<span class="kpi-d ${d>=0?'up':'dn'}">${fP(d)} · ${montoTxt}</span>`;
+      }else{
+        badge=`<span class="kpi-d ${dm>=0?'up':'dn'}">${montoTxt}</span>`;
+      }
+    }
     h+=`<div class="kpi" onclick="goProd('${p.k}')"><div class="kpi-bar" style="background:${p.c}"></div>
       <div class="kpi-lbl">${p.k}</div><div class="kpi-val">${v1!=null?fK(v1):'—'}</div>
-      <div class="kpi-unit">millones COP</div>${d!=null?`<span class="kpi-d ${d>=0?'up':'dn'}">${fP(d)}</span>`:''}</div>`;
+      <div class="kpi-unit">millones COP</div>${badge}</div>`;
   });
   document.getElementById('kpisGen').innerHTML=h;
 }
@@ -755,31 +806,96 @@ function renderVar(data){
   const mavg=mks.map(k=>+(byM[k].s/byM[k].n/1e6).toFixed(2));
   const colors=mavg.map((v,i)=>i===0?'#34d399cc':v>=mavg[i-1]?'#34d399cc':'#fb7185cc');
   dC('chVar');
-  new Chart(document.getElementById('chVar'),{type:'bar',
+  new Chart(document.getElementById('chVar'),{
     data:{labels:mks.map(k=>`${MS[parseInt(k.slice(5,7))]} ${k.slice(2,4)}`),
-      datasets:[{label:'Promedio',data:mavg,backgroundColor:colors,borderRadius:4}]},
-    options:{responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:false},tooltip:{callbacks:{label:t=>`Prom: ${t.parsed.y.toLocaleString('es-CO',{minimumFractionDigits:2,maximumFractionDigits:2})} M`}}},
-      scales:{x:{ticks:{maxTicksLimit:18,font:{size:9},maxRotation:45},grid:{display:false}},
+      datasets:[
+        {type:'bar',label:'Promedio',data:mavg,backgroundColor:colors,borderRadius:4,order:2},
+        {type:'line',label:'Tendencia',data:mavg,borderColor:'#FAC616',borderWidth:2.5,
+         pointRadius:0,pointHoverRadius:5,pointBackgroundColor:'#FAC616',pointBorderColor:'#fff',pointBorderWidth:2,
+         tension:0.4,fill:false,order:1,
+         borderCapStyle:'round'}
+      ]},
+    options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:t=>`${t.dataset.label}: ${t.parsed.y.toLocaleString('es-CO',{minimumFractionDigits:2,maximumFractionDigits:2})} M`}}},
+      scales:{x:{ticks:{maxTicksLimit:24,font:{size:9},maxRotation:45},grid:{display:false}},
         y:{ticks:{font:{size:10},callback:v=>v.toLocaleString('es-CO',{maximumFractionDigits:0})+' M'},grid:{color:'rgba(255,255,255,0.16)'}}}}
   });
+  setTimeout(()=>aplicarScrollGrafica('chVar'),50);
 }
 
 function renderDonut(data){
   const l=data[data.length-1];
-  const vals=PRODS.map(p=>l[p.k]?+(l[p.k]/1e6).toFixed(3):0);
-  const total=vals.reduce((a,b)=>a+b,0);
-  dC('chDonut');
-  document.getElementById('donutTotal').textContent=(total).toLocaleString('es-CO',{minimumFractionDigits:2,maximumFractionDigits:2})+' M';
-  document.getElementById('legDonut').innerHTML=PRODS.map((p,i)=>{
-    const pct=total?(vals[i]/total*100).toFixed(1):0;
-    return `<span class="cleg-i"><span class="cleg-dot" style="background:${p.c}"></span>${p.k} <strong style="color:var(--tx)">${pct}%</strong></span>`;
-  }).join('');
-  new Chart(document.getElementById('chDonut'),{type:'doughnut',
-    data:{labels:PRODS.map(p=>p.k),datasets:[{data:vals,backgroundColor:PRODS.map(p=>p.c),borderWidth:2,borderColor:'#fff',hoverOffset:6}]},
-    options:{responsive:true,maintainAspectRatio:false,cutout:'58%',
-      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>{const pct=(ctx.parsed/total*100).toFixed(1);return ` ${ctx.label}: ${ctx.parsed.toLocaleString('es-CO',{minimumFractionDigits:2,maximumFractionDigits:2})} M (${pct}%)`;}}}}}
+  const items=PRODS.map(p=>({k:p.k,c:p.c,v:l[p.k]?+(l[p.k]/1e6):0}));
+  const total=items.reduce((a,b)=>a+b.v,0);
+  const maxV=Math.max(...items.map(i=>Math.abs(i.v)),1);
+  // Ordenar de mayor a menor
+  items.sort((a,b)=>b.v-a.v);
+  const fmtM=n=>n.toLocaleString('es-CO',{maximumFractionDigits:0});
+  let h=`<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:1rem;padding-bottom:.7rem;border-bottom:1px solid rgba(255,255,255,.14)">
+    <span style="font-size:.7rem;color:var(--tx3);text-transform:uppercase;letter-spacing:.08em">Total portafolio</span>
+    <span style="font-family:var(--fm);font-size:1.15rem;font-weight:600;color:var(--gold)">${total.toLocaleString('es-CO',{minimumFractionDigits:2,maximumFractionDigits:2})} M</span>
+  </div>`;
+  items.forEach(it=>{
+    const pct=total?(it.v/total*100):0;
+    const w=Math.max(Math.abs(it.v)/maxV*100,1.5);
+    h+=`<div style="margin-bottom:.95rem">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:.3rem">
+        <span style="font-size:.8rem;color:var(--tx);font-weight:500;display:flex;align-items:center;gap:7px">
+          <span style="width:10px;height:10px;border-radius:3px;background:${it.c};flex-shrink:0"></span>${it.k}</span>
+        <span style="font-family:var(--fm);font-size:.78rem;color:var(--tx2)">${fmtM(it.v)} M · <strong style="color:var(--tx)">${pct.toFixed(1)}%</strong></span>
+      </div>
+      <div style="height:14px;background:rgba(255,255,255,.08);border-radius:7px;overflow:hidden">
+        <div style="height:100%;width:${w}%;background:linear-gradient(90deg,${it.c}cc,${it.c});border-radius:7px;transition:width .5s cubic-bezier(.4,0,.2,1)"></div>
+      </div>
+    </div>`;
   });
+  document.getElementById('compBars').innerHTML=h;
+}
+
+// ===== Comparador de periodos (panel independiente) =====
+function abrirComparador(){poblarCmpSelectores();document.getElementById('_cmpModal').style.display='flex';}
+function cerrarComparador(){document.getElementById('_cmpModal').style.display='none';}
+function cierreMes(ano,mes){
+  const pre=`${ano}-${String(mes).padStart(2,'0')}`;
+  const reg=ALL.filter(r=>r.Fecha.slice(0,7)===pre);
+  return reg.length?reg[reg.length-1]:null;
+}
+function poblarCmpSelectores(){
+  if(!ALL.length||document.getElementById('cmpMesA').options.length)return;
+  const meses=[['1','Ene'],['2','Feb'],['3','Mar'],['4','Abr'],['5','May'],['6','Jun'],['7','Jul'],['8','Ago'],['9','Sep'],['10','Oct'],['11','Nov'],['12','Dic']];
+  const anos=[...new Set(ALL.map(r=>r.Fecha.slice(0,4)))].sort();
+  const optM=meses.map(m=>`<option value="${m[0]}">${m[1]}</option>`).join('');
+  const optA=anos.map(a=>`<option value="${a}">${a}</option>`).join('');
+  document.getElementById('cmpMesA').innerHTML=optM;
+  document.getElementById('cmpMesB').innerHTML=optM;
+  document.getElementById('cmpAnoA').innerHTML=optA;
+  document.getElementById('cmpAnoB').innerHTML=optA;
+  const first=ALL[0].Fecha,last=ALL[ALL.length-1].Fecha;
+  document.getElementById('cmpMesA').value=String(parseInt(first.slice(5,7)));
+  document.getElementById('cmpAnoA').value=first.slice(0,4);
+  document.getElementById('cmpMesB').value=String(parseInt(last.slice(5,7)));
+  document.getElementById('cmpAnoB').value=last.slice(0,4);
+}
+const MS_AB=['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+function aplicarComparacion(){
+  const mA=+document.getElementById('cmpMesA').value,aA=document.getElementById('cmpAnoA').value;
+  const mB=+document.getElementById('cmpMesB').value,aB=document.getElementById('cmpAnoB').value;
+  const f=cierreMes(aA,mA),l=cierreMes(aB,mB);
+  if(!f||!l){document.getElementById('cmpBody').innerHTML='<tr><td colspan="5" style="color:var(--red);padding:1rem .9rem">No hay datos para uno de los meses seleccionados.</td></tr>';return;}
+  document.getElementById('thIni').textContent=`${MS_AB[mA]} ${aA}`;
+  document.getElementById('thFin').textContent=`${MS_AB[mB]} ${aB}`;
+  let h='',tF=0,tL=0;
+  PRODS.forEach(p=>{
+    const v0=f[p.k],v1=l[p.k];const d=v0&&v1?v1-v0:null,pct=v0&&d?(d/v0*100):null;
+    if(v0)tF+=v0;if(v1)tL+=v1;
+    h+=`<tr><td><span class="dc"><span class="dm" style="background:${p.c}"></span>${p.k}</span></td>
+      <td>${v0?fK(v0):'—'}</td><td>${v1?fK(v1):'—'}</td>
+      <td class="${d==null?'':d>=0?'cup':'cdn'}">${d!=null?(d>=0?'+':'')+fK(d):'—'}</td>
+      <td class="${pct==null?'':pct>=0?'cup':'cdn'}">${pct!=null?fP(pct):'—'}</td></tr>`;
+  });
+  const td=tL-tF,tp=tF?(td/tF*100):0;
+  h+=`<tr><td>TOTAL</td><td>${fK(tF)}</td><td>${fK(tL)}</td><td class="${td>=0?'cup':'cdn'}">${(td>=0?'+':'')+fK(td)}</td><td class="${td>=0?'cup':'cdn'}">${fP(tp)}</td></tr>`;
+  document.getElementById('cmpBody').innerHTML=h;
 }
 
 function renderTable(data){
@@ -914,7 +1030,7 @@ function clearCarteraDate(){
   document.querySelector('#qpCar .qpill:last-child').classList.add('on');
   renderCartera();
 }
-function goCartera(){showPg('pgCartera');setBc('cartera');renderCartera();}
+function goCartera(){showPg('pgCartera');setBc('cartera');renderCartera();setExcelBtn(false);}
 
 function renderCartera(){
   const data=filtrarCar(CAR_F);
@@ -1552,6 +1668,7 @@ function renderMoraDetalleCA(){
       <div style="display:flex;flex-wrap:wrap;gap:.45rem;margin-bottom:.5rem">${_chipsSummary}</div>
       <div style="font-size:.67rem;color:var(--tx3);margin-bottom:.4rem">🔴 Crítico 0–5d · 🟡 Alerta 6–15d · 🟢 Monitoreo ≥16d</div>
     </div>
+    
     <div id="_radarModal" onclick="if(event.target===this)_closeRadarModal()" style="display:none;position:fixed;inset:0;background:rgba(0,18,14,.78);backdrop-filter:blur(14px);z-index:900;align-items:flex-start;justify-content:center;padding:2rem 1rem;overflow-y:auto">
       <div style="background:linear-gradient(150deg,#0a3d33,#062a22 60%,#04211b);border-radius:14px;width:100%;max-width:820px;max-height:88vh;overflow-y:auto;box-shadow:0 24px 60px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.12);border:1px solid var(--glass-bord);padding:1.4rem 1.5rem;position:relative">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;gap:.8rem;flex-wrap:wrap">
