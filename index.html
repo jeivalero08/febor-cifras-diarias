@@ -354,6 +354,9 @@ select,input{font-family:var(--ff)}
   .stbl th,.stbl td{padding:.55rem .6rem}
   #wrapMoraCharts{grid-template-columns:1fr!important}
   #kpisCar{flex-wrap:wrap;gap:.4rem}
+  .sp-trend-grid{grid-template-columns:1fr 1fr!important}
+  .sp-mv{font-size:.8rem}
+  .cat-detail-grid{grid-template-columns:1fr!important}
 }
 @media(max-width:380px){
   .kpis{grid-template-columns:1fr!important}
@@ -375,10 +378,10 @@ select,input{font-family:var(--ff)}
 .sp-tpanel{border:1px solid rgba(255,255,255,.2);border-radius:var(--r-md);padding:1.1rem;margin-top:.7rem;background:rgba(255,255,255,.08);}
 .sp-pchip{display:inline-flex;align-items:center;padding:3px 12px;border-radius:20px;border:1px solid var(--gold);background:transparent;cursor:pointer;font-size:.73rem;font-weight:500;color:var(--gold-l);transition:all .16s;}
 .sp-pchip.on{background:var(--gold);color:var(--g0);}
-.sp-mcard{background:rgba(255,255,255,.12);border-radius:var(--r-sm);padding:.7rem .85rem;border:1px solid rgba(255,255,255,.2);}
-.sp-ml{font-size:.6rem;color:var(--tx3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px;}
-.sp-mv{font-size:.86rem;font-weight:600;color:#fff;}
-.sp-ms{font-size:.62rem;color:var(--tx3);margin-top:2px;}
+.sp-mcard{background:rgba(255,255,255,.12);border-radius:var(--r-sm);padding:.7rem .85rem;border:1px solid rgba(255,255,255,.2);min-width:0;overflow:hidden;}
+.sp-ml{font-size:.6rem;color:var(--tx3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px;overflow-wrap:break-word;}
+.sp-mv{font-size:.86rem;font-weight:600;color:#fff;overflow-wrap:break-word;word-break:break-word;line-height:1.2;}
+.sp-ms{font-size:.62rem;color:var(--tx3);margin-top:2px;overflow-wrap:break-word;}
 .cat-leg-chip{display:inline-flex;align-items:center;gap:5px;padding:4px 11px;border-radius:var(--r-sm);border:1.5px solid rgba(255,255,255,.28);background:rgba(255,255,255,.12);cursor:pointer;font-size:.78rem;font-weight:500;color:#fff;transition:opacity .15s;}
 .cat-leg-chip:hover{opacity:.78;}
 .cat-leg-dot{width:11px;height:11px;border-radius:50%;display:inline-block;flex-shrink:0;}
@@ -1103,9 +1106,10 @@ function renderProd(prod){
         if(!hitos.has(i))return;
         // En Aportes: solo la bolita grande, sin globito de texto (el valor sale al hover)
         if(prod==='Aportes'){
-          ctx.beginPath();ctx.arc(pt.x,pt.y,5,0,Math.PI*2);
+          var _rb=(chart.width<480)?3:5;
+          ctx.beginPath();ctx.arc(pt.x,pt.y,_rb,0,Math.PI*2);
           ctx.fillStyle=p.c;ctx.fill();
-          ctx.lineWidth=2.5;ctx.strokeStyle='#0a3d33';ctx.stroke();
+          ctx.lineWidth=(chart.width<480)?1.5:2.5;ctx.strokeStyle='#0a3d33';ctx.stroke();
           return;
         }
         const val=serie[i];
@@ -1139,7 +1143,7 @@ function renderProd(prod){
     plugins:[globitosPlugin],
     options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:28,left:8,right:8}},plugins:{legend:{display:false},
       tooltip:{callbacks:{title:t=>fDt(t[0].label),label:t=>` ${t.parsed.y.toLocaleString('es-CO',{minimumFractionDigits:3,maximumFractionDigits:3})} M`}}},
-      scales:{x:{ticks:{autoSkip:false,maxRotation:45,font:{size:9},callback:(v,i)=>{const d=data[i]?.Fecha;if(!d)return '';const mk=d.slice(0,7);const esPrimeroDelMes=(i===0)||(data[i-1]&&data[i-1].Fecha.slice(0,7)!==mk);if(!esPrimeroDelMes)return '';const ML=['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];return `${d.slice(8,10)} ${ML[parseInt(d.slice(5,7))]}`;}},grid:{display:false}},
+      scales:{x:{ticks:{autoSkip:false,maxRotation:45,font:{size:9},callback:(v,i)=>{const d=data[i]?.Fecha;if(!d)return '';const mk=d.slice(0,7);const esPrimeroDelMes=(i===0)||(data[i-1]&&data[i-1].Fecha.slice(0,7)!==mk);if(!esPrimeroDelMes)return '';const esMovil=(typeof window!=='undefined'&&window.innerWidth<560);if(esMovil){const mesNum=parseInt(d.slice(5,7));if(mesNum%2!==1)return '';}const ML=['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];return `${d.slice(8,10)} ${ML[parseInt(d.slice(5,7))]}`;}},grid:{display:false}},
         y:usaScrollDet?{min:yMin,max:yMax,afterFit:(s)=>{s.width=0;},ticks:{display:false,font:{size:10},callback:v=>v.toLocaleString('es-CO',{maximumFractionDigits:0})+' M'},grid:{color:'rgba(255,255,255,0.16)'}}:{min:yMin,max:yMax,ticks:{font:{size:10},callback:v=>v.toLocaleString('es-CO',{maximumFractionDigits:0})+' M'},grid:{color:'rgba(255,255,255,0.16)'}}}}
   });
   if(prod!=='Aportes'){setTimeout(()=>aplicarScrollGrafica('chDetLine'),50);}
@@ -1448,7 +1452,7 @@ function showDrillDown(cat){
       <div class="shdr-t" style="color:${CAT_COLOR[cat]}">🔍 Detalle Categoría ${cat} — ${CAT_LABEL[cat]}</div>
       <div class="shdr-s">${det.num} créditos · ${fK(tot)} Capital</div>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;padding:1rem">
+    <div class="cat-detail-grid" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;padding:1rem">
 
       <!-- Volumen -->
       <div style="padding:.8rem;background:var(--bg);border-radius:10px">
@@ -1509,7 +1513,7 @@ function showDrillDown(cat){
           <span class="sp-pchip" onclick="_spSetPeriod(this,'Todo')">Todo</span>
         </div>
       </div>
-      <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin-bottom:.8rem" id="spTrendMets"></div>
+      <div class="sp-trend-grid" style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin-bottom:.8rem" id="spTrendMets"></div>
       <div style="position:relative;width:100%;height:150px"><canvas id="spTrendChart"></canvas></div>
     </div>
   </div>`;
