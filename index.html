@@ -1595,7 +1595,9 @@ function descargarAlertasExcel(){
     XLSX.utils.book_append_sheet(_wb,_ws,s.name);
   });
   if(!_wb.SheetNames.length){alert('Sin créditos para exportar.');return;}
-  XLSX.writeFile(_wb,'Alertas_Deterioro_FEBOR_'+(_last.Fecha||'').replace(/-/g,'')+'.xlsx');
+  var _hoy=new Date();
+  var _fechaHoy=_hoy.getFullYear()+'-'+String(_hoy.getMonth()+1).padStart(2,'0')+'-'+String(_hoy.getDate()).padStart(2,'0');
+  XLSX.writeFile(_wb,'Cartera mora sin arrastre FEBOR '+_fechaHoy+'.xlsx');
 }
 
 function closeMoraDetalle(){
