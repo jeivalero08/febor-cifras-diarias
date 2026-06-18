@@ -28,7 +28,7 @@ function aplicarScrollGrafica(canvasId){
     const ch=Chart.getChart(cv);
     if(!ch)return;
     const nPts=(ch.data&&ch.data.labels)?ch.data.labels.length:0;
-    if(nPts<=cfg.vis)return; // si caben, no hace falta scroll
+    if(nPts<=cfg.vis){quitarScrollGrafica(canvasId);return;} // si caben, limpiar scroll y no hacer nada más
     // Envolver una sola vez: [ ejeYfijo | área-scroll(canvas) ]
     let row=cv.closest('.chart-row');
     if(!row){
@@ -841,7 +841,7 @@ function renderKPIs(data){
   let h=`<div class="kpi" style="background:rgba(255,255,255,0.52);border:1px solid rgba(200,215,230,.80);box-shadow:0 4px 16px rgba(0,0,0,.06)"><div class="kpi-bar" style="background:var(--ac);opacity:.6"></div>
     <div class="kpi-lbl" style="color:#64748b">Total portafolio</div><div class="kpi-val" style="color:#1a2332;font-size:1.3rem">${fK(tL)}</div>
     <div class="kpi-unit">millones COP · ${fDt(l.Fecha)}</div>
-    <span class="kpi-d ${tp>=0?'up':'dn'}" style="background:rgba(255,255,255,.12);color:${tp>=0?'#bbf7d0':'#ffd0d0'};font-weight:700">${fP(tp)} · ${tpMontoTxt}</span></div>`;
+    <span class="kpi-d ${tp>=0?'up':'dn'}" style="background:${tp>=0?'#dcfce7':'#fee2e2'};color:${tp>=0?'#15803d':'#dc2626'};border:1px solid ${tp>=0?'#86efac':'#fca5a5'};font-weight:700">${fP(tp)} · ${tpMontoTxt}</span></div>`;
   PRODS.forEach(p=>{
     const v1=l[p.k];
     // Primer día con valor válido del producto en el periodo
@@ -1164,7 +1164,7 @@ function renderProd(prod){
       scales:{x:{ticks:_esAportes?{maxTicksLimit:12,font:{size:10},callback:(v,i)=>{const d=data[i]?.Fecha;return d?`${d.slice(8,10)}/${d.slice(5,7)}/${d.slice(2,4)}`:'';}}
         :{autoSkip:false,maxRotation:45,font:{size:9},callback:(v,i)=>{const d=data[i]?.Fecha;if(!d)return '';const mk=d.slice(0,7);const esPrimeroDelMes=(i===0)||(data[i-1]&&data[i-1].Fecha.slice(0,7)!==mk);if(!esPrimeroDelMes)return '';const ML=['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];return `${d.slice(8,10)} ${ML[parseInt(d.slice(5,7))]}`;}},
         grid:{display:false}},
-        y:{min:yMin,max:yMax,ticks:{font:{size:10},callback:v=>v.toLocaleString('es-CO',{maximumFractionDigits:0})+' M'},grid:{color:'rgba(0,0,0,0.04)'}}}}
+        y:(!_esAportes&&usaScrollDet)?{min:yMin,max:yMax,afterFit:(s)=>{s.width=0;},ticks:{display:false,font:{size:10},callback:v=>v.toLocaleString('es-CO',{maximumFractionDigits:0})+' M'},grid:{color:'rgba(0,0,0,0.04)'}}:{min:yMin,max:yMax,ticks:{font:{size:10},callback:v=>v.toLocaleString('es-CO',{maximumFractionDigits:0})+' M'},grid:{color:'rgba(0,0,0,0.04)'}}}}
   });
   if(_esAportes){quitarScrollGrafica('chDetLine');}
   else{setTimeout(()=>aplicarScrollGrafica('chDetLine'),50);}
