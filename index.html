@@ -1152,19 +1152,22 @@ function renderProd(prod){
       ctx.restore();
     }
   };
+  const _esAportes=(prod==='Aportes');
   new Chart(document.getElementById('chDetLine'),{type:'line',
     data:{labels:data.map(r=>r.Fecha),datasets:[{label:prod,data:serie,
       borderColor:p.c,borderWidth:2.5,
       backgroundColor:(c)=>{const{ctx,chartArea}=c.chart;if(!chartArea)return p.c+'22';const g=ctx.createLinearGradient(0,chartArea.top,0,chartArea.bottom);g.addColorStop(0,p.c+'66');g.addColorStop(1,p.c+'05');return g;},
       pointRadius:0,pointHoverRadius:7,pointHitRadius:14,pointBackgroundColor:p.c,pointBorderColor:'#fff',pointBorderWidth:2.5,tension:0.4,fill:true}]},
-    plugins:[globitosPlugin],
+    plugins:_esAportes?[]:[ globitosPlugin],
     options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:28,left:8,right:8}},plugins:{legend:{display:false},
       tooltip:{callbacks:{title:t=>fDt(t[0].label),label:t=>` ${t.parsed.y.toLocaleString('es-CO',{minimumFractionDigits:3,maximumFractionDigits:3})} M`}}},
-      scales:{x:{ticks:{autoSkip:false,maxRotation:45,font:{size:9},callback:(v,i)=>{const d=data[i]?.Fecha;if(!d)return '';const mk=d.slice(0,7);const esPrimeroDelMes=(i===0)||(data[i-1]&&data[i-1].Fecha.slice(0,7)!==mk);if(!esPrimeroDelMes)return '';const esMovil=(typeof window!=='undefined'&&window.innerWidth<560);if(esMovil){const mesNum=parseInt(d.slice(5,7));if(mesNum%2!==1)return '';}const ML=['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];return `${d.slice(8,10)} ${ML[parseInt(d.slice(5,7))]}`;}},grid:{display:false}},
-        y:usaScrollDet?{min:yMin,max:yMax,afterFit:(s)=>{s.width=0;},ticks:{display:false,font:{size:10},callback:v=>v.toLocaleString('es-CO',{maximumFractionDigits:0})+' M'},grid:{color:'rgba(0,0,0,0.04)'}}:{min:yMin,max:yMax,ticks:{font:{size:10},callback:v=>v.toLocaleString('es-CO',{maximumFractionDigits:0})+' M'},grid:{color:'rgba(0,0,0,0.04)'}}}}
+      scales:{x:{ticks:_esAportes?{maxTicksLimit:12,font:{size:10},callback:(v,i)=>{const d=data[i]?.Fecha;return d?`${d.slice(8,10)}/${d.slice(5,7)}/${d.slice(2,4)}`:'';}}
+        :{autoSkip:false,maxRotation:45,font:{size:9},callback:(v,i)=>{const d=data[i]?.Fecha;if(!d)return '';const mk=d.slice(0,7);const esPrimeroDelMes=(i===0)||(data[i-1]&&data[i-1].Fecha.slice(0,7)!==mk);if(!esPrimeroDelMes)return '';const ML=['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];return `${d.slice(8,10)} ${ML[parseInt(d.slice(5,7))]}`;}},
+        grid:{display:false}},
+        y:{min:yMin,max:yMax,ticks:{font:{size:10},callback:v=>v.toLocaleString('es-CO',{maximumFractionDigits:0})+' M'},grid:{color:'rgba(0,0,0,0.04)'}}}}
   });
-  if(prod!=='Aportes'){setTimeout(()=>aplicarScrollGrafica('chDetLine'),50);}
-  else{quitarScrollGrafica('chDetLine');}
+  if(_esAportes){quitarScrollGrafica('chDetLine');}
+  else{setTimeout(()=>aplicarScrollGrafica('chDetLine'),50);}
   const bM={};data.forEach(r=>{const k=r.Fecha.slice(0,7);if(!bM[k]){bM[k]={s:0,n:0};}bM[k].s+=r[prod];bM[k].n++;});
   const mks=Object.keys(bM).sort();dC('chDetBar');
   const usaScrollBar=mks.length>(window.__SCROLL_CHARTS['chDetBar']?.vis||18);
