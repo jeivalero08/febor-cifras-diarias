@@ -582,11 +582,11 @@ select,input{font-family:var(--ff)}
     </div>
     <div class="sel-sep"></div>
     <div class="qpills" id="qpCar">
-      <button class="qpill" onclick="setQCar('Anual',this)">Anual</button>
-      <button class="qpill" onclick="setQCar('6M',this)">6 Meses</button>
-      <button class="qpill" onclick="setQCar('3M',this)">3 Meses</button>
-      <button class="qpill" onclick="setQCar('Mensual',this)">Mensual</button>
-      <button class="qpill on" onclick="setQCar('Diario',this)">Diario</button>
+      <button class="qpill" onclick="setQCar(30,this)">Mensual</button>
+      <button class="qpill" onclick="setQCar(90,this)">90d</button>
+      <button class="qpill" onclick="setQCar(180,this)">6 Meses</button>
+      <button class="qpill" onclick="setQCar(365,this)">Año</button>
+      <button class="qpill on" onclick="setQCar(0,this)">Todo</button>
     </div>
     <span class="sel-info" id="carInfo">Sin datos de cartera</span>
   </div>
@@ -699,45 +699,26 @@ const MS=['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','
 
 let ALL=[], CUR='', G={mode:'Diario'}, D={mode:'Diario'};
 
-/* ── FILTRO ANCLA ─────────────────────────────────────────────────────────
-   mode: 'Anual'|'6M'|'3M'|'Mensual'|'Diario'
-   Toma el último dato del array como ancla y retrocede muestreando
-   las fechas exactas que corresponden al patrón.
-   Límites: Anual=todos, 6M=10, 3M=12, Mensual=24, Diario=90
-──────────────────────────────────────────────────────────────────────── */
 const ANCHOR_LIMITS={Anual:9999,'6M':9999,'3M':9999,Mensual:9999,Diario:9999};
 
 function anchorDates(arr, mode){
   if(!arr.length) return [];
-  // Buscar el último registro con fecha válida
   const lastRec = arr[arr.length-1];
   const anchor = new Date(lastRec._d);
-  const limit = ANCHOR_LIMITS[mode]||90;
-
-  if(mode==='Diario'){
-    // Últimos N días continuos
-    const cut=new Date(anchor);cut.setDate(cut.getDate()-(limit-1));
-    return arr.filter(r=>r._d>=cut);
-  }
-
-  // Anclar desde el PRIMER dato hacia adelante usando el día del último como referencia
+  if(mode==='Diario') return [...arr];
   const firstRec=arr[0];
   const firstDate=new Date(firstRec._d);
   const anchorDay=anchor.getDate();
-
-  // Generar anclas avanzando desde el mes/año del primer dato con el día ancla
   const targets=[];
   let cur=new Date(firstDate.getFullYear(), firstDate.getMonth(), anchorDay);
-  while(cur <= anchor){
+  const anchorDate=new Date(anchor.getFullYear(), anchor.getMonth(), anchor.getDate()+1);
+  while(cur <= anchorDate){
     targets.push(new Date(cur));
     if(mode==='Anual') cur.setFullYear(cur.getFullYear()+1);
     else if(mode==='6M') cur.setMonth(cur.getMonth()+6);
     else if(mode==='3M') cur.setMonth(cur.getMonth()+3);
     else if(mode==='Mensual') cur.setMonth(cur.getMonth()+1);
   }
-
-  // Para cada ancla tomar el registro MÁS CERCANO sin límite de distancia
-  // (garantiza que cada ancla siempre produce un punto)
   const result=[];
   const seen=new Set();
   for(const t of targets){
@@ -748,9 +729,8 @@ function anchorDates(arr, mode){
     }
     if(best && !seen.has(best.Fecha)){seen.add(best.Fecha);result.push(best);}
   }
-  // Siempre incluir el primer registro real si no fue capturado
-  if(!seen.has(firstRec.Fecha)) result.push(firstRec);
-  // Ordenar cronológicamente
+  if(!seen.has(arr[0].Fecha)) result.push(arr[0]);
+  if(!seen.has(arr[arr.length-1].Fecha)) result.push(arr[arr.length-1]);
   result.sort((a,b)=>a._d-b._d);
   return result;
 }
@@ -799,12 +779,12 @@ function clearQ(id){document.querySelectorAll('#'+id+' .qpill').forEach(p=>p.cla
 
 // GEN FILTERS
 function setQGen(mode,btn){G={mode};clearQ('qpGen');btn.classList.add('on');renderGeneral();}
-function applyGenDate(){const f=document.getElementById('gFrom').value,t=document.getElementById('gTo').value;if(!f||!t)return;G={mode:'Diario',_from:f,_to:t};clearQ('qpGen');renderGeneral();}
+function applyGenDate(){const f=document.getElementById('gFrom').value,t=document.getElementById('gTo').value;if(!f||!t)return;G={mode:'Diario'};clearQ('qpGen');renderGeneral();}
 function clearGenDate(){G={mode:'Diario'};clearQ('qpGen');document.querySelector('#qpGen .qpill:last-child').classList.add('on');renderGeneral();}
 
 // DET FILTERS
 function setQDet(mode,btn){D={mode};clearQ('qpDet');btn.classList.add('on');renderProd(CUR);}
-function applyDetDate(){const f=document.getElementById('dFrom').value,t=document.getElementById('dTo').value;if(!f||!t)return;D={mode:'Diario',_from:f,_to:t};clearQ('qpDet');renderProd(CUR);}
+function applyDetDate(){const f=document.getElementById('dFrom').value,t=document.getElementById('dTo').value;if(!f||!t)return;D={mode:'Diario'};clearQ('qpDet');renderProd(CUR);}
 function clearDetDate(){D={mode:'Diario'};clearQ('qpDet');document.querySelector('#qpDet .qpill:last-child').classList.add('on');renderProd(CUR);}
 
 // NAV
@@ -1163,6 +1143,14 @@ function renderProd(prod){
       ctx.save();
       ds.forEach((pt,i)=>{
         if(!hitos.has(i))return;
+        // En Aportes: solo la bolita grande, sin globito de texto (el valor sale al hover)
+        if(prod==='Aportes'){
+          var _rb=(chart.width<480)?3:5;
+          ctx.beginPath();ctx.arc(pt.x,pt.y,_rb,0,Math.PI*2);
+          ctx.fillStyle=p.c;ctx.fill();
+          ctx.lineWidth=(chart.width<480)?1.5:2.5;ctx.strokeStyle='#1e293b';ctx.stroke();
+          return;
+        }
         const val=serie[i];
         const txt=val.toLocaleString('es-CO',{maximumFractionDigits:0});
         ctx.font="600 10px 'IBM Plex Mono',monospace";
@@ -1192,14 +1180,16 @@ function renderProd(prod){
       borderColor:p.c,borderWidth:2.5,
       backgroundColor:(c)=>{const{ctx,chartArea}=c.chart;if(!chartArea)return p.c+'22';const g=ctx.createLinearGradient(0,chartArea.top,0,chartArea.bottom);g.addColorStop(0,p.c+'66');g.addColorStop(1,p.c+'05');return g;},
       pointRadius:0,pointHoverRadius:7,pointHitRadius:14,pointBackgroundColor:p.c,pointBorderColor:'#fff',pointBorderWidth:2.5,tension:0.4,fill:true}]},
-    plugins:[ globitosPlugin],
+    plugins:_esAportes?[]:[ globitosPlugin],
     options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:28,left:8,right:8}},plugins:{legend:{display:false},
       tooltip:{callbacks:{title:t=>fDt(t[0].label),label:t=>` ${t.parsed.y.toLocaleString('es-CO',{minimumFractionDigits:3,maximumFractionDigits:3})} M`}}},
-         scales:{x:{ticks:{autoSkip:false,maxRotation:45,font:{size:9},callback:(v,i)=>{const d=data[i]?.Fecha;if(!d)return '';const mk=d.slice(0,7);const esPrimeroDelMes=(i===0)||(data[i-1]&&data[i-1].Fecha.slice(0,7)!==mk);if(!esPrimeroDelMes)return '';const ML=['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];return `${d.slice(8,10)} ${ML[parseInt(d.slice(5,7))]}`;}},
+      scales:{x:{ticks:_esAportes?{maxTicksLimit:12,font:{size:10},callback:(v,i)=>{const d=data[i]?.Fecha;return d?`${d.slice(8,10)}/${d.slice(5,7)}/${d.slice(2,4)}`:'';}}
+        :{autoSkip:false,maxRotation:45,font:{size:9},callback:(v,i)=>{const d=data[i]?.Fecha;if(!d)return '';const mk=d.slice(0,7);const esPrimeroDelMes=(i===0)||(data[i-1]&&data[i-1].Fecha.slice(0,7)!==mk);if(!esPrimeroDelMes)return '';const ML=['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];return `${d.slice(8,10)} ${ML[parseInt(d.slice(5,7))]}`;}},
         grid:{display:false}},
-        y:usaScrollDet?{min:yMin,max:yMax,afterFit:(s)=>{s.width=0;},ticks:{display:false,font:{size:10},callback:v=>v.toLocaleString('es-CO',{maximumFractionDigits:0})+' M'},grid:{color:'rgba(0,0,0,0.04)'}}:{min:yMin,max:yMax,ticks:{font:{size:10},callback:v=>v.toLocaleString('es-CO',{maximumFractionDigits:0})+' M'},grid:{color:'rgba(0,0,0,0.04)'}}}}
+        y:(!_esAportes&&usaScrollDet)?{min:yMin,max:yMax,afterFit:(s)=>{s.width=0;},ticks:{display:false,font:{size:10},callback:v=>v.toLocaleString('es-CO',{maximumFractionDigits:0})+' M'},grid:{color:'rgba(0,0,0,0.04)'}}:{min:yMin,max:yMax,ticks:{font:{size:10},callback:v=>v.toLocaleString('es-CO',{maximumFractionDigits:0})+' M'},grid:{color:'rgba(0,0,0,0.04)'}}}}
   });
-  setTimeout(()=>aplicarScrollGrafica('chDetLine'),50);
+  if(_esAportes){quitarScrollGrafica('chDetLine');}
+  else{setTimeout(()=>aplicarScrollGrafica('chDetLine'),50);}
   const bM={};data.forEach(r=>{const k=r.Fecha.slice(0,7);if(!bM[k]){bM[k]={s:0,n:0};}bM[k].s+=r[prod];bM[k].n++;});
   const mks=Object.keys(bM).sort();dC('chDetBar');
   const usaScrollBar=mks.length>(window.__SCROLL_CHARTS['chDetBar']?.vis||18);
@@ -1240,14 +1230,19 @@ function downloadHTML(){
   a.download='EvolucionSaldos_FEBOR.html';
   a.click();
 }
-let CAR_F={mode:'Diario'};
+let CAR_F={days:0,from:'',to:''};
 let _CAR_SELECTED_DATE=null; // día seleccionado al hacer clic en gráfica
 let _SP_OPEN_CAT=null;
 
-function filtrarCar(st){return anchorDates(CAR_ALL, st.mode||'Diario');}
+function filtrarCar(st){
+  if(!CAR_ALL.length)return[];
+  if(st.days>0){const c=new Date(CAR_ALL[CAR_ALL.length-1]._d);c.setDate(c.getDate()-st.days);return CAR_ALL.filter(r=>r._d>=c);}
+  if(st.from&&st.to)return CAR_ALL.filter(r=>r.Fecha>=st.from&&r.Fecha<=st.to);
+  return[...CAR_ALL];
+}
 
-function setQCar(mode,btn){
-  CAR_F={mode};
+function setQCar(d,btn){
+  CAR_F={days:d,from:'',to:''};
   clearQ('qpCar');btn.classList.add('on');
   renderCartera();
   if(document.getElementById('pgMoraSP').style.display!=='none') renderMoraDetalleSP();
@@ -1256,13 +1251,13 @@ function setQCar(mode,btn){
 function applyCarteraDate(){
   const f=document.getElementById('cFrom').value,t=document.getElementById('cTo').value;
   if(!f||!t)return;
-  CAR_F={mode:'Diario'};clearQ('qpCar');
+  CAR_F={days:0,from:f,to:t};clearQ('qpCar');
   renderCartera();
   if(document.getElementById('pgMoraSP').style.display!=='none') renderMoraDetalleSP();
   if(document.getElementById('pgMoraCA').style.display!=='none') renderMoraDetalleCA();
 }
 function clearCarteraDate(){
-  CAR_F={mode:'Diario'};
+  CAR_F={days:0,from:'',to:''};
   document.getElementById('cFrom').value='';
   document.getElementById('cTo').value='';
   clearQ('qpCar');
