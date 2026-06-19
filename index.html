@@ -710,8 +710,8 @@ function anchorDates(arr, mode){
   const firstDate=new Date(firstRec._d);
   const anchorDay=anchor.getDate();
   const targets=[];
-  let cur=new Date(firstDate.getFullYear(), firstDate.getMonth(), anchorDay);
-  const anchorDate=new Date(anchor.getFullYear(), anchor.getMonth(), anchor.getDate()+1);
+  let cur=new Date(firstDate.getFullYear(), firstDate.getMonth(), anchorDay, 12, 0, 0);
+  const anchorDate=new Date(anchor.getFullYear(), anchor.getMonth(), anchor.getDate(), 12, 0, 0);
   while(cur <= anchorDate){
     targets.push(new Date(cur));
     if(mode==='Anual') cur.setFullYear(cur.getFullYear()+1);
