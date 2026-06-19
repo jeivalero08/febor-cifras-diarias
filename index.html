@@ -703,35 +703,36 @@ const ANCHOR_LIMITS={Anual:9999,'6M':9999,'3M':9999,Mensual:9999,Diario:9999};
 
 function anchorDates(arr, mode){
   if(!arr.length) return [];
-  const lastRec = arr[arr.length-1];
-  const anchor = new Date(lastRec._d);
+  const lastRec=arr[arr.length-1], firstRec=arr[0];
   if(mode==='Diario') return [...arr];
-  const firstRec=arr[0];
-  const firstDate=new Date(firstRec._d);
-  const anchorDay=anchor.getDate();
+  const lastFecha=lastRec.Fecha, firstFecha=firstRec.Fecha;
+  const anchorDay=parseInt(lastFecha.slice(8,10));
+  const pad=n=>String(n).padStart(2,'0');
+  const step={'Anual':12,'6M':6,'3M':3,'Mensual':1}[mode]||1;
+  // Generar anclas YYYY-MM-DD avanzando de step en step desde el primer mes
   const targets=[];
-  let cur=new Date(firstDate.getFullYear(), firstDate.getMonth(), anchorDay, 12, 0, 0);
-  const anchorDate=new Date(anchor.getFullYear(), anchor.getMonth(), anchor.getDate(), 12, 0, 0);
-  while(cur <= anchorDate){
-    targets.push(new Date(cur));
-    if(mode==='Anual') cur.setFullYear(cur.getFullYear()+1);
-    else if(mode==='6M') cur.setMonth(cur.getMonth()+6);
-    else if(mode==='3M') cur.setMonth(cur.getMonth()+3);
-    else if(mode==='Mensual') cur.setMonth(cur.getMonth()+1);
+  let y=parseInt(firstFecha.slice(0,4)), mo=parseInt(firstFecha.slice(5,7));
+  while(true){
+    const maxDay=new Date(y,mo,0).getDate();
+    const t=`${y}-${pad(mo)}-${pad(Math.min(anchorDay,maxDay))}`;
+    if(t>lastFecha) break;
+    targets.push(t);
+    mo+=step;
+    while(mo>12){mo-=12;y++;}
   }
-  const result=[];
-  const seen=new Set();
+  // Buscar registro más cercano a cada ancla comparando fechas como strings
+  const result=[], seen=new Set();
   for(const t of targets){
     let best=null, bestDiff=Infinity;
     for(const r of arr){
-      const diff=Math.abs(r._d-t);
-      if(diff<bestDiff){bestDiff=diff;best=r;}
+      const d=Math.abs(new Date(r.Fecha)-new Date(t));
+      if(d<bestDiff){bestDiff=d;best=r;}
     }
-    if(best && !seen.has(best.Fecha)){seen.add(best.Fecha);result.push(best);}
+    if(best&&!seen.has(best.Fecha)){seen.add(best.Fecha);result.push(best);}
   }
-  if(!seen.has(arr[0].Fecha)) result.push(arr[0]);
-  if(!seen.has(arr[arr.length-1].Fecha)) result.push(arr[arr.length-1]);
-  result.sort((a,b)=>a._d-b._d);
+  if(!seen.has(firstRec.Fecha)) result.push(firstRec);
+  if(!seen.has(lastRec.Fecha)) result.push(lastRec);
+  result.sort((a,b)=>a.Fecha<b.Fecha?-1:1);
   return result;
 }
 
