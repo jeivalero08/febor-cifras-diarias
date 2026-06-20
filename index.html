@@ -7,7 +7,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
 /* === Scroll horizontal con eje Y fijo (técnica de dos contenedores) === */
-window.__SCROLL_CHARTS={chDetLine:{px:14,vis:60}, chVar:{px:42,vis:24}, chDetBar:{px:34,vis:18}, chMoraSP:{px:22,vis:30}, chMoraCA:{px:22,vis:30}};
+window.__SCROLL_CHARTS={chHist:{px:22,vis:30}, chDetLine:{px:70,vis:12}, chVar:{px:42,vis:24}, chDetBar:{px:34,vis:18}, chMoraSP:{px:22,vis:60}, chMoraCA:{px:22,vis:60}};
 function aplicarScrollGrafica(canvasId){
   try{
     const cv=document.getElementById(canvasId);
@@ -47,11 +47,14 @@ function aplicarScrollGrafica(canvasId){
       row.parentNode.insertBefore(hint,row.nextSibling);
     }
     const innerDiv=row.querySelector('.chart-scroll-inner');
-    const anchoTotal=Math.max(nPts*cfg.px, innerDiv.parentNode.clientWidth);
+    const MAX_CANVAS=32000; // límite seguro del canvas HTML (~32767px máximo del navegador)
+    const pxReal=Math.min(cfg.px, Math.floor(MAX_CANVAS/nPts));
+    const anchoTotal=Math.max(nPts*pxReal, innerDiv.parentNode.clientWidth);
     innerDiv.style.width=anchoTotal+'px';
     const host=innerDiv.querySelector('.cwrap')||innerDiv.firstChild;
-    if(host)host.style.width=anchoTotal+'px';
-    ch.resize();
+    if(host){host.style.width=anchoTotal+'px';host.style.overflow='visible';}
+    if(ch.canvas){ch.canvas.style.maxWidth='none';ch.canvas.style.width=anchoTotal+'px';}
+    ch.resize(anchoTotal, ch.height);
     // dibujar el eje Y fijo a partir de la escala real
     setTimeout(()=>dibujarEjeYFijo(canvasId,ch),40);
     const sc=innerDiv.parentNode;sc.scrollLeft=sc.scrollWidth;
@@ -265,7 +268,7 @@ select,input{font-family:var(--ff)}
 .ctitle{font-size:.9rem;font-weight:700;color:#1a2332}
 .csub{font-size:.67rem;color:var(--tx3);margin-top:3px}
 .cwrap{position:relative;overflow:hidden}.cwrap canvas{max-width:100%}
-.h340{height:340px}.h280{height:280px}.h260{height:200px}
+.h400{height:400px}.h340{height:340px}.h280{height:280px}.h260{height:200px}
 .cleg{display:flex;flex-wrap:wrap;gap:10px;margin-top:.9rem}
 .cleg-i{display:flex;align-items:center;gap:5px;font-size:.7rem;color:var(--tx2);cursor:pointer;transition:opacity .14s}
 .cleg-i:hover{opacity:.65}
@@ -501,7 +504,7 @@ select,input{font-family:var(--ff)}
   <div class="crow">
     <div class="ccard span2">
       <div class="ctop"><div><div class="ctitle">Evolución histórica por producto</div><div class="csub">Clic en un producto para ver su detalle · Millones COP</div></div></div>
-      <div class="cwrap h340"><canvas id="chHist"></canvas></div>
+      <div class="cwrap h400"><canvas id="chHist"></canvas></div>
       <div class="cleg" id="legHist"></div>
     </div>
   </div>
@@ -709,16 +712,16 @@ function anchorDates(arr, mode){
   const anchorDay=parseInt(lastFecha.slice(8,10));
   const pad=n=>String(n).padStart(2,'0');
   const step={'Anual':12,'6M':6,'3M':3,'Mensual':1}[mode]||1;
-  // Generar anclas YYYY-MM-DD avanzando de step en step desde el primer mes
+  // Generar anclas retrocediendo desde el último dato para garantizar alineación exacta
   const targets=[];
-  let y=parseInt(firstFecha.slice(0,4)), mo=parseInt(firstFecha.slice(5,7));
+  let y=parseInt(lastFecha.slice(0,4)), mo=parseInt(lastFecha.slice(5,7));
   while(true){
     const maxDay=new Date(y,mo,0).getDate();
     const t=`${y}-${pad(mo)}-${pad(Math.min(anchorDay,maxDay))}`;
-    if(t>lastFecha) break;
-    targets.push(t);
-    mo+=step;
-    while(mo>12){mo-=12;y++;}
+    if(t<firstFecha) break;
+    targets.unshift(t);
+    mo-=step;
+    while(mo<1){mo+=12;y--;}
   }
   // Buscar registro más cercano a cada ancla comparando fechas como strings
   const result=[], seen=new Set();
@@ -772,16 +775,16 @@ function initData(raw){
 }
 
 // FILTER
-function filtrar(st){return anchorDates(ALL, st.mode||'Diario');}
+function filtrar(st){const arr=(st.desde&&st.hasta)?ALL.filter(r=>r.Fecha>=st.desde&&r.Fecha<=st.hasta):ALL;return anchorDates(arr, st.mode||'Diario');}
 function filtrarProd(st,prod){return filtrar(st).filter(r=>r[prod]!=null);}
-function infoStr(d){if(!d.length)return'0 registros';return`${fDt(d[0].Fecha)} → ${fDt(d[d.length-1].Fecha)} · ${d.length} días`;}
+function infoStr(d){if(!d.length)return'0 registros';return`${fDt(d[0].Fecha)} → ${fDt(d[d.length-1].Fecha)}`;}
 
 function clearQ(id){document.querySelectorAll('#'+id+' .qpill').forEach(p=>p.classList.remove('on'));}
 
 // GEN FILTERS
 function setQGen(mode,btn){G={mode};clearQ('qpGen');btn.classList.add('on');renderGeneral();}
-function applyGenDate(){const f=document.getElementById('gFrom').value,t=document.getElementById('gTo').value;if(!f||!t)return;G={mode:'Diario'};clearQ('qpGen');renderGeneral();}
-function clearGenDate(){G={mode:'Diario'};clearQ('qpGen');document.querySelector('#qpGen .qpill:last-child').classList.add('on');renderGeneral();}
+function applyGenDate(){const f=document.getElementById('gFrom').value,t=document.getElementById('gTo').value;if(!f||!t)return;G={mode:'Diario',desde:f,hasta:t};clearQ('qpGen');renderGeneral();}
+function clearGenDate(){G={mode:'Diario'};clearQ('qpGen');document.getElementById('gFrom').value=ALL[0]?.Fecha||'';document.getElementById('gTo').value=ALL[ALL.length-1]?.Fecha||'';document.querySelector('#qpGen .qpill:last-child').classList.add('on');renderGeneral();}
 
 // DET FILTERS
 function setQDet(mode,btn){D={mode};clearQ('qpDet');btn.classList.add('on');renderProd(CUR);}
@@ -815,14 +818,15 @@ function setBc(v,prod){
 }
 
 // MENU HERO
-function renderMenuHero(){
+function renderMenuHero(data){
   const w=document.getElementById('menuHero');
   if(!w)return;
   if(!ALL.length){w.innerHTML='<div class="no-data"><p>Sin datos. Ejecuta el Actualizar FEBOR.bat para cargar el historial.</p></div>';return;}
-  const l=ALL[ALL.length-1],f=ALL[0];
+  const arr=data&&data.length?data:ALL;
+  const l=arr[arr.length-1],f=arr[0];
   const tot=PRODS.reduce((s,p)=>s+(l[p.k]||0),0);
   const totF=PRODS.reduce((s,p)=>s+(f[p.k]||0),0);
-  const prev=ALL.length>1?ALL[ALL.length-2]:null;
+  const prev=arr.length>1?arr[arr.length-2]:null;
   const totP=prev?PRODS.reduce((s,p)=>s+(prev[p.k]||0),0):null;
   const dD=totP?((tot-totP)/totP*100):null;
   const dT=totF?((tot-totF)/totF*100):null;
@@ -851,7 +855,7 @@ function renderGeneral(){
   const data=filtrar(G);
   document.getElementById('genInfo').textContent=infoStr(data);
   if(!data.length)return;
-  renderKPIs(data);renderHist(data);renderVar(data);renderDonut(data);renderTable(data);
+  renderMenuHero(data);renderKPIs(data);renderHist(data);renderVar(data);renderDonut(data);renderTable(data);
 }
 
 function renderKPIs(data){
@@ -894,24 +898,28 @@ function renderKPIs(data){
 function dC(id){const c=Chart.getChart(id);if(c)c.destroy();}
 
 function renderHist(data){
-  const dense=data.length>120;dC('chHist');
+  const esDiario=G.mode==='Diario';
+  const usaScrollHist=esDiario&&data.length>(window.__SCROLL_CHARTS['chHist']?.vis||30);
+  quitarScrollGrafica('chHist');
+  dC('chHist');
   document.getElementById('legHist').innerHTML=PRODS.map(p=>`<span class="cleg-i" onclick="goProd('${p.k}')"><span class="cleg-dot" style="background:${p.c}"></span>${p.k}</span>`).join('');
   new Chart(document.getElementById('chHist'),{type:'line',
     data:{labels:data.map(r=>r.Fecha),datasets:PRODS.map(p=>({
       label:p.k,data:data.map(r=>r[p.k]!=null?+(r[p.k]/1e6).toFixed(3):null),
       borderColor:p.c,backgroundColor:p.c+'18',borderWidth:2,
-      pointRadius:dense?0:2,pointHoverRadius:4,tension:0.35,fill:false,spanGaps:true,
+      pointRadius:3,pointHoverRadius:6,tension:0.35,fill:false,spanGaps:true,
     }))},
-    options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{bottom:usaScrollHist?55:8}},interaction:{mode:'index',intersect:false},
       plugins:{legend:{display:false},tooltip:{callbacks:{
         title:t=>fDt(t[0].label),
         label:t=>` ${t.dataset.label}: ${t.parsed.y!=null?t.parsed.y.toLocaleString('es-CO',{minimumFractionDigits:3,maximumFractionDigits:3})+' M':'—'}`
       }}},
-      scales:{x:{ticks:{maxTicksLimit:12,font:{size:10},callback:(v,i)=>{const d=data[i]?.Fecha;return d?`${d.slice(8,10)}/${d.slice(5,7)}/${d.slice(2,4)}`:'';}},grid:{display:false}},
+      scales:{x:{ticks:{autoSkip:true,maxTicksLimit:usaScrollHist?9999:12,font:{size:9},maxRotation:usaScrollHist?90:0,minRotation:usaScrollHist?90:0,callback:(v,i)=>{const d=data[i]?.Fecha;return d?`${d.slice(8,10)}/${d.slice(5,7)}/${d.slice(2,4)}`:'';}},grid:{display:false}},
         y:{ticks:{font:{size:10},callback:v=>v.toLocaleString('es-CO',{maximumFractionDigits:0})+' M'},grid:{color:'rgba(0,0,0,0.04)'}}},
       onClick:(e,els)=>{if(els.length)goProd(PRODS[els[0].datasetIndex].k);}
     }
   });
+  if(usaScrollHist)setTimeout(()=>aplicarScrollGrafica('chHist'),50);
 }
 
 function renderVar(data){
@@ -938,7 +946,7 @@ function renderVar(data){
       ]},
     options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
       plugins:{legend:{display:false},tooltip:{filter:item=>item.datasetIndex===0,callbacks:{label:t=>`Saldo promedio: ${t.parsed.y.toLocaleString('es-CO',{minimumFractionDigits:2,maximumFractionDigits:2})} M`}}},
-      scales:{x:{ticks:{maxTicksLimit:24,font:{size:9},maxRotation:45},grid:{display:false}},
+      scales:{x:{ticks:{maxTicksLimit:24,font:{size:9},maxRotation:0,minRotation:0},grid:{display:false}},
         y:usaScrollVar?{min:yMinV,max:yMaxV,afterFit:(s)=>{s.width=0;},ticks:{display:false,font:{size:10},callback:v=>v.toLocaleString('es-CO',{maximumFractionDigits:0})+' M'},grid:{color:'rgba(0,0,0,0.04)'}}:{min:yMinV,max:yMaxV,ticks:{font:{size:10},callback:v=>v.toLocaleString('es-CO',{maximumFractionDigits:0})+' M'},grid:{color:'rgba(0,0,0,0.04)'}}}}
   });
   setTimeout(()=>aplicarScrollGrafica('chVar'),50);
@@ -1131,11 +1139,11 @@ function renderProd(prod){
   const sMin=Math.min(...serie), sMax=Math.max(...serie);
   const margen=(sMax-sMin)*0.12||Math.abs(sMax)*0.1||1;
   const yMin=sMin-margen, yMax=sMax+margen;
-  const usaScrollDet=data.length>(window.__SCROLL_CHARTS['chDetLine']?.vis||60);
-  // Hitos = PRIMER día de cada mes
-  const hitos=new Set(); const primPorMes={};
-  data.forEach((r,i)=>{const mk=r.Fecha.slice(0,7);if(primPorMes[mk]===undefined)primPorMes[mk]=i;});
-  Object.values(primPorMes).forEach(i=>hitos.add(i));
+  const VIS_DET=window.__SCROLL_CHARTS['chDetLine']?.vis||30;
+  const usaScrollDet=data.length>VIS_DET;
+  // Hitos: todos los puntos
+  const hitos=new Set();
+  data.forEach((_,i)=>hitos.add(i));
   const globitosPlugin={
     id:'globitos'+prod,
     afterDatasetsDraw(chart){
@@ -1144,53 +1152,59 @@ function renderProd(prod){
       ctx.save();
       ds.forEach((pt,i)=>{
         if(!hitos.has(i))return;
-        // En Aportes: solo la bolita grande, sin globito de texto (el valor sale al hover)
-        if(prod==='Aportes'){
-          var _rb=(chart.width<480)?3:5;
-          ctx.beginPath();ctx.arc(pt.x,pt.y,_rb,0,Math.PI*2);
-          ctx.fillStyle=p.c;ctx.fill();
-          ctx.lineWidth=(chart.width<480)?1.5:2.5;ctx.strokeStyle='#1e293b';ctx.stroke();
-          return;
-        }
         const val=serie[i];
         const txt=val.toLocaleString('es-CO',{maximumFractionDigits:0});
-        ctx.font="600 10px 'IBM Plex Mono',monospace";
-        const w=ctx.measureText(txt).width+16;
-        const area=chart.chartArea;
-        // centro X del globito, ajustado para que no se salga del área
-        let cxg=pt.x;
-        if(cxg-w/2<area.left+2)cxg=area.left+2+w/2;
-        if(cxg+w/2>area.right-2)cxg=area.right-2-w/2;
-        const bx=cxg-w/2, by=pt.y-26, h=18;
-        ctx.fillStyle='rgba(255,255,255,.92)';
-        ctx.beginPath();
-        if(ctx.roundRect)ctx.roundRect(bx,by,w,h,9);else ctx.rect(bx,by,w,h);
-        ctx.fill();
-        ctx.fillStyle='#1e293b';ctx.textAlign='center';ctx.textBaseline='middle';
-        ctx.fillText(txt,cxg,by+h/2+1);
+        // Punto
         ctx.beginPath();ctx.arc(pt.x,pt.y,4,0,Math.PI*2);
         ctx.fillStyle=p.c;ctx.fill();
         ctx.lineWidth=2;ctx.strokeStyle='#1e293b';ctx.stroke();
+        if(rotarFechas){
+          // Modo Diario: texto vertical rotado 90° con fondo redondeado
+          ctx.save();
+          ctx.translate(pt.x, pt.y-10);
+          ctx.rotate(-Math.PI/2);
+          ctx.font="600 9px 'IBM Plex Mono',monospace";
+          const tw=ctx.measureText(txt).width;
+          const ph=12, pw=tw+8;
+          ctx.fillStyle='rgba(255,255,255,.92)';
+          ctx.beginPath();
+          if(ctx.roundRect)ctx.roundRect(0,-ph/2,pw,ph,6);else ctx.rect(0,-ph/2,pw,ph);
+          ctx.fill();
+          ctx.fillStyle='#1e293b';ctx.textAlign='left';ctx.textBaseline='middle';
+          ctx.fillText(txt, 4, 0);
+          ctx.restore();
+        } else {
+          // Otros modos: texto horizontal con fondo redondeado (estilo original)
+          ctx.font="600 10px 'IBM Plex Mono',monospace";
+          const w=ctx.measureText(txt).width+16;
+          const cxg=pt.x;
+          const bx=cxg-w/2, by=pt.y-26, h=18;
+          ctx.fillStyle='rgba(255,255,255,.92)';
+          ctx.beginPath();
+          if(ctx.roundRect)ctx.roundRect(bx,by,w,h,9);else ctx.rect(bx,by,w,h);
+          ctx.fill();
+          ctx.fillStyle='#1e293b';ctx.textAlign='center';ctx.textBaseline='middle';
+          ctx.fillText(txt,cxg,by+h/2+1);
+        }
       });
       ctx.restore();
     }
   };
   const _esAportes=(prod==='Aportes');
+  // Eje X: DD/MM en cada punto, Chart.js auto-skip cuando hay scroll y muchos puntos
+  const pxRealTick=Math.min(window.__SCROLL_CHARTS['chDetLine']?.px||70,Math.floor(32000/data.length));const rotarFechas=pxRealTick<44;const xTicksCfg={autoSkip:false,maxRotation:rotarFechas?90:0,minRotation:rotarFechas?90:0,font:{size:9},callback:(v,i)=>{const d=data[i]?.Fecha;return d?`${d.slice(8,10)}/${d.slice(5,7)}/${d.slice(2,4)}`:'';}};
   new Chart(document.getElementById('chDetLine'),{type:'line',
     data:{labels:data.map(r=>r.Fecha),datasets:[{label:prod,data:serie,
       borderColor:p.c,borderWidth:2.5,
       backgroundColor:(c)=>{const{ctx,chartArea}=c.chart;if(!chartArea)return p.c+'22';const g=ctx.createLinearGradient(0,chartArea.top,0,chartArea.bottom);g.addColorStop(0,p.c+'66');g.addColorStop(1,p.c+'05');return g;},
       pointRadius:0,pointHoverRadius:7,pointHitRadius:14,pointBackgroundColor:p.c,pointBorderColor:'#fff',pointBorderWidth:2.5,tension:0.4,fill:true}]},
-    plugins:_esAportes?[]:[ globitosPlugin],
-    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:28,left:8,right:8}},plugins:{legend:{display:false},
+    plugins:[globitosPlugin],
+    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:32,left:8,right:8,bottom:rotarFechas?55:8}},plugins:{legend:{display:false},
       tooltip:{callbacks:{title:t=>fDt(t[0].label),label:t=>` ${t.parsed.y.toLocaleString('es-CO',{minimumFractionDigits:3,maximumFractionDigits:3})} M`}}},
-      scales:{x:{ticks:_esAportes?{maxTicksLimit:12,font:{size:10},callback:(v,i)=>{const d=data[i]?.Fecha;return d?`${d.slice(8,10)}/${d.slice(5,7)}/${d.slice(2,4)}`:'';}}
-        :{autoSkip:false,maxRotation:45,font:{size:9},callback:(v,i)=>{const d=data[i]?.Fecha;if(!d)return '';const mk=d.slice(0,7);const esPrimeroDelMes=(i===0)||(data[i-1]&&data[i-1].Fecha.slice(0,7)!==mk);if(!esPrimeroDelMes)return '';const ML=['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];return `${d.slice(8,10)} ${ML[parseInt(d.slice(5,7))]}`;}},
-        grid:{display:false}},
-        y:(!_esAportes&&usaScrollDet)?{min:yMin,max:yMax,afterFit:(s)=>{s.width=0;},ticks:{display:false,font:{size:10},callback:v=>v.toLocaleString('es-CO',{maximumFractionDigits:0})+' M'},grid:{color:'rgba(0,0,0,0.04)'}}:{min:yMin,max:yMax,ticks:{font:{size:10},callback:v=>v.toLocaleString('es-CO',{maximumFractionDigits:0})+' M'},grid:{color:'rgba(0,0,0,0.04)'}}}}
-  });
-  if(_esAportes){quitarScrollGrafica('chDetLine');}
-  else{setTimeout(()=>aplicarScrollGrafica('chDetLine'),50);}
+      scales:{x:{ticks:xTicksCfg,grid:{display:false}},
+        y:usaScrollDet?{min:yMin,max:yMax,afterFit:(s)=>{s.width=0;},ticks:{display:false,font:{size:10},callback:v=>v.toLocaleString('es-CO',{maximumFractionDigits:0})+' M'},grid:{color:'rgba(0,0,0,0.04)'}}:{min:yMin,max:yMax,ticks:{font:{size:10},callback:v=>v.toLocaleString('es-CO',{maximumFractionDigits:0})+' M'},grid:{color:'rgba(0,0,0,0.04)'}}}}}
+  );
+  setTimeout(()=>aplicarScrollGrafica('chDetLine'),50);
   const bM={};data.forEach(r=>{const k=r.Fecha.slice(0,7);if(!bM[k]){bM[k]={s:0,n:0};}bM[k].s+=r[prod];bM[k].n++;});
   const mks=Object.keys(bM).sort();dC('chDetBar');
   const usaScrollBar=mks.length>(window.__SCROLL_CHARTS['chDetBar']?.vis||18);
@@ -1198,7 +1212,7 @@ function renderProd(prod){
     data:{labels:mks.map(k=>`${MS[parseInt(k.slice(5,7))]} ${k.slice(2,4)}`),
       datasets:[{label:'Prom',data:mks.map(k=>+(bM[k].s/bM[k].n/1e6).toFixed(3)),backgroundColor:p.c+'99',borderColor:p.c,borderWidth:1,borderRadius:4}]},
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:t=>` ${t.parsed.y.toLocaleString('es-CO',{minimumFractionDigits:2,maximumFractionDigits:2})} M`}}},
-      scales:{x:{ticks:{maxTicksLimit:14,font:{size:10},maxRotation:45},grid:{display:false}},
+      scales:{x:{ticks:{maxTicksLimit:14,font:{size:10},maxRotation:0,minRotation:0},grid:{display:false}},
         y:usaScrollBar?{afterFit:(s)=>{s.width=0;},ticks:{display:false,font:{size:10},callback:v=>v.toLocaleString('es-CO',{maximumFractionDigits:0})+' M'},grid:{color:'rgba(0,0,0,0.04)'}}:{ticks:{font:{size:10},callback:v=>v.toLocaleString('es-CO',{maximumFractionDigits:0})+' M'},grid:{color:'rgba(0,0,0,0.04)'}}}}
   });
   setTimeout(()=>aplicarScrollGrafica('chDetBar'),50);
@@ -1359,8 +1373,8 @@ function renderCartera(){
       : {min:yMn,max:yMx,ticks:{font:{size:9},callback:v=>v.toFixed(1)+'%'},grid:{color:'rgba(0,0,0,0.04)'}};
     // Eje X: con scroll = primer día de cada mes; sin scroll = pocas etiquetas auto
     const xTicks=usaScroll
-      ? {autoSkip:false,maxRotation:45,font:{size:9},callback:(v,i)=>{const d=data[i]?.Fecha;if(!d)return '';const mk=d.slice(0,7);const esP=(i===0)||(data[i-1]&&data[i-1].Fecha.slice(0,7)!==mk);if(!esP)return '';return `${d.slice(8,10)} ${ML[parseInt(d.slice(5,7))]}`;}}
-      : {autoSkip:false,maxRotation:45,minRotation:45,font:{size:9},callback:(v,i)=>{const d=data[i]?.Fecha;if(!d)return '';const paso=data.length<=16?1:(data.length<=30?2:3);if(i%paso!==0&&i!==data.length-1)return '';return `${d.slice(8,10)}/${d.slice(5,7)}`;}};
+      ? {autoSkip:false,maxRotation:0,minRotation:0,font:{size:9},callback:(v,i)=>{const d=data[i]?.Fecha;if(!d)return '';const mk=d.slice(0,7);const esP=(i===0)||(data[i-1]&&data[i-1].Fecha.slice(0,7)!==mk);if(!esP)return '';return `${d.slice(8,10)} ${ML[parseInt(d.slice(5,7))]}`;}}
+      : {autoSkip:false,maxRotation:0,minRotation:0,font:{size:9},callback:(v,i)=>{const d=data[i]?.Fecha;if(!d)return '';const paso=data.length<=16?1:(data.length<=30?2:3);if(i%paso!==0&&i!==data.length-1)return '';return `${d.slice(8,10)}/${d.slice(5,7)}`;}};
     new Chart(document.getElementById(id),{type:'line',
       data:{labels:data.map(r=>r.Fecha),datasets:[{
         data:serie,
@@ -1797,7 +1811,7 @@ function renderMoraDetalleSP(){
       plugins:{legend:{display:false},
         tooltip:{callbacks:{title:t=>fDt(t[0].label),label:t=>` ${t.dataset.label}: ${t.parsed.y.toLocaleString('es-CO',{minimumFractionDigits:2})} M`}}},
       onClick:(e,els)=>{if(els.length){_CAR_SELECTED_DATE=data[els[0].index]?.Fecha||null;renderCartera();renderMoraDetalleSP();}},
-      scales:{x:{ticks:{autoSkip:false,maxRotation:45,minRotation:45,font:{size:8},callback:(v,i)=>{const d=data[i]?.Fecha;if(!d)return '';const paso=data.length<=16?1:(data.length<=35?2:3);if(i%paso!==0&&i!==data.length-1)return '';return `${d.slice(8,10)}/${d.slice(5,7)}`;}},grid:{display:false}},
+      scales:{x:{ticks:{autoSkip:false,maxRotation:0,minRotation:0,font:{size:8},callback:(v,i)=>{const d=data[i]?.Fecha;if(!d)return '';const paso=data.length<=16?1:(data.length<=35?2:3);if(i%paso!==0&&i!==data.length-1)return '';return `${d.slice(8,10)}/${d.slice(5,7)}`;}},grid:{display:false}},
         y:{ticks:{font:{size:9},callback:v=>v+' M'},grid:{color:'rgba(0,0,0,0.04)'},stacked:true}}}});
   (function(){var lg=document.getElementById('legCatSP');if(!lg)return;
     lg.innerHTML='<span class="cat-leg-chip cat-pill-anim" style="border-color:'+CAT_COLORS['A']+';outline-color:'+CAT_COLORS['A']+'44" onclick="showDrillDown(\'A\')"><span class="cat-leg-dot" style="background:'+CAT_COLORS['A']+'"></span>Cat A <span class="cat-leg-lupa">\uD83D\uDD0D</span></span>'
@@ -1817,7 +1831,7 @@ function renderMoraDetalleSP(){
           renderMoraDetalleSP();
         }
       },
-      scales:{x:{ticks:{autoSkip:false,maxRotation:45,font:{size:9},callback:(v,i)=>{const d=data[i]?.Fecha;return d?`${d.slice(8,10)}/${d.slice(5,7)}`:'';}},grid:{display:false}},
+      scales:{x:{ticks:{autoSkip:false,maxRotation:0,minRotation:0,font:{size:9},callback:(v,i)=>{const d=data[i]?.Fecha;return d?`${d.slice(8,10)}/${d.slice(5,7)}/${d.slice(2,4)}`:'';}},grid:{display:false}},
         y:{ticks:{font:{size:9},callback:v=>v+' M'},grid:{color:'rgba(0,0,0,0.04)'},stacked:true}}}});
   (function(){var lg=document.getElementById('legEvolSP');if(!lg)return;
     lg.innerHTML=cats.filter(c=>c!=='A').map(c=>'<span class="cat-leg-chip cat-pill-anim" style="border-color:'+CAT_COLORS[c]+';outline-color:'+CAT_COLORS[c]+'44" onclick="showDrillDown(\''+c+'\')"><span class="cat-leg-dot" style="background:'+CAT_COLORS[c]+'"></span>Cat '+c+' <span class="cat-leg-lupa">🔍</span></span>').join('')
@@ -2082,7 +2096,7 @@ function renderMoraDetalleCA(){
       plugins:{legend:{display:false},
         tooltip:{callbacks:{title:t=>fDt(t[0].label),label:t=>` ${t.dataset.label}: ${t.parsed.y.toLocaleString('es-CO',{minimumFractionDigits:2})} M`}}},
       onClick:(e,els)=>{if(els.length){_CAR_SELECTED_DATE=data[els[0].index]?.Fecha||null;renderCartera();renderMoraDetalleCA();}},
-      scales:{x:{ticks:{autoSkip:false,maxRotation:45,minRotation:45,font:{size:8},callback:(v,i)=>{const d=data[i]?.Fecha;if(!d)return '';const paso=data.length<=16?1:(data.length<=35?2:3);if(i%paso!==0&&i!==data.length-1)return '';return `${d.slice(8,10)}/${d.slice(5,7)}`;}},grid:{display:false}},
+      scales:{x:{ticks:{autoSkip:false,maxRotation:0,minRotation:0,font:{size:8},callback:(v,i)=>{const d=data[i]?.Fecha;if(!d)return '';const paso=data.length<=16?1:(data.length<=35?2:3);if(i%paso!==0&&i!==data.length-1)return '';return `${d.slice(8,10)}/${d.slice(5,7)}`;}},grid:{display:false}},
         y:{ticks:{font:{size:9},callback:v=>v+' M'},grid:{color:'rgba(0,0,0,0.04)'},stacked:true}}}});
   (function(){var lg=document.getElementById('legCatCA');if(!lg)return;
     lg.innerHTML='<span class="cat-leg-chip cat-pill-anim" style="border-color:'+CAT_COLORS['A']+';outline-color:'+CAT_COLORS['A']+'44"><span class="cat-leg-dot" style="background:'+CAT_COLORS['A']+'"></span>Cat A (arrastre)</span>';
@@ -2096,7 +2110,7 @@ function renderMoraDetalleCA(){
       plugins:{legend:{display:false},
         tooltip:{callbacks:{title:t=>fDt(t[0].label),label:t=>` ${t.dataset.label}: ${t.parsed.y.toLocaleString('es-CO',{minimumFractionDigits:2})} M`}}},
       onClick:(e,els)=>{if(els.length){_CAR_SELECTED_DATE=data[els[0].index]?.Fecha||null;renderCartera();renderMoraDetalleCA();}},
-      scales:{x:{ticks:{autoSkip:false,maxRotation:45,font:{size:9},callback:(v,i)=>{const d=data[i]?.Fecha;return d?`${d.slice(8,10)}/${d.slice(5,7)}`:'';}},grid:{display:false}},
+      scales:{x:{ticks:{autoSkip:false,maxRotation:0,minRotation:0,font:{size:9},callback:(v,i)=>{const d=data[i]?.Fecha;return d?`${d.slice(8,10)}/${d.slice(5,7)}/${d.slice(2,4)}`:'';}},grid:{display:false}},
         y:{ticks:{font:{size:9},callback:v=>v+' M'},grid:{color:'rgba(0,0,0,0.04)'},stacked:true}}}});
   (function(){var lg=document.getElementById('legEvolCA');if(!lg)return;
     lg.innerHTML=cats.filter(c=>c!=='A').map(c=>'<span class="cat-leg-chip" style="border-color:'+CAT_COLORS[c]+'"><span class="cat-leg-dot" style="background:'+CAT_COLORS[c]+'"></span>Cat '+c+' <span class="cat-leg-lupa">🔍</span></span>').join('');
