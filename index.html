@@ -146,14 +146,14 @@ body{font-family:var(--ff);color:var(--tx);font-size:14px;line-height:1.6;-webki
 button{cursor:pointer;font-family:var(--ff);border:none;background:none}
 select,input{font-family:var(--ff)}
 
-.load-ov{position:fixed;inset:0;background:linear-gradient(135deg,#1e293b,#0f172a);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:1000;transition:opacity .4s}
+.load-ov{position:fixed;inset:0;background:rgba(248,250,255,0.82);backdrop-filter:blur(18px) saturate(140%);-webkit-backdrop-filter:blur(18px) saturate(140%);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:1000;transition:opacity .4s}
 .load-ov.gone{opacity:0;pointer-events:none}
 .load-bar-bg{width:220px;height:4px;background:rgba(255,255,255,.16);border-radius:4px;overflow:hidden;margin-top:1.6rem}
 .load-bar-fill{height:100%;background:linear-gradient(90deg,var(--ac),var(--ac-l));border-radius:4px;transition:width .3s;width:0;box-shadow:0 0 12px var(--ac-glow)}
 .load-txt{font-size:.72rem;color:rgba(255,255,255,.5);margin-top:.8rem;font-family:var(--fm)}
 
 /* HEADER — cristal */
-.hdr{background:rgba(15,23,42,0.68);backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);padding:0 1.8rem;display:flex;align-items:center;justify-content:space-between;min-height:64px;position:sticky;top:0;z-index:200;flex-wrap:wrap;gap:.5rem;border-bottom:1px solid rgba(255,255,255,.10);box-shadow:0 4px 24px rgba(0,0,0,.12)}
+.hdr{background:rgba(30,41,59,0.85);backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);padding:0 1.8rem;display:flex;align-items:center;justify-content:space-between;min-height:64px;position:sticky;top:0;z-index:200;flex-wrap:wrap;gap:.5rem;border-bottom:1px solid rgba(255,255,255,.10);box-shadow:0 4px 24px rgba(0,0,0,.12)}
 .hdr-brand{display:flex;align-items:center;gap:11px;padding:.5rem 0}
 .hdr-name{font-size:.97rem;color:#fff;font-weight:700}
 .hdr-tag{font-size:.58rem;color:rgba(255,255,255,.38);text-transform:uppercase;letter-spacing:.1em;line-height:1.4}
@@ -222,7 +222,7 @@ select,input{font-family:var(--ff)}
 .mcard:hover{transform:translateY(-4px);box-shadow:0 12px 40px rgba(0,0,0,.10),inset 0 1px 0 rgba(255,255,255,.75);border-color:rgba(200,215,230,.80);background:rgba(255,255,255,0.55)}
 .mcard-stripe{position:absolute;top:0;left:0;width:4px;height:100%;background:linear-gradient(180deg,var(--ac),var(--ac-l));opacity:0;transition:opacity .2s}
 .mcard:hover .mcard-stripe{opacity:1}
-.mcard-ico{width:68px;height:68px;background:#1e293b;border:1px solid rgba(255,255,255,.06);border-radius:18px;display:flex;align-items:center;justify-content:center;margin-bottom:.9rem;box-shadow:0 4px 14px -4px rgba(0,0,0,.3)}
+.mcard-ico{width:68px;height:68px;background:rgba(30,41,59,0.12);border:1px solid rgba(30,41,59,0.18);border-radius:18px;display:flex;align-items:center;justify-content:center;margin-bottom:.9rem;box-shadow:0 4px 14px -4px rgba(0,0,0,.12);backdrop-filter:blur(8px)}
 .mcard h3{font-size:.92rem;font-weight:700;color:#1a2332;margin-bottom:.28rem}
 .mcard p{font-size:.74rem;color:#475569;line-height:1.55}
 .mcard-arr{position:absolute;right:1rem;bottom:1rem;font-size:1rem;color:var(--tx3);transition:all .2s}
@@ -463,21 +463,21 @@ select,input{font-family:var(--ff)}
   <div class="mgrid mgrid-portada" style="max-width:1180px;margin:2.2rem auto 0">
     <div class="mcard" onclick="goGeneral()" style="padding:2.8rem 2.4rem">
       <div class="mcard-stripe" style="background:#00927A"></div>
-      <div class="mcard-ico" style="width:68px;height:68px"><svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="#6B9FD4" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10l9-5 9 5"/><path d="M5 10v8M19 10v8M9.5 18v-5h5v5"/><path d="M3 21h18"/></svg></div>
+      <div class="mcard-ico" style="width:68px;height:68px"><svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="#64748b" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10l9-5 9 5"/><path d="M5 10v8M19 10v8M9.5 18v-5h5v5"/><path d="M3 21h18"/></svg></div>
       <h3 style="font-size:1.35rem;margin:1.1rem 0 .5rem">Depósitos</h3>
       <p style="font-size:.82rem">Ahorro Voluntario · CDAT · Daes · Ahorro Contractual · Bolsillo Rentable</p>
       <span class="mcard-arr">→</span>
     </div>
     <div class="mcard" onclick="goProd('Aportes')" style="padding:2.8rem 2.4rem">
       <div class="mcard-stripe" style="background:#7ab8a8"></div>
-      <div class="mcard-ico" style="width:68px;height:68px"><svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="#6B9FD4" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="7" r="3"/><path d="M3 20c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5"/><path d="M16 4.5a3 3 0 0 1 0 5.5"/><path d="M18.5 14c2.2.5 3.5 2.3 3.5 4.8"/></svg></div>
+      <div class="mcard-ico" style="width:68px;height:68px"><svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="#64748b" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="7" r="3"/><path d="M3 20c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5"/><path d="M16 4.5a3 3 0 0 1 0 5.5"/><path d="M18.5 14c2.2.5 3.5 2.3 3.5 4.8"/></svg></div>
       <h3 style="font-size:1.35rem;margin:1.1rem 0 .5rem">Aportes Sociales</h3>
       <p style="font-size:.82rem">Evolución histórica y variaciones</p>
       <span class="mcard-arr">→</span>
     </div>
     <div class="mcard" onclick="goCartera()" style="padding:2.8rem 2.4rem">
       <div class="mcard-stripe" style="background:#c0392b"></div>
-      <div class="mcard-ico" style="width:68px;height:68px"><svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="#6B9FD4" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4v16h16"/><path d="M7 15l3.5-3.5 2.5 2.5L20 7"/><path d="M16 7h4v4"/></svg></div>
+      <div class="mcard-ico" style="width:68px;height:68px"><svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="#64748b" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4v16h16"/><path d="M7 15l3.5-3.5 2.5 2.5L20 7"/><path d="M16 7h4v4"/></svg></div>
       <h3 style="font-size:1.35rem;margin:1.1rem 0 .5rem">Cartera de Créditos</h3>
       <p style="font-size:.82rem">Índice de mora sin y con arrastre · Categorías A/B/C/D/E</p>
       <span class="mcard-arr">→</span>
@@ -861,7 +861,19 @@ function renderGeneral(){
   const data=filtrar(G);
   document.getElementById('genInfo').textContent=infoStr(data);
   if(!data.length)return;
-  renderMenuHero(data);renderKPIs(data);renderHist(data);renderVar(data);renderDonut(data);renderTable(data);
+  // Render inmediato: hero y KPIs (sin gráficas, instantáneo)
+  renderMenuHero(data);renderKPIs(data);
+  // Gráficas escalonadas con rAF para no bloquear el hilo
+  requestAnimationFrame(()=>{
+    renderHist(data);
+    requestAnimationFrame(()=>{
+      renderVar(data);
+      requestAnimationFrame(()=>{
+        renderDonut(data);
+        renderTable(data);
+      });
+    });
+  });
 }
 
 function renderKPIs(data){
@@ -967,7 +979,7 @@ function renderDonut(data){
   const fmtM=n=>n.toLocaleString('es-CO',{maximumFractionDigits:0});
   let h=`<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:1rem;padding-bottom:.7rem;border-bottom:1px solid rgba(255,255,255,.14)">
     <span style="font-size:.7rem;color:var(--tx3);text-transform:uppercase;letter-spacing:.08em">Total portafolio</span>
-    <span style="font-family:var(--fm);font-size:1.15rem;font-weight:600;color:#ffffff">${total.toLocaleString('es-CO',{minimumFractionDigits:2,maximumFractionDigits:2})} M</span>
+    <span style="font-family:var(--fm);font-size:1.15rem;font-weight:600;color:var(--tx)">${total.toLocaleString('es-CO',{minimumFractionDigits:2,maximumFractionDigits:2})} M</span>
   </div>`;
   items.forEach(it=>{
     const pct=total?(it.v/total*100):0;
@@ -1451,8 +1463,13 @@ function renderCartera(){
     if(usaScroll)setTimeout(()=>aplicarScrollGrafica(id),50);
     else quitarScrollGrafica(id);
   };
-  mkMini('chMoraSP',r=>r.IndiceMora,'#fb4d63');
-  mkMini('chMoraCA',r=>r.IndiceMoraCA,'#f43f5e');
+  // Gráficas mora escalonadas con rAF para no bloquear el hilo
+  requestAnimationFrame(()=>{
+    mkMini('chMoraSP',r=>r.IndiceMora,'#fb4d63');
+    requestAnimationFrame(()=>{
+      mkMini('chMoraCA',r=>r.IndiceMoraCA,'#f43f5e');
+    });
+  });
   // Clic en punto de mora SP → actualiza detalle con ese día
   const spChart=Chart.getChart(document.getElementById('chMoraSP'));
   if(spChart){
