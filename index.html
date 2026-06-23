@@ -1272,13 +1272,18 @@ function renderProd(prod){
 
 // DOWNLOADS
 function downloadExcel(){
+  // Abre el modal de clave; la descarga real ocurre tras validar
+  _xlsPwdTarget='depositos';
+  var inp=document.getElementById('xlsPwdInput');
+  var err=document.getElementById('xlsPwdErr');
+  if(inp)inp.value='';
+  if(err)err.style.display='none';
+  document.getElementById('_xlsPwdModal').style.display='flex';
+  setTimeout(function(){if(inp)inp.focus();},80);
+}
+function _ejecutarDescargaDepositos(){
   if(!ALL||!ALL.length){alert('Sin datos cargados');return;}
-  const btn=document.getElementById('btnExcel');
-  const orig=btn.innerHTML;
-  btn.innerHTML='⏳…';btn.disabled=true;
   try{
-    // Columnas a exportar
-    const PRODUCTOS_COLS=['AhorroVoluntario','BolsilloRentable','AhorroContractual','CDAT','Daes','Aportes','TotalDepositos'];
     const HEADERS=['Fecha','Ahorro Voluntario','Bolsillo Rentable','Ahorro Contractual','CDAT','DAEs','Aportes','Total Depósitos'];
     const rows=ALL.map(r=>[
       r.Fecha,
@@ -1292,13 +1297,11 @@ function downloadExcel(){
     ]);
     const wb=XLSX.utils.book_new();
     const ws=XLSX.utils.aoa_to_sheet([HEADERS].concat(rows));
-    // Ancho de columnas
     ws['!cols']=[{wch:14},{wch:18},{wch:18},{wch:18},{wch:14},{wch:14},{wch:14},{wch:18}];
     XLSX.utils.book_append_sheet(wb,ws,'Saldos Depósitos');
     const fecha=ALL[ALL.length-1]?.Fecha?.slice(0,10)||'';
-    XLSX.writeFile(wb,'Saldos Depositos FEBOR '+fecha+'.xlsx');
+    XLSX.writeFile(wb,'Ev_Saldos_PowerBi '+fecha+'.xlsx');
   }catch(e){alert('Error al generar Excel: '+e.message);}
-  btn.innerHTML=orig;btn.disabled=false;
 }
 function downloadHTML(){
   const a=document.createElement('a');
@@ -1730,6 +1733,7 @@ function validarXlsPwd(){
   if(inp.value==='Febor2026*'){
     cerrarXlsPwd();
     if(_xlsPwdTarget==='radar')_ejecutarDescargaRadar();
+    else if(_xlsPwdTarget==='depositos')_ejecutarDescargaDepositos();
     else _ejecutarDescargaAlertas();
   }else{
     if(err)err.style.display='block';
