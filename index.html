@@ -1282,28 +1282,11 @@ function downloadExcel(){
   setTimeout(function(){if(inp)inp.focus();},80);
 }
 function _ejecutarDescargaDepositos(){
-  const btn=document.getElementById('btnExcel');
-  const orig=btn?btn.innerHTML:'';
-  if(btn){btn.innerHTML='⏳…';btn.disabled=true;}
-  // Descargar el archivo original desde la misma carpeta (local o GitHub Pages)
-  const xhr=new XMLHttpRequest();
-  xhr.open('GET','Ev_Saldos_PowerBi.xlsx',true);
-  xhr.responseType='blob';
-  xhr.onload=function(){
-    if(xhr.status===200){
-      const url=URL.createObjectURL(xhr.response);
-      const a=document.createElement('a');
-      a.href=url;a.download='Ev_Saldos_PowerBi.xlsx';
-      document.body.appendChild(a);a.click();
-      setTimeout(()=>{URL.revokeObjectURL(url);document.body.removeChild(a);},500);
-    }else{alert('No se encontró Ev_Saldos_PowerBi.xlsx.');}
-    if(btn){btn.innerHTML=orig;btn.disabled=false;}
-  };
-  xhr.onerror=function(){
-    alert('No se encontró Ev_Saldos_PowerBi.xlsx.');
-    if(btn){btn.innerHTML=orig;btn.disabled=false;}
-  };
-  xhr.send();
+  const a=document.createElement('a');
+  a.href='Ev_Saldos_PowerBi.xlsx';
+  a.download='Ev_Saldos_PowerBi.xlsx';
+  document.body.appendChild(a);a.click();
+  setTimeout(()=>{document.body.removeChild(a);},500);
 }
 function downloadHTML(){
   const a=document.createElement('a');
