@@ -1282,26 +1282,28 @@ function downloadExcel(){
   setTimeout(function(){if(inp)inp.focus();},80);
 }
 function _ejecutarDescargaDepositos(){
-  if(!ALL||!ALL.length){alert('Sin datos cargados');return;}
-  try{
-    const HEADERS=['Fecha','Ahorro Voluntario','Bolsillo Rentable','Ahorro Contractual','CDAT','DAEs','Aportes','Total Depósitos'];
-    const rows=ALL.map(r=>[
-      r.Fecha,
-      r['Ahorro Voluntario']||0,
-      r['Bolsillo Rentable']||0,
-      r['Ahorro Contractual']||0,
-      r['CDAT']||0,
-      r['Daes']||0,
-      r['Aportes']||0,
-      PRODS.reduce((s,p)=>s+(r[p.k]||0),0)
-    ]);
-    const wb=XLSX.utils.book_new();
-    const ws=XLSX.utils.aoa_to_sheet([HEADERS].concat(rows));
-    ws['!cols']=[{wch:14},{wch:18},{wch:18},{wch:18},{wch:14},{wch:14},{wch:14},{wch:18}];
-    XLSX.utils.book_append_sheet(wb,ws,'Saldos Depósitos');
-    const fecha=ALL[ALL.length-1]?.Fecha?.slice(0,10)||'';
-    XLSX.writeFile(wb,'Ev_Saldos_PowerBi '+fecha+'.xlsx');
-  }catch(e){alert('Error al generar Excel: '+e.message);}
+  const btn=document.getElementById('btnExcel');
+  const orig=btn?btn.innerHTML:'';
+  if(btn){btn.innerHTML='⏳…';btn.disabled=true;}
+  // Descargar el archivo original desde la misma carpeta (local o GitHub Pages)
+  const xhr=new XMLHttpRequest();
+  xhr.open('GET','Ev_Saldos_PowerBi.xlsx',true);
+  xhr.responseType='blob';
+  xhr.onload=function(){
+    if(xhr.status===200){
+      const url=URL.createObjectURL(xhr.response);
+      const a=document.createElement('a');
+      a.href=url;a.download='Ev_Saldos_PowerBi.xlsx';
+      document.body.appendChild(a);a.click();
+      setTimeout(()=>{URL.revokeObjectURL(url);document.body.removeChild(a);},500);
+    }else{alert('No se encontró Ev_Saldos_PowerBi.xlsx.');}
+    if(btn){btn.innerHTML=orig;btn.disabled=false;}
+  };
+  xhr.onerror=function(){
+    alert('No se encontró Ev_Saldos_PowerBi.xlsx.');
+    if(btn){btn.innerHTML=orig;btn.disabled=false;}
+  };
+  xhr.send();
 }
 function downloadHTML(){
   const a=document.createElement('a');
