@@ -78,7 +78,7 @@ function dibujarEjeYFijo(canvasId,ch){
     yScale.ticks.forEach(t=>{
       const yPix=yScale.getPixelForValue(t.value);
       const _esPct=['chMoraSP','chMoraCA'].includes(canvasId);
-      const txt=_esPct?(t.value.toFixed(1)+'%'):(t.value.toLocaleString('es-CO',{maximumFractionDigits:0})+' M');
+      const txt=_esPct?(t.value.toFixed(1)+'%'):(t.value.toLocaleString('es-CO',{minimumFractionDigits:2,maximumFractionDigits:2})+' M');
       html+=`<div style="position:absolute;right:7px;top:${yPix}px;transform:translateY(-50%);font-size:10px;color:rgba(71,85,105,0.80);font-family:monospace;white-space:nowrap">${txt}</div>`;
     });
     yfix.innerHTML=html;
@@ -839,7 +839,7 @@ function renderMenuHero(data){
   w.innerHTML=`<div class="menu-hero">
     <div class="mh-l">
       <div class="lbl">Saldo total del portafolio</div>
-      <div class="val">${fK(tot)} <span style="font-size:.8rem;color:rgba(255,255,255,.25)">millones COP</span></div>
+      <div class="val">${fK(tot)}</div>
       <div class="sub">Al ${fDt(l.Fecha)}</div>
       <div class="mh-badges">
         ${dD!=null?`<span class="badge gold">${fP(dD)} vs día anterior</span>`:''}
@@ -930,10 +930,10 @@ function renderHist(data){
     options:{responsive:true,maintainAspectRatio:false,layout:{padding:{left:30,right:30,bottom:usaScrollHist?55:8}},interaction:{mode:'index',intersect:false},
       plugins:{legend:{display:false},tooltip:{callbacks:{
         title:t=>fDt(t[0].label),
-        label:t=>` ${t.dataset.label}: ${t.parsed.y!=null?t.parsed.y.toLocaleString('es-CO',{minimumFractionDigits:3,maximumFractionDigits:3})+' M':'—'}`
+        label:t=>` ${t.dataset.label}: ${t.parsed.y!=null?t.parsed.y.toLocaleString('es-CO',{minimumFractionDigits:2,maximumFractionDigits:2})+' M':'—'}`
       }}},
       scales:{x:{ticks:{autoSkip:true,maxTicksLimit:usaScrollHist?9999:12,font:{size:9},maxRotation:usaScrollHist?90:0,minRotation:usaScrollHist?90:0,callback:(v,i)=>{const d=data[i]?.Fecha;return d?`${d.slice(8,10)}/${d.slice(5,7)}/${d.slice(2,4)}`:'';}},grid:{display:false}},
-        y:{display:!usaScrollHist,ticks:{font:{size:10},callback:v=>v.toLocaleString('es-CO',{maximumFractionDigits:0})+' M'},grid:{color:'rgba(0,0,0,0.04)'}}},
+        y:{display:!usaScrollHist,ticks:{font:{size:10},callback:v=>v.toLocaleString('es-CO',{minimumFractionDigits:2,maximumFractionDigits:2})+' M'},grid:{color:'rgba(0,0,0,0.04)'}}},
     }
   });
   if(usaScrollHist)setTimeout(()=>aplicarScrollGrafica('chHist'),50);
@@ -964,7 +964,7 @@ function renderVar(data){
     options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},layout:{padding:{left:30,right:30,bottom:usaScrollVar?50:8}},
       plugins:{legend:{display:false},tooltip:{filter:item=>item.datasetIndex===0,callbacks:{label:t=>`Saldo promedio: ${t.parsed.y.toLocaleString('es-CO',{minimumFractionDigits:2,maximumFractionDigits:2})} M`}}},
       scales:{x:{ticks:{maxTicksLimit:24,font:{size:9},maxRotation:0,minRotation:0},grid:{display:false}},
-        y:usaScrollVar?{min:yMinV,max:yMaxV,afterFit:(s)=>{s.width=0;},ticks:{display:false,font:{size:10},callback:v=>v.toLocaleString('es-CO',{maximumFractionDigits:0})+' M'},grid:{color:'rgba(0,0,0,0.04)'}}:{min:yMinV,max:yMaxV,ticks:{font:{size:10},callback:v=>v.toLocaleString('es-CO',{maximumFractionDigits:0})+' M'},grid:{color:'rgba(0,0,0,0.04)'}}}}
+        y:usaScrollVar?{min:yMinV,max:yMaxV,afterFit:(s)=>{s.width=0;},ticks:{display:false,font:{size:10},callback:v=>v.toLocaleString('es-CO',{minimumFractionDigits:2,maximumFractionDigits:2})+' M'},grid:{color:'rgba(0,0,0,0.04)'}}:{min:yMinV,max:yMaxV,ticks:{font:{size:10},callback:v=>v.toLocaleString('es-CO',{minimumFractionDigits:2,maximumFractionDigits:2})+' M'},grid:{color:'rgba(0,0,0,0.04)'}}}}
   });
   setTimeout(()=>aplicarScrollGrafica('chVar'),50);
 }
@@ -1139,7 +1139,7 @@ function renderProd(prod){
   _dh.style.webkitBackdropFilter='blur(0px)';
   _dh.style.boxShadow='0 8px 32px '+p.c+'55';_dh.innerHTML=`<div class="det-hero-top">
     <div><div class="det-pname">${prod}</div><div class="det-val">${fK(l[prod])}</div>
-      <div class="det-unit">millones COP · ${fDt(l.Fecha)}</div>
+      <div class="det-unit">${fDt(l.Fecha)}</div>
       <div class="det-deltas">
         ${pct!=null?`<span class="det-d" style="background:rgba(0,0,0,.25);color:#ffffff;border:1px solid rgba(255,255,255,.25)">${Math.abs(pct)>999?((l[prod]-f[prod])>=0?'+':'-')+Math.abs((l[prod]-f[prod])/1e6).toLocaleString('es-CO',{maximumFractionDigits:0})+' M en el período':fP(pct)+' en el período'}</span>`:''}
         ${pctD!=null?`<span class="det-d" style="background:rgba(255,255,255,.15);color:rgba(255,255,255,.90);border:1px solid rgba(255,255,255,.20)">${fP(pctD)} vs día ant.</span>`:''}
@@ -1170,7 +1170,7 @@ function renderProd(prod){
       ds.forEach((pt,i)=>{
         if(!hitos.has(i))return;
         const val=serie[i];
-        const txt=val.toLocaleString('es-CO',{maximumFractionDigits:0});
+        const txt=val.toLocaleString('es-CO',{minimumFractionDigits:2,maximumFractionDigits:2});
         // Punto
         ctx.beginPath();ctx.arc(pt.x,pt.y,4,0,Math.PI*2);
         ctx.fillStyle=p.c;ctx.fill();
@@ -1216,10 +1216,10 @@ function renderProd(prod){
       backgroundColor:(c)=>{const{ctx,chartArea}=c.chart;if(!chartArea)return p.c+'22';const g=ctx.createLinearGradient(0,chartArea.top,0,chartArea.bottom);g.addColorStop(0,p.c+'66');g.addColorStop(1,p.c+'05');return g;},
       pointRadius:0,pointHoverRadius:7,pointHitRadius:14,pointBackgroundColor:p.c,pointBorderColor:'#fff',pointBorderWidth:2.5,tension:0.4,fill:true}]},
     plugins:[globitosPlugin],
-    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:32,left:30,right:30,bottom:rotarFechas?55:8}},plugins:{legend:{display:false},
-      tooltip:{callbacks:{title:t=>fDt(t[0].label),label:t=>` ${t.parsed.y.toLocaleString('es-CO',{minimumFractionDigits:3,maximumFractionDigits:3})} M`}}},
+    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:44,left:30,right:30,bottom:rotarFechas?55:8}},plugins:{legend:{display:false},
+      tooltip:{callbacks:{title:t=>fDt(t[0].label),label:t=>` ${t.parsed.y.toLocaleString('es-CO',{minimumFractionDigits:2,maximumFractionDigits:2})} M`}}},
       scales:{x:{ticks:xTicksCfg,grid:{display:false}},
-        y:usaScrollDet?{min:yMin,max:yMax,afterFit:(s)=>{s.width=0;},ticks:{display:false,font:{size:10},callback:v=>v.toLocaleString('es-CO',{maximumFractionDigits:0})+' M'},grid:{color:'rgba(0,0,0,0.04)'}}:{min:yMin,max:yMax,ticks:{font:{size:10},callback:v=>v.toLocaleString('es-CO',{maximumFractionDigits:0})+' M'},grid:{color:'rgba(0,0,0,0.04)'}}}}}
+        y:usaScrollDet?{min:yMin,max:yMax,afterFit:(s)=>{s.width=0;},ticks:{display:false,font:{size:10},callback:v=>v.toLocaleString('es-CO',{minimumFractionDigits:2,maximumFractionDigits:2})+' M'},grid:{color:'rgba(0,0,0,0.04)'}}:{min:yMin,max:yMax,ticks:{font:{size:10},callback:v=>v.toLocaleString('es-CO',{minimumFractionDigits:2,maximumFractionDigits:2})+' M'},grid:{color:'rgba(0,0,0,0.04)'}}}}}
   );
   setTimeout(()=>aplicarScrollGrafica('chDetLine'),50);
   const bM={};data.forEach(r=>{const k=r.Fecha.slice(0,7);if(!bM[k]){bM[k]={s:0,n:0};}bM[k].s+=r[prod];bM[k].n++;});
@@ -1230,7 +1230,7 @@ function renderProd(prod){
       datasets:[{label:'Prom',data:mks.map(k=>+(bM[k].s/bM[k].n/1e6).toFixed(3)),backgroundColor:p.c+'99',borderColor:p.c,borderWidth:1,borderRadius:4}]},
     options:{responsive:true,maintainAspectRatio:false,layout:{padding:{left:30,right:30,bottom:usaScrollBar?50:8}},plugins:{legend:{display:false},tooltip:{callbacks:{label:t=>` ${t.parsed.y.toLocaleString('es-CO',{minimumFractionDigits:2,maximumFractionDigits:2})} M`}}},
       scales:{x:{ticks:{maxTicksLimit:14,font:{size:10},maxRotation:0,minRotation:0},grid:{display:false}},
-        y:usaScrollBar?{afterFit:(s)=>{s.width=0;},ticks:{display:false,font:{size:10},callback:v=>v.toLocaleString('es-CO',{maximumFractionDigits:0})+' M'},grid:{color:'rgba(0,0,0,0.04)'}}:{ticks:{font:{size:10},callback:v=>v.toLocaleString('es-CO',{maximumFractionDigits:0})+' M'},grid:{color:'rgba(0,0,0,0.04)'}}}}
+        y:usaScrollBar?{afterFit:(s)=>{s.width=0;},ticks:{display:false,font:{size:10},callback:v=>v.toLocaleString('es-CO',{minimumFractionDigits:2,maximumFractionDigits:2})+' M'},grid:{color:'rgba(0,0,0,0.04)'}}:{ticks:{font:{size:10},callback:v=>v.toLocaleString('es-CO',{minimumFractionDigits:2,maximumFractionDigits:2})+' M'},grid:{color:'rgba(0,0,0,0.04)'}}}}
   });
   setTimeout(()=>aplicarScrollGrafica('chDetBar'),50);
   // Estadísticas del período
@@ -1374,7 +1374,7 @@ function renderCartera(){
     <div class="kpi kpi-tot" style="cursor:pointer;background:linear-gradient(135deg,#EF4444dd,#DC262699);border:none;box-shadow:0 8px 28px rgba(239,68,68,.40)" onclick="closeMoraDetalle()" title="Clic para volver a vista general de cartera">
       <div class="kpi-bar" style="background:rgba(255,255,255,.25)"></div>
       <div class="kpi-lbl" style="color:rgba(255,255,255,.75);font-size:.63rem">Cartera total</div><div class="kpi-val" style="color:#fff;font-size:1.25rem">${fK(tot)}</div>
-      <div class="kpi-unit" style="color:rgba(255,255,255,.65)">millones COP · ${fDt(l.Fecha)}</div>
+      <div class="kpi-unit" style="color:rgba(255,255,255,.65)">${fDt(l.Fecha)}</div>
       <div style="font-size:.62rem;color:rgba(255,255,255,.55);margin-top:.2rem">↩ Ver gráficas generales</div></div>
     <div class="kpi" id="kpiMoraSP" style="cursor:pointer" onclick="showMoraDetalle('sp')">
       <div class="kpi-bar" style="background:#EF4444"></div>
@@ -1456,32 +1456,31 @@ function renderCartera(){
     mkMini('chMoraSP',r=>r.IndiceMora,'#fb4d63');
     requestAnimationFrame(()=>{
       mkMini('chMoraCA',r=>r.IndiceMoraCA,'#f43f5e');
+      // Asignar onclick DESPUÉS de que ambos charts existen
+      const spChart=Chart.getChart(document.getElementById('chMoraSP'));
+      if(spChart){
+        document.getElementById('chMoraSP').onclick=function(e){
+          const pts=spChart.getElementsAtEventForMode(e,'nearest',{intersect:false},true);
+          if(pts.length){
+            _CAR_SELECTED_DATE=data[pts[0].index]?.Fecha||null;
+            renderCartera();
+            showMoraDetalle('sp');
+          }
+        };
+      }
+      const caChart=Chart.getChart(document.getElementById('chMoraCA'));
+      if(caChart){
+        document.getElementById('chMoraCA').onclick=function(e){
+          const pts=caChart.getElementsAtEventForMode(e,'nearest',{intersect:false},true);
+          if(pts.length){
+            _CAR_SELECTED_DATE=data[pts[0].index]?.Fecha||null;
+            renderCartera();
+            showMoraDetalle('ca');
+          }
+        };
+      }
     });
   });
-  // Clic en punto de mora SP → actualiza detalle con ese día
-  const spChart=Chart.getChart(document.getElementById('chMoraSP'));
-  if(spChart){
-    document.getElementById('chMoraSP').onclick=function(e){
-      const pts=spChart.getElementsAtEventForMode(e,'nearest',{intersect:false},true);
-      if(pts.length){
-        _CAR_SELECTED_DATE=data[pts[0].index]?.Fecha||null;
-        renderCartera();
-        showMoraDetalle('sp');
-      }
-    };
-  }
-  // Clic en punto de mora CA → actualiza detalle con ese día
-  const caChart=Chart.getChart(document.getElementById('chMoraCA'));
-  if(caChart){
-    document.getElementById('chMoraCA').onclick=function(e){
-      const pts=caChart.getElementsAtEventForMode(e,'nearest',{intersect:false},true);
-      if(pts.length){
-        _CAR_SELECTED_DATE=data[pts[0].index]?.Fecha||null;
-        renderCartera();
-        showMoraDetalle('ca');
-      }
-    };
-  }
 }
 
 function showMoraDetalle(tipo){
@@ -1825,12 +1824,13 @@ function renderMoraDetalleSP(){
   const pcts=cats.map(c=>+((l['Cat'+c]||0)/tot*100).toFixed(2));
   let h=`<div style="display:flex;align-items:center;gap:.8rem;margin:.6rem 0 .8rem;flex-wrap:wrap">
     <button class="det-back" style="position:static;margin:0" onclick="closeMoraDetalle()">← Volver a Cartera</button>
-    <span style="font-weight:700;color:#EF4444;font-size:.88rem">Mora Sin Arrastre</span></div>
+    <span style="font-weight:700;color:#EF4444;font-size:.88rem">Mora Sin Arrastre</span>
+    <span id="fechaMoraSP" style="display:inline-flex;align-items:center;padding:2px 9px;border-radius:20px;background:rgba(239,68,68,.12);color:#b91c1c;font-size:.68rem;font-weight:600;font-family:var(--fm);margin-left:.2rem;border:1px solid rgba(185,28,28,.35)">📅 ${fDt(l.Fecha)}</span></div>
   <div class="crow">
-    <div class="ccard"><div class="ctop"><div><div class="ctitle">Evolución Cat A — Riesgo Normal</div></div></div>
+    <div class="ccard"><div class="ctop"><div><div class="ctitle">Evolución Cat A — Riesgo Normal <span id="fechaCatSP" style="font-size:.7rem;font-weight:500;color:var(--tx3);font-family:var(--fm)">${fDt(l.Fecha)}</span></div></div></div>
       <div class="cwrap h260"><canvas id="chCatSP"></canvas></div>
       <div id="legCatSP" style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;padding:.4rem 0 .2rem"></div></div>
-    <div class="ccard"><div class="ctop"><div><div class="ctitle">Evolución cartera</div></div></div>
+    <div class="ccard"><div class="ctop"><div><div class="ctitle">Evolución cartera <span id="fechaEvolSP" style="font-size:.7rem;font-weight:500;color:var(--tx3);font-family:var(--fm)">${fDt(l.Fecha)}</span></div></div></div>
       <div class="cwrap h260"><canvas id="chEvolSP"></canvas></div>
       <div id="legEvolSP" style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;padding:.4rem 0 .2rem"></div></div>
   </div>
@@ -1850,7 +1850,7 @@ function renderMoraDetalleSP(){
   tRows.push(`<tr style="font-weight:700;border-top:2px solid var(--bord)"><td colspan="2">TOTAL</td><td style="font-family:var(--fm);text-align:right">${fK(tot)}</td><td style="text-align:right">100%</td><td></td></tr>`);
   tRows.push(`<tr style="color:#c0392b;font-size:.8rem"><td colspan="2">MORA (B+C+D+E)</td><td style="font-family:var(--fm);text-align:right">${fK(moraT)}</td><td style="text-align:right"><strong>${(moraT/tot*100).toFixed(2)}%</strong></td><td></td></tr>`);
   h+=`<div class="ccard span2" style="margin-bottom:.9rem">
-    <div class="shdr"><div class="shdr-t">Resumen — Sin arrastre</div></div>
+    <div class="shdr"><div class="shdr-t">Resumen — Sin arrastre <span id="fechaResumenSP" style="display:inline-flex;align-items:center;padding:2px 9px;border-radius:20px;background:rgba(0,86,72,.12);color:#005648;font-size:.68rem;font-weight:600;font-family:var(--fm);margin-left:.4rem;border:1px solid rgba(0,86,72,.35)">📅 ${fDt(l.Fecha)}</span></div></div>
     <div class="stbl-wrap"><table class="stbl"><thead><tr>
       <th>CAT</th><th>DESCRIPCIÓN</th><th style="text-align:right">SALDO</th><th style="text-align:right">PART.</th><th style="text-align:right">VAR. DÍA</th>
     </tr></thead><tbody>${tRows.join('')}</tbody></table></div></div>`;
@@ -1878,13 +1878,7 @@ function renderMoraDetalleSP(){
     options:{responsive:true,maintainAspectRatio:false,layout:{padding:{left:30,right:30,bottom:data.length>12?50:8}},interaction:{mode:'index',intersect:false},
       plugins:{legend:{display:false},
         tooltip:{callbacks:{title:t=>fDt(t[0].label),label:t=>` ${t.dataset.label}: ${t.parsed.y.toLocaleString('es-CO',{minimumFractionDigits:2})} M`}}},
-      onClick:(e,els)=>{
-        if(els.length){
-          _CAR_SELECTED_DATE=data[els[0].index]?.Fecha||null;
-          renderCartera();
-          renderMoraDetalleSP();
-        }
-      },
+      onClick:(e,els)=>{if(els.length){_CAR_SELECTED_DATE=data[els[0].index]?.Fecha||null;renderCartera();renderMoraDetalleSP();}},
       scales:{x:{ticks:{autoSkip:false,maxRotation:data.length>12?90:0,minRotation:data.length>12?90:0,font:{size:9},color:'#64748b',callback:(v,i)=>{const d=data[i]?.Fecha;return d?`${d.slice(8,10)}/${d.slice(5,7)}/${d.slice(2,4)}`:'';}},grid:{display:false}},
         y:{ticks:{font:{size:9},color:'#64748b',callback:v=>v+' M'},grid:{color:'rgba(0,0,0,0.04)'},stacked:true}}}});
   if(data.length>(window.__SCROLL_CHARTS['chEvolSP']?.vis||12))setTimeout(()=>aplicarScrollGrafica('chEvolSP'),50);else quitarScrollGrafica('chEvolSP');
@@ -1906,17 +1900,17 @@ function renderMoraDetalleCA(){
   renderCartera();
   // Chip de fecha
   const _fmtFechaCA=function(f){return f?f.slice(8,10)+'/'+f.slice(5,7)+'/'+f.slice(0,4):'';};
-  const _fechaChip=l.Fecha?'<span style="display:inline-flex;align-items:center;padding:2px 9px;border-radius:20px;background:rgba(52,211,153,.18);color:#34d399;font-size:.68rem;font-weight:600;font-family:var(--fm);margin-left:.4rem;border:1px solid rgba(52,211,153,.3)">📅 '+_fmtFechaCA(l.Fecha)+'</span>':'';
+  const _fechaChip=l.Fecha?'<span style="display:inline-flex;align-items:center;padding:2px 9px;border-radius:20px;background:rgba(0,86,72,.12);color:#005648;font-size:.68rem;font-weight:600;font-family:var(--fm);margin-left:.4rem;border:1px solid rgba(0,86,72,.35)">📅 '+_fmtFechaCA(l.Fecha)+'</span>':'';
   const cats=['A','B','C','D','E'],catColors=cats.map(c=>CAT_COLORS[c]);
   const hasDetalle=(l.CA_B||0)+(l.CA_C||0)+(l.CA_D||0)>0;
   let h=`<div style="display:flex;align-items:center;gap:.8rem;margin:.6rem 0 .8rem;flex-wrap:wrap">
     <button class="det-back" style="position:static;margin:0" onclick="closeMoraDetalle()">← Volver a Cartera</button>
-    <span style="font-weight:600;color:#8b0000;font-size:.88rem">Mora Con Arrastre — Agrupado por cliente</span>${_fechaChip}</div>
+    <span style="font-weight:600;color:#8b0000;font-size:.88rem">Mora Con Arrastre — Agrupado por cliente</span><span id="fechaMoraCA" style="display:inline-flex;align-items:center;padding:2px 9px;border-radius:20px;background:rgba(0,86,72,.12);color:#005648;font-size:.68rem;font-weight:600;font-family:var(--fm);margin-left:.4rem;border:1px solid rgba(0,86,72,.35)">📅 ${_fmtFechaCA(l.Fecha)}</span></div>
   <div class="crow">
-    <div class="ccard"><div class="ctop"><div><div class="ctitle">Evolución Cat A — Con arrastre</div></div></div>
+    <div class="ccard"><div class="ctop"><div><div class="ctitle">Evolución Cat A — Con arrastre <span id="fechaCatCA" style="font-size:.7rem;font-weight:500;color:var(--tx3);font-family:var(--fm)">${_fmtFechaCA(l.Fecha)}</span></div></div></div>
       <div class="cwrap h260"><canvas id="chCatCA"></canvas></div>
       <div id="legCatCA" style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;padding:.4rem 0 .2rem"></div></div>
-    <div class="ccard"><div class="ctop"><div><div class="ctitle">Evolución cartera — Con arrastre</div></div></div>
+    <div class="ccard"><div class="ctop"><div><div class="ctitle">Evolución cartera — Con arrastre <span id="fechaEvolCA" style="font-size:.7rem;font-weight:500;color:var(--tx3);font-family:var(--fm)">${_fmtFechaCA(l.Fecha)}</span></div></div></div>
       <div class="cwrap h260"><canvas id="chEvolCA"></canvas></div>
       <div id="legEvolCA" style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;padding:.4rem 0 .2rem"></div></div>
   </div>`;
@@ -1934,7 +1928,7 @@ function renderMoraDetalleCA(){
   }
   rowsCA+=`<tr style="font-weight:700;border-top:2px solid var(--bord)"><td colspan="2">TOTAL</td><td style="font-family:var(--fm);text-align:right">${fK(tot)}</td><td style="text-align:right">100%</td></tr>`;
   h+=`<div class="ccard span2" style="margin-bottom:.9rem">
-    <div class="shdr"><div class="shdr-t">Resumen — Con arrastre ${_fechaChip}</div></div>
+    <div class="shdr"><div class="shdr-t">Resumen — Con arrastre <span id="fechaResumenCA" style="display:inline-flex;align-items:center;padding:2px 9px;border-radius:20px;background:rgba(0,86,72,.12);color:#005648;font-size:.68rem;font-weight:600;font-family:var(--fm);margin-left:.4rem;border:1px solid rgba(0,86,72,.35)">📅 ${_fmtFechaCA(l.Fecha)}</span></div></div>
     <div class="stbl-wrap"><table class="stbl"><thead><tr><th>CAT</th><th>DESCRIPCIÓN</th><th style="text-align:right">SALDO</th><th style="text-align:right">PART.</th></tr></thead>
     <tbody>${rowsCA}</tbody></table></div></div>`;
   // ── Radar de Asociados en Riesgo de Rodamiento ──
