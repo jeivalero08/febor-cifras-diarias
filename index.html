@@ -1280,11 +1280,15 @@ function renderProd(prod){
   const yMin=sMin-margen, yMax=sMax+margen;
   const VIS_DET=window.__SCROLL_CHARTS['chDetLine']?.vis||30;
   const usaScrollDet=data.length>VIS_DET;
-  // Hitos: todos siempre (el scroll ya limita los visibles en modo diario)
-  // En móvil sin scroll y muchos puntos (3 meses ~90), reducir a los más representativos
+  // Hitos: en diario con scroll mostrar todos (pocos visibles a la vez)
+  // En 3 meses/anual con scroll en móvil, reducir globitos
   const hitos=new Set();
   const _isMob=window.innerWidth<768;
-  const _reducir=_isMob&&!usaScrollDet&&data.length>25;
+  // Solo reducir en móvil cuando hay MUCHOS puntos (>25) Y NO es diario
+  // El diario en scroll muestra ~12 puntos a la vez → todos con globito
+  // El 3 meses tiene ~90 puntos aunque tenga scroll → reducir
+  const _esDiario=(window.__SCROLL_CHARTS['chDetLine']?.px||70)>=44;
+  const _reducir=_isMob&&data.length>25&&!_esDiario;
   if(!_reducir){
     data.forEach((_,i)=>hitos.add(i));
   } else {
@@ -1351,7 +1355,7 @@ function renderProd(prod){
       backgroundColor:(c)=>{const{ctx,chartArea}=c.chart;if(!chartArea)return p.c+'22';const g=ctx.createLinearGradient(0,chartArea.top,0,chartArea.bottom);g.addColorStop(0,p.c+'66');g.addColorStop(1,p.c+'05');return g;},
       pointRadius:0,pointHoverRadius:7,pointHitRadius:14,pointBackgroundColor:p.c,pointBorderColor:'#fff',pointBorderWidth:2.5,tension:0.4,fill:true}]},
     plugins:[globitosPlugin],
-    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:44,left:30,right:30,bottom:rotarFechas?55:8}},plugins:{legend:{display:false},
+    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:_isMob?30:44,left:_isMob?4:30,right:_isMob?4:30,bottom:rotarFechas?(_isMob?80:55):8}},plugins:{legend:{display:false},
       tooltip:{callbacks:{title:t=>fDt(t[0].label),label:t=>` ${t.parsed.y.toLocaleString('es-CO',{minimumFractionDigits:2,maximumFractionDigits:2})} M`}}},
       scales:{x:{ticks:xTicksCfg,grid:{display:false}},
         y:usaScrollDet?{min:yMin,max:yMax,afterFit:(s)=>{s.width=0;},ticks:{display:false,font:{size:10},callback:v=>v.toLocaleString('es-CO',{minimumFractionDigits:2,maximumFractionDigits:2})+' M'},grid:{color:'rgba(0,0,0,0.04)'}}:{min:yMin,max:yMax,ticks:{font:{size:10},callback:v=>v.toLocaleString('es-CO',{minimumFractionDigits:2,maximumFractionDigits:2})+' M'},grid:{color:'rgba(0,0,0,0.04)'}}}}}
