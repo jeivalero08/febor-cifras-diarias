@@ -1280,24 +1280,9 @@ function renderProd(prod){
   const yMin=sMin-margen, yMax=sMax+margen;
   const VIS_DET=window.__SCROLL_CHARTS['chDetLine']?.vis||30;
   const usaScrollDet=data.length>VIS_DET;
-  // Hitos: en móvil y muchos puntos, mostrar solo los más representativos
+  // Hitos: todos los puntos
   const hitos=new Set();
-  const _esMobil=window.innerWidth<768;
-  const _maxGlobitos=_esMobil?(data.length>60?8:data.length>20?6:data.length):data.length;
-  if(_maxGlobitos>=data.length){
-    data.forEach((_,i)=>hitos.add(i));
-  } else {
-    // Siempre incluir primero y último
-    hitos.add(0); hitos.add(data.length-1);
-    // Mínimo y máximo
-    const _serie2=data.map(r=>+(r[prod]/1e6).toFixed(3));
-    const _minIdx=_serie2.indexOf(Math.min(..._serie2));
-    const _maxIdx=_serie2.indexOf(Math.max(..._serie2));
-    hitos.add(_minIdx); hitos.add(_maxIdx);
-    // Distribuir el resto uniformemente
-    const _step=Math.floor(data.length/(_maxGlobitos-2));
-    for(let i=_step;i<data.length-1;i+=_step) hitos.add(i);
-  }
+  data.forEach((_,i)=>hitos.add(i));
   const globitosPlugin={
     id:'globitos'+prod,
     afterDatasetsDraw(chart){
@@ -1317,7 +1302,7 @@ function renderProd(prod){
           ctx.save();
           ctx.translate(pt.x, pt.y-10);
           ctx.rotate(-Math.PI/2);
-          ctx.font=`600 ${_esMobil?7:9}px 'IBM Plex Mono',monospace`;
+          ctx.font="600 9px 'IBM Plex Mono',monospace";
           const tw=ctx.measureText(txt).width;
           const ph=12, pw=tw+8;
           ctx.fillStyle='rgba(255,255,255,.92)';
@@ -1346,14 +1331,14 @@ function renderProd(prod){
   };
   const _esAportes=(prod==='Aportes');
   // Eje X: DD/MM en cada punto, Chart.js auto-skip cuando hay scroll y muchos puntos
-  const pxRealTick=Math.min(window.__SCROLL_CHARTS['chDetLine']?.px||70,Math.floor(32000/data.length));const rotarFechas=pxRealTick<44;const xTicksCfg={autoSkip:false,maxRotation:rotarFechas?90:0,minRotation:rotarFechas?90:0,font:{size:_esMobil?7:9},callback:(v,i)=>{const d=data[i]?.Fecha;return d?`${d.slice(8,10)}/${d.slice(5,7)}/${d.slice(2,4)}`:'';}};
+  const pxRealTick=Math.min(window.__SCROLL_CHARTS['chDetLine']?.px||70,Math.floor(32000/data.length));const rotarFechas=pxRealTick<44;const xTicksCfg={autoSkip:false,maxRotation:rotarFechas?90:0,minRotation:rotarFechas?90:0,font:{size:9},callback:(v,i)=>{const d=data[i]?.Fecha;return d?`${d.slice(8,10)}/${d.slice(5,7)}/${d.slice(2,4)}`:'';}};
   new Chart(document.getElementById('chDetLine'),{type:'line',
     data:{labels:data.map(r=>r.Fecha),datasets:[{label:prod,data:serie,
       borderColor:p.c,borderWidth:2.5,
       backgroundColor:(c)=>{const{ctx,chartArea}=c.chart;if(!chartArea)return p.c+'22';const g=ctx.createLinearGradient(0,chartArea.top,0,chartArea.bottom);g.addColorStop(0,p.c+'66');g.addColorStop(1,p.c+'05');return g;},
       pointRadius:0,pointHoverRadius:7,pointHitRadius:14,pointBackgroundColor:p.c,pointBorderColor:'#fff',pointBorderWidth:2.5,tension:0.4,fill:true}]},
     plugins:[globitosPlugin],
-    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:_esMobil&&rotarFechas?28:44,left:_esMobil?8:30,right:_esMobil?8:30,bottom:rotarFechas?(_esMobil?70:55):8}},plugins:{legend:{display:false},
+    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:44,left:30,right:30,bottom:rotarFechas?55:8}},plugins:{legend:{display:false},
       tooltip:{callbacks:{title:t=>fDt(t[0].label),label:t=>` ${t.parsed.y.toLocaleString('es-CO',{minimumFractionDigits:2,maximumFractionDigits:2})} M`}}},
       scales:{x:{ticks:xTicksCfg,grid:{display:false}},
         y:usaScrollDet?{min:yMin,max:yMax,afterFit:(s)=>{s.width=0;},ticks:{display:false,font:{size:10},callback:v=>v.toLocaleString('es-CO',{minimumFractionDigits:2,maximumFractionDigits:2})+' M'},grid:{color:'rgba(0,0,0,0.04)'}}:{min:yMin,max:yMax,ticks:{font:{size:10},callback:v=>v.toLocaleString('es-CO',{minimumFractionDigits:2,maximumFractionDigits:2})+' M'},grid:{color:'rgba(0,0,0,0.04)'}}}}}
