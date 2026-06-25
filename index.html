@@ -1280,9 +1280,20 @@ function renderProd(prod){
   const yMin=sMin-margen, yMax=sMax+margen;
   const VIS_DET=window.__SCROLL_CHARTS['chDetLine']?.vis||30;
   const usaScrollDet=data.length>VIS_DET;
-  // Hitos: todos los puntos
+  // Hitos: en móvil con muchos puntos, solo mostrar los más representativos
   const hitos=new Set();
-  data.forEach((_,i)=>hitos.add(i));
+  const _isMob=window.innerWidth<768;
+  const _maxH=_isMob&&data.length>20?Math.min(10,data.length):data.length;
+  if(_maxH>=data.length){
+    data.forEach((_,i)=>hitos.add(i));
+  } else {
+    const _s=data.map(r=>+(r[prod]/1e6).toFixed(3));
+    hitos.add(0); hitos.add(data.length-1);
+    hitos.add(_s.indexOf(Math.min(..._s)));
+    hitos.add(_s.indexOf(Math.max(..._s)));
+    const step=Math.floor(data.length/(_maxH-2));
+    for(let i=step;i<data.length-1;i+=step) hitos.add(i);
+  }
   const globitosPlugin={
     id:'globitos'+prod,
     afterDatasetsDraw(chart){
