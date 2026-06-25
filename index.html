@@ -1280,13 +1280,15 @@ function renderProd(prod){
   const yMin=sMin-margen, yMax=sMax+margen;
   const VIS_DET=window.__SCROLL_CHARTS['chDetLine']?.vis||30;
   const usaScrollDet=data.length>VIS_DET;
-  // Hitos: en móvil con muchos puntos, solo mostrar los más representativos
+  // Hitos: todos siempre (el scroll ya limita los visibles en modo diario)
+  // En móvil sin scroll y muchos puntos (3 meses ~90), reducir a los más representativos
   const hitos=new Set();
   const _isMob=window.innerWidth<768;
-  const _maxH=_isMob&&data.length>20?Math.min(10,data.length):data.length;
-  if(_maxH>=data.length){
+  const _reducir=_isMob&&!usaScrollDet&&data.length>25;
+  if(!_reducir){
     data.forEach((_,i)=>hitos.add(i));
   } else {
+    const _maxH=8;
     const _s=data.map(r=>+(r[prod]/1e6).toFixed(3));
     hitos.add(0); hitos.add(data.length-1);
     hitos.add(_s.indexOf(Math.min(..._s)));
