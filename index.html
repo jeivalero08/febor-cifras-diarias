@@ -1409,31 +1409,34 @@ function renderProd(prod){
   const prevRec=ALL[ALL.findIndex(r=>r.Fecha===l.Fecha)-1];
   const prevFecha=prevRec?prevRec.Fecha:null;
   const varDiaLabel=prevFecha?`Var. ${fDt(prevFecha)} → ${fDt(l.Fecha)}`:'Variación vs día ant.';
-  // Promedio: indicar sobre cuántos puntos
+  // Promedio: indicar sobre cuántos puntos de datos vs. días de calendario
+  // (pueden no coincidir si hay días sin registro, ej. fines de semana
+  // antes de que el bot corriera diario, o caídas puntuales del sistema)
   const nPuntos=vals.length;
-  const avgLabel=`Promedio período (${nPuntos} ${nPuntos===1?'dato':'datos'})`;
+  const avgLabel='Promedio período';
   // Volatilidad: desviación estándar
   const mean=vals.reduce((a,b)=>a+b,0)/nPuntos;
   const std=Math.sqrt(vals.reduce((s,v)=>s+(v-mean)**2,0)/nPuntos)/1e6;
   // Días sobre el promedio
   const diasSobre=vals.filter(v=>v>mean).length;
-  // Crecimiento anualizado: ((último/primero)^(365/días)-1)*100
-  const diasPeriodo=Math.max(1,Math.round((new Date(l.Fecha)-new Date(f.Fecha))/(1000*60*60*24)));
   const fProd=f[prod]||0, lProd=l[prod]||0;
-  const crAnual=fProd>0?((Math.pow(lProd/fProd,365/diasPeriodo)-1)*100):null;
   // % del máximo histórico
   const maxHist=Math.max(...ALL.map(r=>r[prod]||0));
   const pctMax=maxHist>0?(lProd/maxHist*100):null;
+  // Montos en $ para acompañar las variaciones
+  const deltaTotal=lProd-fProd;
+  const deltaTotalStr=(deltaTotal>=0?'+':'-')+fK(Math.abs(deltaTotal));
+  const deltaDia=(prevRec&&prevRec[prod]!=null)?(l[prod]-prevRec[prod]):null;
+  const deltaDiaStr=deltaDia!=null?((deltaDia>=0?'+':'-')+fK(Math.abs(deltaDia))):'';
 
   const rows=[
     ['Saldo actual', fK(l[prod])],
     ['Saldo inicial período', fK(f[prod])],
-    ['Variación total', `<span class="${pct>=0?'cup':'cdn'}">${pct!=null?fP(pct):'—'}</span>`],
-    [varDiaLabel, `<span class="${pctD>=0?'cup':'cdn'}">${pctD!=null?fP(pctD):'—'}</span>`],
+    ['Variación total', `<span class="${pct>=0?'cup':'cdn'}">${pct!=null?fP(pct)+' · '+deltaTotalStr:'—'}</span>`],
+    [varDiaLabel, `<span class="${pctD>=0?'cup':'cdn'}">${pctD!=null?fP(pctD)+(deltaDiaStr?' · '+deltaDiaStr:''):'—'}</span>`],
     [avgLabel, fK(avgV)],
     [`Mínimo período${fMin?' · '+fDt(fMin):''}`, fK(minV)],
     [`Máximo período${fMax?' · '+fDt(fMax):''}`, fK(maxV)],
-    [`Crecimiento anualizado (${diasPeriodo} días)`, crAnual!=null?`<span class="${crAnual>=0?'cup':'cdn'}">${fP(crAnual)}</span>`:'—'],
   ];
   document.getElementById('detStats').innerHTML=`<div class="stbl-wrap"><table class="stbl"><tbody>${rows.map(([l,v])=>`<tr><td style="color:var(--tx3)">${l}</td><td>${v}</td></tr>`).join('')}</tbody></table></div>`;
 }
@@ -2286,6 +2289,7 @@ function renderMoraDetalleCA(){
             <div id="_radarModalTitle" style="font-size:.92rem;font-weight:700;color:#1a2332"></div>
             <div id="_radarModalSub" style="font-size:.68rem;color:var(--tx3);margin-top:2px"></div>
           </div>
+          <div id="_radarModalTabs" style="display:flex;gap:.4rem;flex-wrap:wrap;margin-left:auto;margin-right:.6rem"></div>
           <button onclick="_closeRadarModal()" style="background:none;border:none;cursor:pointer;font-size:1.1rem;color:var(--tx3);line-height:1;flex-shrink:0">✕</button>
         </div>
         <div id="_radarModalHeader" style="padding:0 1.5rem;flex-shrink:0;background:rgba(255,255,255,0.95)"></div>
@@ -2369,8 +2373,22 @@ function _openRadarModal(grupo){
   var fK=window._radarFmtK||function(v){return v;};
   var asos=grupos[grupo]||[];
   if(!asos.length){return;}
+  // Orden dentro del grupo: mayor a menor saldo en riesgo; en empate,
+  // mayor a menor cantidad de créditos; en empate, menor a mayor días.
+  asos=asos.slice().sort(function(a,b){
+    if(b.saldoTotal!==a.saldoTotal) return b.saldoTotal-a.saldoTotal;
+    if(b.creditos.length!==a.creditos.length) return b.creditos.length-a.creditos.length;
+    return a.minDias-b.minDias;
+  });
   // Título
   document.getElementById('_radarModalTitle').innerHTML=cfg.ico+' '+cfg.label+' — Asociados en riesgo de rodamiento';
+  // Pestañas rápidas para saltar entre grupos sin cerrar el modal
+  var _ordenG=['critico','alerta','monitoreo'];
+  document.getElementById('_radarModalTabs').innerHTML=_ordenG.filter(function(g){return (grupos[g]||[]).length>0;}).map(function(g){
+    var gcfg=(window._radarSemConfig||{})[g];
+    var activo=g===grupo;
+    return '<button onclick="_openRadarModal(\''+g+'\')" style="font-size:.72rem;font-weight:600;padding:.3rem .7rem;border-radius:7px;cursor:pointer;border:1.5px solid '+gcfg.col+';background:'+(activo?gcfg.col:gcfg.bg)+';color:'+(activo?'#fff':gcfg.col)+';white-space:nowrap">'+gcfg.ico+' '+gcfg.label+'</button>';
+  }).join('');
   var nc=asos.reduce(function(s,a){return s+a.creditos.length;},0);
   var st=asos.reduce(function(s,a){return s+a.saldoTotal;},0);
   document.getElementById('_radarModalSub').textContent=asos.length+' asociados · '+nc+' créditos · '+fK(st)+' saldo total en riesgo';
