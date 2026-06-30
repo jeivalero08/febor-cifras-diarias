@@ -1289,10 +1289,15 @@ function renderProd(prod){
   const usaScrollDet=data.length>VIS_DET;
   // Hitos: todos siempre (el scroll ya limita los visibles en modo diario)
   // En móvil sin scroll y muchos puntos (3 meses ~90), reducir a los más representativos
+  // En móvil DENSO (Diario, muchos días): alternamos globito sí/globito no
+  // (el punto se dibuja siempre, el valor en texto solo cada 2 días) para
+  // que no se amontonen, pero sigan marcados todos los días.
   const hitos=new Set();
   const _isMob=window.innerWidth<768;
   const _reducir=_isMob&&!usaScrollDet&&data.length>25;
-  if(!_reducir){
+  if(_mobDenso){
+    data.forEach((_,i)=>{ if(i%2===0||i===data.length-1) hitos.add(i); });
+  } else if(!_reducir){
     data.forEach((_,i)=>hitos.add(i));
   } else {
     const _maxH=8;
@@ -1310,13 +1315,24 @@ function renderProd(prod){
       const ds=chart.getDatasetMeta(0).data;
       ctx.save();
       ds.forEach((pt,i)=>{
-        if(!hitos.has(i))return;
+        if(_mobDenso){
+          // En modo denso de celular el punto se dibuja para TODOS los días
+          // (pepita marcada), y el texto del valor solo si está en hitos.
+          ctx.beginPath();ctx.arc(pt.x,pt.y,3,0,Math.PI*2);
+          ctx.fillStyle=p.c;ctx.fill();
+          ctx.lineWidth=1.5;ctx.strokeStyle='#1e293b';ctx.stroke();
+          if(!hitos.has(i))return;
+        } else {
+          if(!hitos.has(i))return;
+        }
         const val=serie[i];
         const txt=val.toLocaleString('es-CO',{minimumFractionDigits:2,maximumFractionDigits:2});
-        // Punto
-        ctx.beginPath();ctx.arc(pt.x,pt.y,4,0,Math.PI*2);
-        ctx.fillStyle=p.c;ctx.fill();
-        ctx.lineWidth=2;ctx.strokeStyle='#1e293b';ctx.stroke();
+        if(!_mobDenso){
+          // Punto (modos no densos: se dibuja solo junto con su globito)
+          ctx.beginPath();ctx.arc(pt.x,pt.y,4,0,Math.PI*2);
+          ctx.fillStyle=p.c;ctx.fill();
+          ctx.lineWidth=2;ctx.strokeStyle='#1e293b';ctx.stroke();
+        }
         if(rotarFechas){
           // Modo Diario: texto vertical rotado 90° con fondo redondeado
           ctx.save();
@@ -1363,12 +1379,12 @@ function renderProd(prod){
     data:{labels:data.map(r=>r.Fecha),datasets:[{label:prod,data:serie,
       borderColor:p.c,borderWidth:2.5,
       backgroundColor:(c)=>{const{ctx,chartArea}=c.chart;if(!chartArea)return p.c+'22';const g=ctx.createLinearGradient(0,chartArea.top,0,chartArea.bottom);g.addColorStop(0,p.c+'66');g.addColorStop(1,p.c+'05');return g;},
-      pointRadius:_mobDenso?1:0,pointHoverRadius:7,pointHitRadius:14,pointBackgroundColor:p.c,pointBorderColor:_mobDenso?p.c:'#fff',pointBorderWidth:_mobDenso?0:2.5,tension:0.4,fill:true}]},
-    plugins:_mobDenso?[]:[globitosPlugin],
-    options:{responsive:true,maintainAspectRatio:false,interaction:_mobDenso?{mode:'nearest',axis:'x',intersect:false}:undefined,layout:{padding:{top:(rotarFechas&&window.innerWidth<768)?70:44,left:30,right:30,bottom:rotarFechas?55:8}},plugins:{legend:{display:false},
+      pointRadius:0,pointHoverRadius:7,pointHitRadius:14,pointBackgroundColor:p.c,pointBorderColor:'#fff',pointBorderWidth:2.5,tension:0.4,fill:true}]},
+    plugins:[globitosPlugin],
+    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:(rotarFechas&&window.innerWidth<768)?70:44,left:30,right:30,bottom:rotarFechas?55:8}},plugins:{legend:{display:false},
       tooltip:{callbacks:{title:t=>fDt(t[0].label),label:t=>` ${t.parsed.y.toLocaleString('es-CO',{minimumFractionDigits:2,maximumFractionDigits:2})} M`}}},
       scales:{x:{ticks:xTicksCfg,grid:{display:false}},
-        y:usaScrollDet?{min:yMin,max:yMax,afterFit:(s)=>{s.width=0;},ticks:{display:false,font:{size:10},callback:v=>v.toLocaleString('es-CO',{minimumFractionDigits:2,maximumFractionDigits:2})+' M'},grid:{color:'rgba(0,0,0,0.04)'}}:{min:yMin,max:yMax,ticks:{font:{size:10},callback:v=>v.toLocaleString('es-CO',{minimumFractionDigits:2,maximumFractionDigits:2})+' M'},grid:{color:'rgba(0,0,0,0.04)'}}}}}
+        y:usaScrollDet?{min:yMin,max:yMax,afterFit:(s)=>{s.width=0;},ticks:{display:false,count:_mobDenso?6:undefined,font:{size:10},callback:v=>v.toLocaleString('es-CO',{minimumFractionDigits:2,maximumFractionDigits:2})+' M'},grid:{color:'rgba(0,0,0,0.04)'}}:{min:yMin,max:yMax,ticks:{font:{size:10},callback:v=>v.toLocaleString('es-CO',{minimumFractionDigits:2,maximumFractionDigits:2})+' M'},grid:{color:'rgba(0,0,0,0.04)'}}}}}
   );
   setTimeout(()=>aplicarScrollGrafica('chDetLine'),50);
   const bM={};data.forEach(r=>{const k=r.Fecha.slice(0,7);if(!bM[k]){bM[k]={s:0,n:0};}bM[k].s+=r[prod];bM[k].n++;});
