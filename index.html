@@ -1435,7 +1435,7 @@ function renderProd(prod){
     [`Máximo período${fMax?' · '+fDt(fMax):''}`, fK(maxV)],
     [`Crecimiento anualizado (${diasPeriodo} días)`, crAnual!=null?`<span class="${crAnual>=0?'cup':'cdn'}">${fP(crAnual)}</span>`:'—'],
   ];
-  document.getElementById('detStats').innerHTML=`<table class="stbl"><tbody>${rows.map(([l,v])=>`<tr><td style="color:var(--tx3)">${l}</td><td>${v}</td></tr>`).join('')}</tbody></table>`;
+  document.getElementById('detStats').innerHTML=`<div class="stbl-wrap"><table class="stbl"><tbody>${rows.map(([l,v])=>`<tr><td style="color:var(--tx3)">${l}</td><td>${v}</td></tr>`).join('')}</tbody></table></div>`;
 }
 
 // DOWNLOADS
