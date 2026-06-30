@@ -7,7 +7,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
 /* === Scroll horizontal con eje Y fijo (técnica de dos contenedores) === */
-window.__SCROLL_CHARTS={chHist:{px:22,vis:30}, chDetLine:{px:70,vis:(window.innerWidth<768?6:12)}, chVar:{px:42,vis:24}, chDetBar:{px:34,vis:18}, chMoraSP:{px:50,vis:12}, chMoraCA:{px:50,vis:12}};
+window.__SCROLL_CHARTS={chHist:{px:22,vis:30}, chDetLine:{px:70,vis:(window.innerWidth<768?6:12),visMobile:7}, chVar:{px:42,vis:24}, chDetBar:{px:34,vis:18}, chMoraSP:{px:50,vis:12}, chMoraCA:{px:50,vis:12}};
 function aplicarScrollGrafica(canvasId){
   try{
     const cv=document.getElementById(canvasId);
@@ -53,7 +53,13 @@ function aplicarScrollGrafica(canvasId){
     }
     const innerDiv=row.querySelector('.chart-scroll-inner');
     const MAX_CANVAS=32000; // límite seguro del canvas HTML (~32767px máximo del navegador)
-    const pxReal=Math.min(cfg.px, Math.floor(MAX_CANVAS/nPts));
+    let pxObjetivo=cfg.px;
+    if(window.innerWidth<768 && cfg.visMobile){
+      // en móvil: separar los puntos para que solo quepan ~visMobile a la vez en pantalla
+      const anchoVisible=innerDiv.parentNode.clientWidth||(window.innerWidth-40);
+      pxObjetivo=Math.max(38, Math.round(anchoVisible/cfg.visMobile));
+    }
+    const pxReal=Math.min(pxObjetivo, Math.floor(MAX_CANVAS/nPts));
     const anchoTotal=Math.max(nPts*pxReal, innerDiv.parentNode.clientWidth);
     innerDiv.style.width=anchoTotal+'px';
     const host=innerDiv.querySelector('.cwrap')||innerDiv.firstChild;
