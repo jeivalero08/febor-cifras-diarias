@@ -7,7 +7,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
 /* === Scroll horizontal con eje Y fijo (técnica de dos contenedores) === */
-window.__SCROLL_CHARTS={chHist:{px:22,vis:30}, chDetLine:{px:70,vis:(window.innerWidth<768?6:12)}, chVar:{px:42,vis:24}, chDetBar:{px:34,vis:18}, chMoraSP:{px:50,vis:12}, chMoraCA:{px:50,vis:12}};
+window.__SCROLL_CHARTS={chHist:{px:22,vis:30}, chDetLine:{px:70,vis:12}, chVar:{px:42,vis:24}, chDetBar:{px:34,vis:18}, chMoraSP:{px:50,vis:12}, chMoraCA:{px:50,vis:12}};
 function aplicarScrollGrafica(canvasId){
   try{
     const cv=document.getElementById(canvasId);
@@ -42,7 +42,8 @@ function aplicarScrollGrafica(canvasId){
       row.appendChild(yfix);row.appendChild(scroll);
       scroll.appendChild(innerDiv);innerDiv.appendChild(host);
       // Fijar el alto del row al alto actual del host para que no se expanda
-      const _hostH=host.offsetHeight||200;
+      const _extraH=(canvasId==='chDetLine'&&window.innerWidth<768)?70:0;
+      const _hostH=(host.offsetHeight||200)+_extraH;
       row.style.height=_hostH+'px';
       scroll.style.height=_hostH+'px';
       innerDiv.style.height=_hostH+'px';
@@ -50,6 +51,12 @@ function aplicarScrollGrafica(canvasId){
       const hint=document.createElement('div');hint.className='chart-scroll-hint';
       hint.textContent='Desplázate horizontalmente para ver más períodos →';
       row.parentNode.insertBefore(hint,row.nextSibling);
+    }else if(canvasId==='chDetLine'&&window.innerWidth<768){
+      const host=row.querySelector('.cwrap')||row.querySelector('.chart-scroll-inner')?.firstChild;
+      const _hostH=70+(host?.offsetHeight||130);
+      row.style.height=_hostH+'px';
+      const _scroll=row.querySelector('.chart-scroll');if(_scroll)_scroll.style.height=_hostH+'px';
+      const _innerDiv=row.querySelector('.chart-scroll-inner');if(_innerDiv)_innerDiv.style.height=_hostH+'px';
     }
     const innerDiv=row.querySelector('.chart-scroll-inner');
     const MAX_CANVAS=32000; // límite seguro del canvas HTML (~32767px máximo del navegador)
@@ -1327,13 +1334,10 @@ function renderProd(prod){
           ctx.restore();
         } else {
           // Otros modos: texto horizontal con fondo redondeado (estilo original)
-          const _mobGlob=window.innerWidth<768;
-          ctx.font=(_mobGlob?"600 8px":"600 10px")+" 'IBM Plex Mono',monospace";
-          const _padH=_mobGlob?10:16;
-          const w=ctx.measureText(txt).width+_padH;
+          ctx.font="600 10px 'IBM Plex Mono',monospace";
+          const w=ctx.measureText(txt).width+16;
           const cxg=pt.x;
-          const _offY=_mobGlob?20:26;
-          const bx=cxg-w/2, by=pt.y-_offY, h=18;
+          const bx=cxg-w/2, by=pt.y-26, h=18;
           ctx.fillStyle='rgba(255,255,255,.92)';
           ctx.beginPath();
           if(ctx.roundRect)ctx.roundRect(bx,by,w,h,9);else ctx.rect(bx,by,w,h);
@@ -1347,14 +1351,14 @@ function renderProd(prod){
   };
   const _esAportes=(prod==='Aportes');
   // Eje X: DD/MM en cada punto, Chart.js auto-skip cuando hay scroll y muchos puntos
-  const pxRealTick=Math.min(window.__SCROLL_CHARTS['chDetLine']?.px||70,Math.floor(32000/data.length));const rotarFechas=(window.innerWidth<768)||pxRealTick<44;const xTicksCfg={autoSkip:false,maxRotation:rotarFechas?90:0,minRotation:rotarFechas?90:0,font:{size:9},callback:(v,i)=>{const d=data[i]?.Fecha;return d?`${d.slice(8,10)}/${d.slice(5,7)}/${d.slice(2,4)}`:'';}};
+  const pxRealTick=Math.min(window.__SCROLL_CHARTS['chDetLine']?.px||70,Math.floor(32000/data.length));const rotarFechas=pxRealTick<44;const xTicksCfg={autoSkip:false,maxRotation:rotarFechas?90:0,minRotation:rotarFechas?90:0,font:{size:9},callback:(v,i)=>{const d=data[i]?.Fecha;return d?`${d.slice(8,10)}/${d.slice(5,7)}/${d.slice(2,4)}`:'';}};
   new Chart(document.getElementById('chDetLine'),{type:'line',
     data:{labels:data.map(r=>r.Fecha),datasets:[{label:prod,data:serie,
       borderColor:p.c,borderWidth:2.5,
       backgroundColor:(c)=>{const{ctx,chartArea}=c.chart;if(!chartArea)return p.c+'22';const g=ctx.createLinearGradient(0,chartArea.top,0,chartArea.bottom);g.addColorStop(0,p.c+'66');g.addColorStop(1,p.c+'05');return g;},
       pointRadius:0,pointHoverRadius:7,pointHitRadius:14,pointBackgroundColor:p.c,pointBorderColor:'#fff',pointBorderWidth:2.5,tension:0.4,fill:true}]},
     plugins:[globitosPlugin],
-    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:(rotarFechas&&window.innerWidth<768)?70:44,left:rotarFechas?45:30,right:30,bottom:rotarFechas?70:8}},plugins:{legend:{display:false},
+    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:44,left:30,right:30,bottom:rotarFechas?55:8}},plugins:{legend:{display:false},
       tooltip:{callbacks:{title:t=>fDt(t[0].label),label:t=>` ${t.parsed.y.toLocaleString('es-CO',{minimumFractionDigits:2,maximumFractionDigits:2})} M`}}},
       scales:{x:{ticks:xTicksCfg,grid:{display:false}},
         y:usaScrollDet?{min:yMin,max:yMax,afterFit:(s)=>{s.width=0;},ticks:{display:false,font:{size:10},callback:v=>v.toLocaleString('es-CO',{minimumFractionDigits:2,maximumFractionDigits:2})+' M'},grid:{color:'rgba(0,0,0,0.04)'}}:{min:yMin,max:yMax,ticks:{font:{size:10},callback:v=>v.toLocaleString('es-CO',{minimumFractionDigits:2,maximumFractionDigits:2})+' M'},grid:{color:'rgba(0,0,0,0.04)'}}}}}
