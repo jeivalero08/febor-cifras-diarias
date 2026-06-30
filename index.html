@@ -42,27 +42,19 @@ function aplicarScrollGrafica(canvasId){
       row.appendChild(yfix);row.appendChild(scroll);
       scroll.appendChild(innerDiv);innerDiv.appendChild(host);
       // Fijar el alto del row al alto actual del host para que no se expanda
-      const _extraH=(canvasId==='chDetLine'&&window.innerWidth<768)?70:0;
-      const _hostH=(host.offsetHeight||200)+_extraH;
+      const _hostH=host.offsetHeight||200;
       row.style.height=_hostH+'px';
       scroll.style.height=_hostH+'px';
       innerDiv.style.height=_hostH+'px';
       host.style.height='100%';host.style.width='100%';
-      host.dataset.baseH=String((host.offsetHeight||200));
       const hint=document.createElement('div');hint.className='chart-scroll-hint';
       hint.textContent='Desplázate horizontalmente para ver más períodos →';
       row.parentNode.insertBefore(hint,row.nextSibling);
-    }else if(canvasId==='chDetLine'&&window.innerWidth<768){
-      const host=row.querySelector('.cwrap')||row.querySelector('.chart-scroll-inner')?.firstChild;
-      const _hostH=70+(host?.offsetHeight||130);
-      row.style.height=_hostH+'px';
-      const _scroll=row.querySelector('.chart-scroll');if(_scroll)_scroll.style.height=_hostH+'px';
-      const _innerDiv=row.querySelector('.chart-scroll-inner');if(_innerDiv)_innerDiv.style.height=_hostH+'px';
     }
     const innerDiv=row.querySelector('.chart-scroll-inner');
     const MAX_CANVAS=32000; // límite seguro del canvas HTML (~32767px máximo del navegador)
-    const _px5=(canvasId==='chDetLine'&&window.innerWidth<768)?Math.floor((innerDiv.parentNode.clientWidth||340)/5):cfg.px;
-    const pxReal=Math.min(_px5, Math.floor(MAX_CANVAS/nPts));
+    const _px7=(canvasId==='chDetLine'&&window.innerWidth<768)?Math.floor((innerDiv.parentNode.clientWidth||340)/7):cfg.px;
+    const pxReal=Math.min(_px7, Math.floor(MAX_CANVAS/nPts));
     const anchoTotal=Math.max(nPts*pxReal, innerDiv.parentNode.clientWidth);
     innerDiv.style.width=anchoTotal+'px';
     const host=innerDiv.querySelector('.cwrap')||innerDiv.firstChild;
@@ -1356,8 +1348,8 @@ function renderProd(prod){
   };
   const _esAportes=(prod==='Aportes');
   // Eje X: DD/MM en cada punto, Chart.js auto-skip cuando hay scroll y muchos puntos
-  const _pxParaRotacion=window.innerWidth<768?Math.floor((Math.min(window.innerWidth,420)-60)/5):(window.__SCROLL_CHARTS['chDetLine']?.px||70);
-  const pxRealTick=Math.min(_pxParaRotacion,Math.floor(32000/data.length));const rotarFechas=pxRealTick<44;const _fechaCorta=rotarFechas&&window.innerWidth<768;const xTicksCfg={autoSkip:false,maxRotation:rotarFechas?90:0,minRotation:rotarFechas?90:0,font:{size:_fechaCorta?7:9},callback:(v,i)=>{const d=data[i]?.Fecha;return d?`${d.slice(8,10)}/${d.slice(5,7)}/${d.slice(2,4)}`:'';}};
+  const _pxParaTick=(window.innerWidth<768)?Math.floor((Math.min(window.innerWidth,420)-60)/7):(window.__SCROLL_CHARTS['chDetLine']?.px||70);
+  const pxRealTick=Math.min(_pxParaTick,Math.floor(32000/data.length));const rotarFechas=pxRealTick<44;const _fechaPeq=rotarFechas&&window.innerWidth<768;const xTicksCfg={autoSkip:false,maxRotation:rotarFechas?90:0,minRotation:rotarFechas?90:0,font:{size:_fechaPeq?7:9},callback:(v,i)=>{const d=data[i]?.Fecha;return d?`${d.slice(8,10)}/${d.slice(5,7)}/${d.slice(2,4)}`:'';}};
   new Chart(document.getElementById('chDetLine'),{type:'line',
     data:{labels:data.map(r=>r.Fecha),datasets:[{label:prod,data:serie,
       borderColor:p.c,borderWidth:2.5,
