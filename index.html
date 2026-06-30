@@ -1355,7 +1355,7 @@ function renderProd(prod){
   };
   const _esAportes=(prod==='Aportes');
   // Eje X: DD/MM en cada punto, Chart.js auto-skip cuando hay scroll y muchos puntos
-  const pxRealTick=Math.min(window.__SCROLL_CHARTS['chDetLine']?.px||70,Math.floor(32000/data.length));const rotarFechas=pxRealTick<44;const xTicksCfg={autoSkip:false,maxRotation:rotarFechas?90:0,minRotation:rotarFechas?90:0,font:{size:9},callback:(v,i)=>{const d=data[i]?.Fecha;return d?`${d.slice(8,10)}/${d.slice(5,7)}`:'';}};
+  const pxRealTick=Math.min(window.__SCROLL_CHARTS['chDetLine']?.px||70,Math.floor(32000/data.length));const rotarFechas=pxRealTick<44;const _fechaCorta=rotarFechas&&window.innerWidth<768;const xTicksCfg={autoSkip:false,maxRotation:rotarFechas?90:0,minRotation:rotarFechas?90:0,font:{size:9},callback:(v,i)=>{const d=data[i]?.Fecha;if(!d)return '';return _fechaCorta?`${d.slice(8,10)}/${d.slice(5,7)}`:`${d.slice(8,10)}/${d.slice(5,7)}/${d.slice(2,4)}`;}};
   new Chart(document.getElementById('chDetLine'),{type:'line',
     data:{labels:data.map(r=>r.Fecha),datasets:[{label:prod,data:serie,
       borderColor:p.c,borderWidth:2.5,
