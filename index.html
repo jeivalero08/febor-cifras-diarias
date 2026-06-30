@@ -7,7 +7,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
 /* === Scroll horizontal con eje Y fijo (técnica de dos contenedores) === */
-window.__SCROLL_CHARTS={chHist:{px:22,vis:30}, chDetLine:{px:70,vis:(window.innerWidth<768?6:12),visMobile:7}, chVar:{px:42,vis:24}, chDetBar:{px:34,vis:18}, chMoraSP:{px:50,vis:12}, chMoraCA:{px:50,vis:12}};
+window.__SCROLL_CHARTS={chHist:{px:22,vis:30}, chDetLine:{px:70,vis:(window.innerWidth<768?6:12)}, chVar:{px:42,vis:24}, chDetBar:{px:34,vis:18}, chMoraSP:{px:50,vis:12}, chMoraCA:{px:50,vis:12}};
 function aplicarScrollGrafica(canvasId){
   try{
     const cv=document.getElementById(canvasId);
@@ -53,13 +53,7 @@ function aplicarScrollGrafica(canvasId){
     }
     const innerDiv=row.querySelector('.chart-scroll-inner');
     const MAX_CANVAS=32000; // límite seguro del canvas HTML (~32767px máximo del navegador)
-    let pxObjetivo=cfg.px;
-    if(window.innerWidth<768 && cfg.visMobile){
-      // en móvil: separar los puntos para que solo quepan ~visMobile a la vez en pantalla
-      const anchoVisible=innerDiv.parentNode.clientWidth||(window.innerWidth-40);
-      pxObjetivo=Math.max(38, Math.round(anchoVisible/cfg.visMobile));
-    }
-    const pxReal=Math.min(pxObjetivo, Math.floor(MAX_CANVAS/nPts));
+    const pxReal=Math.min(cfg.px, Math.floor(MAX_CANVAS/nPts));
     const anchoTotal=Math.max(nPts*pxReal, innerDiv.parentNode.clientWidth);
     innerDiv.style.width=anchoTotal+'px';
     const host=innerDiv.querySelector('.cwrap')||innerDiv.firstChild;
@@ -1280,40 +1274,34 @@ function renderProd(prod){
     </div>
   </div>`;
   const dense=data.length>90;dC('chDetLine');
-  // En móvil, si el rango es muy largo (ej. todo el historial en modo Diario),
-  // el ancho máximo de canvas del navegador (~32000px) impide separar bien cada
-  // día individual. Para esos casos mostramos un punto cada N días (manteniendo
-  // siempre el primero y el último) en vez de apretar todo; los rangos cortos
-  // (semana/mes) siguen mostrando cada día sin tocar nada. Las estadísticas
-  // (mínimo/promedio/máximo/tabla) siguen usando 'data' completo, sin alterar.
-  const _isMobChart=window.innerWidth<768;
-  const MOBILE_MAX_PTS=400;
-  let chartRows=data;
-  if(_isMobChart && data.length>MOBILE_MAX_PTS){
-    const _stride=Math.ceil(data.length/MOBILE_MAX_PTS);
-    chartRows=data.filter((_,i)=>i%_stride===0||i===data.length-1);
-  }
-  const serie=chartRows.map(r=>+(r[prod]/1e6).toFixed(3));
+  const serie=data.map(r=>+(r[prod]/1e6).toFixed(3));
+  // Calculamos antes si el rango es muy denso (modo Diario con muchos días).
+  // _mobDenso: SOLO en pantallas angostas (celular) usamos el estilo simplificado
+  // (puntos + valor al tocar, como el gráfico principal). El PC sigue exactamente
+  // igual que antes, con los globitos de texto rotado.
+  const pxRealTick=Math.min(window.__SCROLL_CHARTS['chDetLine']?.px||70,Math.floor(32000/data.length));
+  const rotarFechas=pxRealTick<44;
+  const _mobDenso=rotarFechas&&window.innerWidth<768;
   const sMin=Math.min(...serie), sMax=Math.max(...serie);
   const margen=(sMax-sMin)*0.12||Math.abs(sMax)*0.1||1;
   const yMin=sMin-margen, yMax=sMax+margen;
   const VIS_DET=window.__SCROLL_CHARTS['chDetLine']?.vis||30;
-  const usaScrollDet=chartRows.length>VIS_DET;
+  const usaScrollDet=data.length>VIS_DET;
   // Hitos: todos siempre (el scroll ya limita los visibles en modo diario)
   // En móvil sin scroll y muchos puntos (3 meses ~90), reducir a los más representativos
   const hitos=new Set();
   const _isMob=window.innerWidth<768;
-  const _reducir=_isMob&&!usaScrollDet&&chartRows.length>25;
+  const _reducir=_isMob&&!usaScrollDet&&data.length>25;
   if(!_reducir){
-    chartRows.forEach((_,i)=>hitos.add(i));
+    data.forEach((_,i)=>hitos.add(i));
   } else {
     const _maxH=8;
-    const _s=chartRows.map(r=>+(r[prod]/1e6).toFixed(3));
-    hitos.add(0); hitos.add(chartRows.length-1);
+    const _s=data.map(r=>+(r[prod]/1e6).toFixed(3));
+    hitos.add(0); hitos.add(data.length-1);
     hitos.add(_s.indexOf(Math.min(..._s)));
     hitos.add(_s.indexOf(Math.max(..._s)));
-    const step=Math.floor(chartRows.length/(_maxH-2));
-    for(let i=step;i<chartRows.length-1;i+=step) hitos.add(i);
+    const step=Math.floor(data.length/(_maxH-2));
+    for(let i=step;i<data.length-1;i+=step) hitos.add(i);
   }
   const globitosPlugin={
     id:'globitos'+prod,
@@ -1365,15 +1353,19 @@ function renderProd(prod){
     }
   };
   const _esAportes=(prod==='Aportes');
-  // Eje X: DD/MM en cada punto, Chart.js auto-skip cuando hay scroll y muchos puntos
-  const pxRealTick=Math.min(window.__SCROLL_CHARTS['chDetLine']?.px||70,Math.floor(32000/chartRows.length));const rotarFechas=pxRealTick<44;const xTicksCfg={autoSkip:false,maxRotation:rotarFechas?90:0,minRotation:rotarFechas?90:0,font:{size:9},callback:(v,i)=>{const d=chartRows[i]?.Fecha;return d?`${d.slice(8,10)}/${d.slice(5,7)}/${d.slice(2,4)}`:'';}};
+  // Eje X: en celular con modo denso (Diario, muchos días) usamos auto-skip sin
+  // rotar, igual que el gráfico principal. En PC (o rangos no densos) queda
+  // exactamente igual que antes: cada fecha, rotada 90° si rotarFechas.
+  const xTicksCfg=_mobDenso
+    ?{autoSkip:true,maxTicksLimit:5,maxRotation:0,minRotation:0,font:{size:9},callback:(v,i)=>{const d=data[i]?.Fecha;return d?`${d.slice(8,10)}/${d.slice(5,7)}/${d.slice(2,4)}`:'';}}
+    :{autoSkip:false,maxRotation:rotarFechas?90:0,minRotation:rotarFechas?90:0,font:{size:9},callback:(v,i)=>{const d=data[i]?.Fecha;return d?`${d.slice(8,10)}/${d.slice(5,7)}/${d.slice(2,4)}`:'';}};
   new Chart(document.getElementById('chDetLine'),{type:'line',
-    data:{labels:chartRows.map(r=>r.Fecha),datasets:[{label:prod,data:serie,
+    data:{labels:data.map(r=>r.Fecha),datasets:[{label:prod,data:serie,
       borderColor:p.c,borderWidth:2.5,
       backgroundColor:(c)=>{const{ctx,chartArea}=c.chart;if(!chartArea)return p.c+'22';const g=ctx.createLinearGradient(0,chartArea.top,0,chartArea.bottom);g.addColorStop(0,p.c+'66');g.addColorStop(1,p.c+'05');return g;},
-      pointRadius:0,pointHoverRadius:7,pointHitRadius:14,pointBackgroundColor:p.c,pointBorderColor:'#fff',pointBorderWidth:2.5,tension:0.4,fill:true}]},
-    plugins:[globitosPlugin],
-    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:(rotarFechas&&window.innerWidth<768)?70:44,left:30,right:30,bottom:rotarFechas?55:8}},plugins:{legend:{display:false},
+      pointRadius:_mobDenso?1:0,pointHoverRadius:7,pointHitRadius:14,pointBackgroundColor:p.c,pointBorderColor:'#fff',pointBorderWidth:2.5,tension:0.4,fill:true}]},
+    plugins:_mobDenso?[]:[globitosPlugin],
+    options:{responsive:true,maintainAspectRatio:false,interaction:_mobDenso?{mode:'nearest',axis:'x',intersect:false}:undefined,layout:{padding:{top:(rotarFechas&&window.innerWidth<768)?70:44,left:30,right:30,bottom:rotarFechas?55:8}},plugins:{legend:{display:false},
       tooltip:{callbacks:{title:t=>fDt(t[0].label),label:t=>` ${t.parsed.y.toLocaleString('es-CO',{minimumFractionDigits:2,maximumFractionDigits:2})} M`}}},
       scales:{x:{ticks:xTicksCfg,grid:{display:false}},
         y:usaScrollDet?{min:yMin,max:yMax,afterFit:(s)=>{s.width=0;},ticks:{display:false,font:{size:10},callback:v=>v.toLocaleString('es-CO',{minimumFractionDigits:2,maximumFractionDigits:2})+' M'},grid:{color:'rgba(0,0,0,0.04)'}}:{min:yMin,max:yMax,ticks:{font:{size:10},callback:v=>v.toLocaleString('es-CO',{minimumFractionDigits:2,maximumFractionDigits:2})+' M'},grid:{color:'rgba(0,0,0,0.04)'}}}}}
