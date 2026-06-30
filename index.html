@@ -1280,27 +1280,40 @@ function renderProd(prod){
     </div>
   </div>`;
   const dense=data.length>90;dC('chDetLine');
-  const serie=data.map(r=>+(r[prod]/1e6).toFixed(3));
+  // En móvil, si el rango es muy largo (ej. todo el historial en modo Diario),
+  // el ancho máximo de canvas del navegador (~32000px) impide separar bien cada
+  // día individual. Para esos casos mostramos un punto cada N días (manteniendo
+  // siempre el primero y el último) en vez de apretar todo; los rangos cortos
+  // (semana/mes) siguen mostrando cada día sin tocar nada. Las estadísticas
+  // (mínimo/promedio/máximo/tabla) siguen usando 'data' completo, sin alterar.
+  const _isMobChart=window.innerWidth<768;
+  const MOBILE_MAX_PTS=400;
+  let chartRows=data;
+  if(_isMobChart && data.length>MOBILE_MAX_PTS){
+    const _stride=Math.ceil(data.length/MOBILE_MAX_PTS);
+    chartRows=data.filter((_,i)=>i%_stride===0||i===data.length-1);
+  }
+  const serie=chartRows.map(r=>+(r[prod]/1e6).toFixed(3));
   const sMin=Math.min(...serie), sMax=Math.max(...serie);
   const margen=(sMax-sMin)*0.12||Math.abs(sMax)*0.1||1;
   const yMin=sMin-margen, yMax=sMax+margen;
   const VIS_DET=window.__SCROLL_CHARTS['chDetLine']?.vis||30;
-  const usaScrollDet=data.length>VIS_DET;
+  const usaScrollDet=chartRows.length>VIS_DET;
   // Hitos: todos siempre (el scroll ya limita los visibles en modo diario)
   // En móvil sin scroll y muchos puntos (3 meses ~90), reducir a los más representativos
   const hitos=new Set();
   const _isMob=window.innerWidth<768;
-  const _reducir=_isMob&&!usaScrollDet&&data.length>25;
+  const _reducir=_isMob&&!usaScrollDet&&chartRows.length>25;
   if(!_reducir){
-    data.forEach((_,i)=>hitos.add(i));
+    chartRows.forEach((_,i)=>hitos.add(i));
   } else {
     const _maxH=8;
-    const _s=data.map(r=>+(r[prod]/1e6).toFixed(3));
-    hitos.add(0); hitos.add(data.length-1);
+    const _s=chartRows.map(r=>+(r[prod]/1e6).toFixed(3));
+    hitos.add(0); hitos.add(chartRows.length-1);
     hitos.add(_s.indexOf(Math.min(..._s)));
     hitos.add(_s.indexOf(Math.max(..._s)));
-    const step=Math.floor(data.length/(_maxH-2));
-    for(let i=step;i<data.length-1;i+=step) hitos.add(i);
+    const step=Math.floor(chartRows.length/(_maxH-2));
+    for(let i=step;i<chartRows.length-1;i+=step) hitos.add(i);
   }
   const globitosPlugin={
     id:'globitos'+prod,
@@ -1353,9 +1366,9 @@ function renderProd(prod){
   };
   const _esAportes=(prod==='Aportes');
   // Eje X: DD/MM en cada punto, Chart.js auto-skip cuando hay scroll y muchos puntos
-  const pxRealTick=Math.min(window.__SCROLL_CHARTS['chDetLine']?.px||70,Math.floor(32000/data.length));const rotarFechas=pxRealTick<44;const xTicksCfg={autoSkip:false,maxRotation:rotarFechas?90:0,minRotation:rotarFechas?90:0,font:{size:9},callback:(v,i)=>{const d=data[i]?.Fecha;return d?`${d.slice(8,10)}/${d.slice(5,7)}/${d.slice(2,4)}`:'';}};
+  const pxRealTick=Math.min(window.__SCROLL_CHARTS['chDetLine']?.px||70,Math.floor(32000/chartRows.length));const rotarFechas=pxRealTick<44;const xTicksCfg={autoSkip:false,maxRotation:rotarFechas?90:0,minRotation:rotarFechas?90:0,font:{size:9},callback:(v,i)=>{const d=chartRows[i]?.Fecha;return d?`${d.slice(8,10)}/${d.slice(5,7)}/${d.slice(2,4)}`:'';}};
   new Chart(document.getElementById('chDetLine'),{type:'line',
-    data:{labels:data.map(r=>r.Fecha),datasets:[{label:prod,data:serie,
+    data:{labels:chartRows.map(r=>r.Fecha),datasets:[{label:prod,data:serie,
       borderColor:p.c,borderWidth:2.5,
       backgroundColor:(c)=>{const{ctx,chartArea}=c.chart;if(!chartArea)return p.c+'22';const g=ctx.createLinearGradient(0,chartArea.top,0,chartArea.bottom);g.addColorStop(0,p.c+'66');g.addColorStop(1,p.c+'05');return g;},
       pointRadius:0,pointHoverRadius:7,pointHitRadius:14,pointBackgroundColor:p.c,pointBorderColor:'#fff',pointBorderWidth:2.5,tension:0.4,fill:true}]},
