@@ -1357,13 +1357,13 @@ function renderProd(prod){
   // rotar, igual que el gráfico principal. En PC (o rangos no densos) queda
   // exactamente igual que antes: cada fecha, rotada 90° si rotarFechas.
   const xTicksCfg=_mobDenso
-    ?{autoSkip:true,maxTicksLimit:5,maxRotation:0,minRotation:0,font:{size:9},callback:(v,i)=>{const d=data[i]?.Fecha;return d?`${d.slice(8,10)}/${d.slice(5,7)}/${d.slice(2,4)}`:'';}}
+    ?{autoSkip:true,maxTicksLimit:usaScrollDet?9999:(window.innerWidth<768?5:12),maxRotation:0,minRotation:0,font:{size:9},callback:(v,i)=>{const d=data[i]?.Fecha;return d?`${d.slice(8,10)}/${d.slice(5,7)}/${d.slice(2,4)}`:'';}}
     :{autoSkip:false,maxRotation:rotarFechas?90:0,minRotation:rotarFechas?90:0,font:{size:9},callback:(v,i)=>{const d=data[i]?.Fecha;return d?`${d.slice(8,10)}/${d.slice(5,7)}/${d.slice(2,4)}`:'';}};
   new Chart(document.getElementById('chDetLine'),{type:'line',
     data:{labels:data.map(r=>r.Fecha),datasets:[{label:prod,data:serie,
       borderColor:p.c,borderWidth:2.5,
       backgroundColor:(c)=>{const{ctx,chartArea}=c.chart;if(!chartArea)return p.c+'22';const g=ctx.createLinearGradient(0,chartArea.top,0,chartArea.bottom);g.addColorStop(0,p.c+'66');g.addColorStop(1,p.c+'05');return g;},
-      pointRadius:_mobDenso?1:0,pointHoverRadius:7,pointHitRadius:14,pointBackgroundColor:p.c,pointBorderColor:'#fff',pointBorderWidth:2.5,tension:0.4,fill:true}]},
+      pointRadius:_mobDenso?1:0,pointHoverRadius:7,pointHitRadius:14,pointBackgroundColor:p.c,pointBorderColor:_mobDenso?p.c:'#fff',pointBorderWidth:_mobDenso?0:2.5,tension:0.4,fill:true}]},
     plugins:_mobDenso?[]:[globitosPlugin],
     options:{responsive:true,maintainAspectRatio:false,interaction:_mobDenso?{mode:'nearest',axis:'x',intersect:false}:undefined,layout:{padding:{top:(rotarFechas&&window.innerWidth<768)?70:44,left:30,right:30,bottom:rotarFechas?55:8}},plugins:{legend:{display:false},
       tooltip:{callbacks:{title:t=>fDt(t[0].label),label:t=>` ${t.parsed.y.toLocaleString('es-CO',{minimumFractionDigits:2,maximumFractionDigits:2})} M`}}},
