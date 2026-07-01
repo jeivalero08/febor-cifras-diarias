@@ -1051,7 +1051,7 @@ function renderHist(data){
       borderColor:p.c,backgroundColor:p.c+'18',borderWidth:2,
       pointRadius:window.innerWidth<768?1:3,pointHoverRadius:6,tension:0.35,fill:false,spanGaps:true,
     }))},
-    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{left:30,right:30,bottom:usaScrollHist?55:8}},interaction:{mode:'index',intersect:false},
+    options:{responsive:true,maintainAspectRatio:false,devicePixelRatio:1,layout:{padding:{left:30,right:30,bottom:usaScrollHist?55:8}},interaction:{mode:'index',intersect:false},
       plugins:{legend:{display:false},tooltip:{callbacks:{
         title:t=>fDt(t[0].label),
         label:t=>` ${t.dataset.label}: ${t.parsed.y!=null?t.parsed.y.toLocaleString('es-CO',{minimumFractionDigits:2,maximumFractionDigits:2})+' M':'—'}`
@@ -1085,7 +1085,7 @@ function renderVar(data){
          pointRadius:0,pointHoverRadius:5,pointBackgroundColor:'#4A7CC7',pointBorderColor:'#fff',pointBorderWidth:2,
          tension:0.4,fill:false,order:1,borderCapStyle:'round'}
       ]},
-    options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},layout:{padding:{left:30,right:30,bottom:usaScrollVar?50:8}},
+    options:{responsive:true,maintainAspectRatio:false,devicePixelRatio:1,interaction:{mode:'index',intersect:false},layout:{padding:{left:30,right:30,bottom:usaScrollVar?50:8}},
       plugins:{legend:{display:false},tooltip:{filter:item=>item.datasetIndex===0,callbacks:{label:t=>`Saldo promedio: ${t.parsed.y.toLocaleString('es-CO',{minimumFractionDigits:2,maximumFractionDigits:2})} M`}}},
       scales:{x:{ticks:{maxTicksLimit:window.innerWidth<768?5:24,font:{size:window.innerWidth<768?8:9},maxRotation:0,minRotation:0},grid:{display:false}},
         y:usaScrollVar?{min:yMinV,max:yMaxV,afterFit:(s)=>{s.width=0;},ticks:{display:false,font:{size:10},callback:v=>v.toLocaleString('es-CO',{minimumFractionDigits:2,maximumFractionDigits:2})+' M'},grid:{color:'rgba(0,0,0,0.04)'}}:{min:yMinV,max:yMaxV,ticks:{font:{size:10},callback:v=>v.toLocaleString('es-CO',{minimumFractionDigits:2,maximumFractionDigits:2})+' M'},grid:{color:'rgba(0,0,0,0.04)'}}}}
@@ -1383,7 +1383,7 @@ function renderProd(prod){
       backgroundColor:(c)=>{const{ctx,chartArea}=c.chart;if(!chartArea)return p.c+'22';const g=ctx.createLinearGradient(0,chartArea.top,0,chartArea.bottom);g.addColorStop(0,p.c+'66');g.addColorStop(1,p.c+'05');return g;},
       pointRadius:0,pointHoverRadius:7,pointHitRadius:14,pointBackgroundColor:p.c,pointBorderColor:'#fff',pointBorderWidth:2.5,tension:0.4,fill:true}]},
     plugins:[globitosPlugin],
-    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:(rotarFechas&&window.innerWidth<768)?70:44,left:30,right:30,bottom:_mobDenso?20:(rotarFechas?55:8)}},plugins:{legend:{display:false},
+    options:{responsive:true,maintainAspectRatio:false,devicePixelRatio:1,layout:{padding:{top:(rotarFechas&&window.innerWidth<768)?70:44,left:30,right:30,bottom:_mobDenso?20:(rotarFechas?55:8)}},plugins:{legend:{display:false},
       tooltip:{callbacks:{title:t=>fDt(t[0].label),label:t=>` ${t.parsed.y.toLocaleString('es-CO',{minimumFractionDigits:2,maximumFractionDigits:2})} M`}}},
       scales:{x:{ticks:xTicksCfg,grid:{display:false}},
         y:usaScrollDet?{min:yMin,max:yMax,afterFit:(s)=>{s.width=0;},ticks:{display:false,count:_mobDenso?6:undefined,font:{size:10},callback:v=>v.toLocaleString('es-CO',{minimumFractionDigits:2,maximumFractionDigits:2})+' M'},grid:{color:'rgba(0,0,0,0.04)'}}:{min:yMin,max:yMax,ticks:{font:{size:10},callback:v=>v.toLocaleString('es-CO',{minimumFractionDigits:2,maximumFractionDigits:2})+' M'},grid:{color:'rgba(0,0,0,0.04)'}}}}}
@@ -1395,7 +1395,7 @@ function renderProd(prod){
   new Chart(document.getElementById('chDetBar'),{type:'bar',
     data:{labels:mks.map(k=>`${MS[parseInt(k.slice(5,7))]} ${k.slice(2,4)}`),
       datasets:[{label:'Prom',data:mks.map(k=>+(bM[k].s/bM[k].n/1e6).toFixed(3)),backgroundColor:p.c+'99',borderColor:p.c,borderWidth:1,borderRadius:4}]},
-    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{left:30,right:30,bottom:usaScrollBar?50:8}},plugins:{legend:{display:false},tooltip:{callbacks:{label:t=>` ${t.parsed.y.toLocaleString('es-CO',{minimumFractionDigits:2,maximumFractionDigits:2})} M`}}},
+    options:{responsive:true,maintainAspectRatio:false,devicePixelRatio:1,layout:{padding:{left:30,right:30,bottom:usaScrollBar?50:8}},plugins:{legend:{display:false},tooltip:{callbacks:{label:t=>` ${t.parsed.y.toLocaleString('es-CO',{minimumFractionDigits:2,maximumFractionDigits:2})} M`}}},
       scales:{x:{ticks:{maxTicksLimit:window.innerWidth<768?5:14,font:{size:window.innerWidth<768?8:10},maxRotation:0,minRotation:0},grid:{display:false}},
         y:usaScrollBar?{afterFit:(s)=>{s.width=0;},ticks:{display:false,font:{size:10},callback:v=>v.toLocaleString('es-CO',{minimumFractionDigits:2,maximumFractionDigits:2})+' M'},grid:{color:'rgba(0,0,0,0.04)'}}:{ticks:{font:{size:10},callback:v=>v.toLocaleString('es-CO',{minimumFractionDigits:2,maximumFractionDigits:2})+' M'},grid:{color:'rgba(0,0,0,0.04)'}}}}
   });
@@ -1625,7 +1625,7 @@ function renderCartera(){
         backgroundColor:(c)=>{const{ctx,chartArea}=c.chart;if(!chartArea)return color+'22';const g=ctx.createLinearGradient(0,chartArea.top,0,chartArea.bottom);g.addColorStop(0,color+'55');g.addColorStop(1,color+'05');return g;},
         pointRadius:0,pointHoverRadius:7,pointHitRadius:14,pointBackgroundColor:color,pointBorderColor:'#fff',pointBorderWidth:2.5,tension:0.4,fill:true}]},
       plugins:[globMora],
-      options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},layout:{padding:{top:24,left:30,right:30,bottom:usaScroll?50:8}},
+      options:{responsive:true,maintainAspectRatio:false,devicePixelRatio:1,interaction:{mode:'index',intersect:false},layout:{padding:{top:24,left:30,right:30,bottom:usaScroll?50:8}},
         plugins:{legend:{display:false},tooltip:{callbacks:{
           title:t=>fDt(t[0].label),label:t=>` ${t.parsed.y.toFixed(2)}%`}}},
         scales:{x:{ticks:xTicks,grid:{display:false}},y:yScale}}});
