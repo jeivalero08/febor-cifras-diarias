@@ -7,6 +7,13 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
 /* === Scroll horizontal con eje Y fijo (técnica de dos contenedores) === */
+/* Forzamos devicePixelRatio=1 globalmente: los gráficos con scroll horizontal
+   pueden llegar a ~32.000px de ancho, y multiplicado por el devicePixelRatio
+   real del celular (2.5-3x, y aún más si el usuario tiene zoom de pantalla
+   activado) supera el límite físico de canvas de los navegadores móviles,
+   dejando el gráfico en blanco. Fijarlo aquí, antes de crear cualquier
+   gráfico, es más confiable que la opción por gráfico individual. */
+if(window.Chart){Chart.defaults.devicePixelRatio=1;}
 window.__SCROLL_CHARTS={chHist:{px:22,vis:30}, chDetLine:{px:70,vis:(window.innerWidth<768?6:12)}, chVar:{px:42,vis:24}, chDetBar:{px:34,vis:18}, chMoraSP:{px:50,vis:12}, chMoraCA:{px:50,vis:12}};
 function aplicarScrollGrafica(canvasId){
   try{
@@ -60,6 +67,16 @@ function aplicarScrollGrafica(canvasId){
     if(host){host.style.width=anchoTotal+'px';host.style.overflow='visible';}
     if(ch.canvas){ch.canvas.style.maxWidth='none';ch.canvas.style.width=anchoTotal+'px';}
     ch.resize(anchoTotal, ch.height);
+    // Respaldo: si por cualquier motivo el bitmap real del canvas quedó más
+    // ancho que el límite seguro (p. ej. el navegador aplicó su propio
+    // devicePixelRatio pese a la config), lo recortamos a mano para que
+    // nunca quede en blanco.
+    if(ch.canvas && ch.canvas.width>MAX_CANVAS){
+      const ratio=MAX_CANVAS/ch.canvas.width;
+      ch.canvas.width=Math.floor(ch.canvas.width*ratio);
+      ch.canvas.height=Math.floor(ch.canvas.height*ratio);
+      ch.draw();
+    }
     // dibujar el eje Y fijo a partir de la escala real
     setTimeout(()=>dibujarEjeYFijo(canvasId,ch),40);
     const sc=innerDiv.parentNode;sc.scrollLeft=sc.scrollWidth;
