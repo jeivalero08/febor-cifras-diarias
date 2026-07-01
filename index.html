@@ -293,7 +293,7 @@ select,input{font-family:var(--ff)}
 .stbl td:not(:first-child){text-align:right;font-family:var(--fm);font-size:.75rem}
 .stbl tr{transition:background .25s}
 .stbl tr:hover td{background:rgba(255,255,255,.38);transition:background .3s}
-.stbl tr:last-child td{border-bottom:none;font-weight:700;color:var(--g0)}
+.stbl tr:last-child td{border-bottom:none;color:var(--g0)}
 .dc{display:flex;align-items:center;gap:7px}
 .dm{width:8px;height:8px;border-radius:3px;flex-shrink:0}
 .cup{color:var(--grn);font-weight:600}
@@ -864,7 +864,6 @@ function anchorDates(arr, mode){
     }
     if(best&&!seen.has(best.Fecha)){seen.add(best.Fecha);result.push(best);}
   }
-  if(!seen.has(firstRec.Fecha)) result.push(firstRec);
   if(!seen.has(lastRec.Fecha)) result.push(lastRec);
   result.sort((a,b)=>a.Fecha<b.Fecha?-1:1);
   return result;
@@ -1406,9 +1405,24 @@ function renderProd(prod){
   const iMin=vals.indexOf(minV), iMax=vals.indexOf(maxV);
   const fMin=data[iMin]?.Fecha, fMax=data[iMax]?.Fecha;
   // Variación vs día anterior: mostrar las 2 fechas comparadas
-  const prevRec=ALL[ALL.findIndex(r=>r.Fecha===l.Fecha)-1];
+  const _modoVar=D.mode||'Diario';
+  const _stepVar={'Anual':12,'6M':6,'3M':3,'Mensual':1}[_modoVar]||0;
+  let prevRec;
+  if(_stepVar===0){
+    prevRec=ALL[ALL.findIndex(r=>r.Fecha===l.Fecha)-1];
+  }else{
+    const _lF=l.Fecha,_lY=parseInt(_lF.slice(0,4)),_lM=parseInt(_lF.slice(5,7)),_lD=parseInt(_lF.slice(8,10));
+    let _pY=_lY,_pM=_lM-_stepVar;while(_pM<1){_pM+=12;_pY--;}
+    const _maxD=new Date(_pY,_pM,0).getDate();
+    const _pad=n=>String(n).padStart(2,'0');
+    const _target=`${_pY}-${_pad(_pM)}-${_pad(Math.min(_lD,_maxD))}`;
+    let _best=null,_bestDiff=Infinity;
+    for(const r of ALL){const d=Math.abs(new Date(r.Fecha)-new Date(_target));if(d<_bestDiff){_bestDiff=d;_best=r;}}
+    prevRec=_best;
+  }
   const prevFecha=prevRec?prevRec.Fecha:null;
-  const varDiaLabel=prevFecha?`Var. ${fDt(prevFecha)} → ${fDt(l.Fecha)}`:'Variación vs día ant.';
+  const _varLabels={'Anual':'vs año ant.','6M':'vs 6 meses ant.','3M':'vs trimestre ant.','Mensual':'vs mes ant.'};
+  const varDiaLabel=prevFecha?`Var. ${fDt(prevFecha)} → ${fDt(l.Fecha)}`:`Variación ${_varLabels[_modoVar]||'vs día ant.'}`;
   // Promedio: indicar sobre cuántos puntos de datos vs. días de calendario
   // (pueden no coincidir si hay días sin registro, ej. fines de semana
   // antes de que el bot corriera diario, o caídas puntuales del sistema)
@@ -1494,7 +1508,6 @@ function filtrarCar(st){
     for(const r of arr){const d=Math.abs(new Date(r.Fecha)-new Date(t));if(d<bestDiff){bestDiff=d;best=r;}}
     if(best&&!seen.has(best.Fecha)){seen.add(best.Fecha);result.push(best);}
   }
-  if(!seen.has(firstRec.Fecha))result.push(firstRec);
   if(!seen.has(lastRec.Fecha))result.push(lastRec);
   result.sort((a,b)=>a.Fecha<b.Fecha?-1:1);
   return result;
