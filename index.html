@@ -23,7 +23,7 @@ function __dprSeguro(anchoCSS,altoCSS){
   const a=Math.max(1,anchoCSS||1), h=Math.max(1,altoCSS||300);
   return Math.max(1, Math.min(d, 32000/a, Math.sqrt(16000000/(a*h))));
 }
-window.__SCROLL_CHARTS={chHist:{px:22,vis:30}, chDetLine:{px:70,vis:(window.innerWidth<768?6:12)}, chVar:{px:42,vis:24}, chDetBar:{px:34,vis:18}, chMoraSP:{px:50,vis:12}, chMoraCA:{px:50,vis:12}};
+window.__SCROLL_CHARTS={chHist:{px:22,vis:30}, chDetLine:{px:70,vis:(window.innerWidth<768?6:12)}, chVar:{px:42,vis:24}, chDetBar:{px:34,vis:18}, chMoraSP:{px:50,vis:12}, chMoraCA:{px:50,vis:12}, chCatSP:{px:34,vis:12}, chEvolSP:{px:34,vis:12}, chCatCA:{px:34,vis:12}, chEvolCA:{px:34,vis:12}};
 function aplicarScrollGrafica(canvasId){
   try{
     const cv=document.getElementById(canvasId);
@@ -2139,6 +2139,7 @@ function renderMoraDetalleSP(){
       <th>CAT</th><th>DESCRIPCIÓN</th><th style="text-align:right">SALDO</th><th style="text-align:right">PART.</th><th style="text-align:right">VAR. DÍA</th>
     </tr></thead><tbody>${tRows.join('')}</tbody></table></div></div>`;
   document.getElementById('pgMoraSP').innerHTML=h;
+  const usaScrollCatSP=data.length>(window.__SCROLL_CHARTS['chCatSP']?.vis||12);
   dC('chCatSP');
   new Chart(document.getElementById('chCatSP'),{type:'bar',
     data:{labels:data.map(r=>r.Fecha),
@@ -2149,8 +2150,8 @@ function renderMoraDetalleSP(){
         tooltip:{callbacks:{title:t=>fDt(t[0].label),label:t=>` ${t.dataset.label}: ${t.parsed.y.toLocaleString('es-CO',{minimumFractionDigits:2})} M`}}},
       onClick:(e,els)=>{if(els.length){_CAR_SELECTED_DATE=data[els[0].index]?.Fecha||null;renderCartera();renderMoraDetalleSP();}},
       scales:{x:{ticks:{autoSkip:false,maxRotation:0,minRotation:0,font:{size:8},color:'#64748b',callback:(v,i)=>{const d=data[i]?.Fecha;if(!d)return '';const paso=data.length<=16?1:(data.length<=35?2:3);if(i%paso!==0&&i!==data.length-1)return '';return `${d.slice(8,10)}/${d.slice(5,7)}`;}},grid:{display:false}},
-        y:{ticks:{font:{size:9},color:'#64748b',callback:v=>v+' M'},grid:{color:'rgba(0,0,0,0.04)'},stacked:true}}}});
-  if(data.length>(window.__SCROLL_CHARTS['chCatSP']?.vis||12))setTimeout(()=>aplicarScrollGrafica('chCatSP'),50);else quitarScrollGrafica('chCatSP');
+        y:usaScrollCatSP?{afterFit:(s)=>{s.width=0;},ticks:{display:false,font:{size:9},color:'#64748b',callback:v=>v+' M'},grid:{color:'rgba(0,0,0,0.04)'},stacked:true}:{ticks:{font:{size:9},color:'#64748b',callback:v=>v+' M'},grid:{color:'rgba(0,0,0,0.04)'},stacked:true}}}});
+  if(usaScrollCatSP)setTimeout(()=>aplicarScrollGrafica('chCatSP'),50);else quitarScrollGrafica('chCatSP');
   (function(){var lg=document.getElementById('legCatSP');if(!lg)return;
     lg.innerHTML='<span class="cat-leg-chip cat-pill-anim" style="border-color:'+CAT_COLORS['A']+';outline-color:'+CAT_COLORS['A']+'44" onclick="showDrillDown(\'A\')"><span class="cat-leg-dot" style="background:'+CAT_COLORS['A']+'"></span>Cat A <span class="cat-leg-lupa">\uD83D\uDD0D</span></span>'
       +'<div class="cat-hint">👆 Clic para ver el detalle</div>';
@@ -2164,8 +2165,8 @@ function renderMoraDetalleSP(){
         tooltip:{callbacks:{title:t=>fDt(t[0].label),label:t=>` ${t.dataset.label}: ${t.parsed.y.toLocaleString('es-CO',{minimumFractionDigits:2})} M`}}},
       onClick:(e,els)=>{if(els.length){_CAR_SELECTED_DATE=data[els[0].index]?.Fecha||null;renderCartera();renderMoraDetalleSP();}},
       scales:{x:{ticks:{autoSkip:false,maxRotation:data.length>12?90:0,minRotation:data.length>12?90:0,font:{size:9},color:'#64748b',callback:(v,i)=>{const d=data[i]?.Fecha;return d?`${d.slice(8,10)}/${d.slice(5,7)}/${d.slice(2,4)}`:'';}},grid:{display:false}},
-        y:{ticks:{font:{size:9},color:'#64748b',callback:v=>v+' M'},grid:{color:'rgba(0,0,0,0.04)'},stacked:true}}}});
-  if(data.length>(window.__SCROLL_CHARTS['chEvolSP']?.vis||12))setTimeout(()=>aplicarScrollGrafica('chEvolSP'),50);else quitarScrollGrafica('chEvolSP');
+        y:usaScrollCatSP?{afterFit:(s)=>{s.width=0;},ticks:{display:false,font:{size:9},color:'#64748b',callback:v=>v+' M'},grid:{color:'rgba(0,0,0,0.04)'},stacked:true}:{ticks:{font:{size:9},color:'#64748b',callback:v=>v+' M'},grid:{color:'rgba(0,0,0,0.04)'},stacked:true}}}});
+  if(usaScrollCatSP)setTimeout(()=>aplicarScrollGrafica('chEvolSP'),50);else quitarScrollGrafica('chEvolSP');
   (function(){var lg=document.getElementById('legEvolSP');if(!lg)return;
     lg.innerHTML=cats.filter(c=>c!=='A').map(c=>'<span class="cat-leg-chip cat-pill-anim" style="border-color:'+CAT_COLORS[c]+';outline-color:'+CAT_COLORS[c]+'44" onclick="showDrillDown(\''+c+'\')"><span class="cat-leg-dot" style="background:'+CAT_COLORS[c]+'"></span>Cat '+c+' <span class="cat-leg-lupa">🔍</span></span>').join('')
       +'<div class="cat-hint">👆 Clic en una categoría para ver el detalle</div>';
@@ -2366,6 +2367,7 @@ function renderMoraDetalleCA(){
     ch.onclick=function(){inp.showPicker?inp.showPicker():inp.click();};
   })();
   // ── Gráfica izquierda: Cat A con arrastre (barras apiladas, igual que SP) ──
+  const usaScrollCatCA=data.length>(window.__SCROLL_CHARTS['chCatCA']?.vis||12);
   dC('chCatCA');
   new Chart(document.getElementById('chCatCA'),{type:'bar',
     data:{labels:data.map(r=>r.Fecha),
@@ -2376,8 +2378,8 @@ function renderMoraDetalleCA(){
         tooltip:{callbacks:{title:t=>fDt(t[0].label),label:t=>` ${t.dataset.label}: ${t.parsed.y.toLocaleString('es-CO',{minimumFractionDigits:2})} M`}}},
       onClick:(e,els)=>{if(els.length){_CAR_SELECTED_DATE=data[els[0].index]?.Fecha||null;renderCartera();renderMoraDetalleCA();}},
       scales:{x:{ticks:{autoSkip:false,maxRotation:0,minRotation:0,font:{size:8},color:'#64748b',callback:(v,i)=>{const d=data[i]?.Fecha;if(!d)return '';const paso=data.length<=16?1:(data.length<=35?2:3);if(i%paso!==0&&i!==data.length-1)return '';return `${d.slice(8,10)}/${d.slice(5,7)}`;}},grid:{display:false}},
-        y:{ticks:{font:{size:9},color:'#64748b',callback:v=>v+' M'},grid:{color:'rgba(0,0,0,0.04)'},stacked:true}}}});
-  if(data.length>(window.__SCROLL_CHARTS['chCatCA']?.vis||12))setTimeout(()=>aplicarScrollGrafica('chCatCA'),50);else quitarScrollGrafica('chCatCA');
+        y:usaScrollCatCA?{afterFit:(s)=>{s.width=0;},ticks:{display:false,font:{size:9},color:'#64748b',callback:v=>v+' M'},grid:{color:'rgba(0,0,0,0.04)'},stacked:true}:{ticks:{font:{size:9},color:'#64748b',callback:v=>v+' M'},grid:{color:'rgba(0,0,0,0.04)'},stacked:true}}}});
+  if(usaScrollCatCA)setTimeout(()=>aplicarScrollGrafica('chCatCA'),50);else quitarScrollGrafica('chCatCA');
   (function(){var lg=document.getElementById('legCatCA');if(!lg)return;
     lg.innerHTML='<span class="cat-leg-chip" style="border-color:'+CAT_COLORS['A']+'"><span class="cat-leg-dot" style="background:'+CAT_COLORS['A']+'"></span>Cat A (arrastre)</span>';
   })();
@@ -2391,8 +2393,8 @@ function renderMoraDetalleCA(){
         tooltip:{callbacks:{title:t=>fDt(t[0].label),label:t=>` ${t.dataset.label}: ${t.parsed.y.toLocaleString('es-CO',{minimumFractionDigits:2})} M`}}},
       onClick:(e,els)=>{if(els.length){_CAR_SELECTED_DATE=data[els[0].index]?.Fecha||null;renderCartera();renderMoraDetalleCA();}},
       scales:{x:{ticks:{autoSkip:false,maxRotation:data.length>12?90:0,minRotation:data.length>12?90:0,font:{size:9},color:'#64748b',callback:(v,i)=>{const d=data[i]?.Fecha;return d?`${d.slice(8,10)}/${d.slice(5,7)}/${d.slice(2,4)}`:'';}},grid:{display:false}},
-        y:{ticks:{font:{size:9},color:'#64748b',callback:v=>v+' M'},grid:{color:'rgba(0,0,0,0.04)'},stacked:true}}}});
-  if(data.length>(window.__SCROLL_CHARTS['chEvolCA']?.vis||12))setTimeout(()=>aplicarScrollGrafica('chEvolCA'),50);else quitarScrollGrafica('chEvolCA');
+        y:usaScrollCatCA?{afterFit:(s)=>{s.width=0;},ticks:{display:false,font:{size:9},color:'#64748b',callback:v=>v+' M'},grid:{color:'rgba(0,0,0,0.04)'},stacked:true}:{ticks:{font:{size:9},color:'#64748b',callback:v=>v+' M'},grid:{color:'rgba(0,0,0,0.04)'},stacked:true}}}});
+  if(usaScrollCatCA)setTimeout(()=>aplicarScrollGrafica('chEvolCA'),50);else quitarScrollGrafica('chEvolCA');
   (function(){var lg=document.getElementById('legEvolCA');if(!lg)return;
     lg.innerHTML=cats.filter(c=>c!=='A').map(c=>'<span class="cat-leg-chip" style="border-color:'+CAT_COLORS[c]+'"><span class="cat-leg-dot" style="background:'+CAT_COLORS[c]+'"></span>Cat '+c+'</span>').join('');
   })();
