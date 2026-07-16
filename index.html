@@ -91,6 +91,22 @@ function aplicarScrollGrafica(canvasId){
       ch.canvas.height=Math.floor(ch.canvas.height*ratio);
       ch.draw();
     }
+    // Verificación diferida de escala (solo gráficos con DPR real): en la
+    // carga inicial del celular el resize puede ejecutarse antes de que el
+    // layout esté listo y el lienzo queda con la escala interna equivocada
+    // (el gráfico se ve encogido hasta cambiar de filtro). Aquí se comprueba
+    // y, si hay desajuste, se corrige automáticamente.
+    if(ch.$dprDeseado>1){
+      const _verificarEscala=()=>{try{
+        const c2=Chart.getChart(cv); if(!c2||!c2.canvas)return;
+        const cssW=Math.round(parseFloat(c2.canvas.style.width)||0);
+        const ratio=c2.currentDevicePixelRatio||1;
+        const okBitmap=Math.abs(c2.canvas.width-Math.floor(c2.width*ratio))<=2;
+        const okCss=!cssW||Math.abs(c2.width-cssW)<=2;
+        if(!okBitmap||!okCss){c2.resize(anchoTotal-1,c2.height);c2.resize(anchoTotal,c2.height);}
+      }catch(_){}};
+      setTimeout(_verificarEscala,300);setTimeout(_verificarEscala,1200);
+    }
     // dibujar el eje Y fijo a partir de la escala real
     setTimeout(()=>dibujarEjeYFijo(canvasId,ch),40);
     const sc=innerDiv.parentNode;sc.scrollLeft=sc.scrollWidth;
@@ -1657,7 +1673,7 @@ function renderCartera(){
         backgroundColor:(c)=>{const{ctx,chartArea}=c.chart;if(!chartArea)return color+'22';const g=ctx.createLinearGradient(0,chartArea.top,0,chartArea.bottom);g.addColorStop(0,color+'55');g.addColorStop(1,color+'05');return g;},
         pointRadius:0,pointHoverRadius:7,pointHitRadius:14,pointBackgroundColor:color,pointBorderColor:'#fff',pointBorderWidth:2.5,tension:0.4,fill:true}]},
       plugins:[globMora],
-      options:{responsive:true,maintainAspectRatio:false,devicePixelRatio:1,interaction:{mode:'index',intersect:false},layout:{padding:{top:24,left:30,right:30,bottom:usaScroll?50:8}},
+      options:{responsive:true,maintainAspectRatio:false,devicePixelRatio:(window.devicePixelRatio||1),interaction:{mode:'index',intersect:false},layout:{padding:{top:24,left:30,right:30,bottom:usaScroll?50:8}},
         plugins:{legend:{display:false},tooltip:{callbacks:{
           title:t=>fDt(t[0].label),label:t=>` ${t.parsed.y.toFixed(2)}%`}}},
         scales:{x:{ticks:xTicks,grid:{display:false}},y:yScale}}});
@@ -2145,7 +2161,7 @@ function renderMoraDetalleSP(){
     data:{labels:data.map(r=>r.Fecha),
       datasets:[{label:'Cat A',data:data.map(r=>+((r.CatA||0)/1e6).toFixed(2)),
         backgroundColor:CAT_COLORS['A']+'cc',stack:'s'}]},
-    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{left:30,right:30,bottom:data.length>12?50:8}},interaction:{mode:'index',intersect:false},
+    options:{responsive:true,maintainAspectRatio:false,devicePixelRatio:(window.devicePixelRatio||1),layout:{padding:{left:30,right:30,bottom:data.length>12?50:8}},interaction:{mode:'index',intersect:false},
       plugins:{legend:{display:false},
         tooltip:{callbacks:{title:t=>fDt(t[0].label),label:t=>` ${t.dataset.label}: ${t.parsed.y.toLocaleString('es-CO',{minimumFractionDigits:2})} M`}}},
       onClick:(e,els)=>{if(els.length){_CAR_SELECTED_DATE=data[els[0].index]?.Fecha||null;renderCartera();renderMoraDetalleSP();}},
@@ -2160,7 +2176,7 @@ function renderMoraDetalleSP(){
   new Chart(document.getElementById('chEvolSP'),{type:'bar',
     data:{labels:data.map(r=>r.Fecha),datasets:cats.filter(c=>c!=='A').map(c=>({
       label:'Cat '+c,data:data.map(r=>+((r['Cat'+c]||0)/1e6).toFixed(2)),backgroundColor:CAT_COLORS[c]+'cc',stack:'s'}))},
-    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{left:30,right:30,bottom:data.length>12?50:8}},interaction:{mode:'index',intersect:false},
+    options:{responsive:true,maintainAspectRatio:false,devicePixelRatio:(window.devicePixelRatio||1),layout:{padding:{left:30,right:30,bottom:data.length>12?50:8}},interaction:{mode:'index',intersect:false},
       plugins:{legend:{display:false},
         tooltip:{callbacks:{title:t=>fDt(t[0].label),label:t=>` ${t.dataset.label}: ${t.parsed.y.toLocaleString('es-CO',{minimumFractionDigits:2})} M`}}},
       onClick:(e,els)=>{if(els.length){_CAR_SELECTED_DATE=data[els[0].index]?.Fecha||null;renderCartera();renderMoraDetalleSP();}},
@@ -2373,7 +2389,7 @@ function renderMoraDetalleCA(){
     data:{labels:data.map(r=>r.Fecha),
       datasets:[{label:'Cat A (CA)',data:data.map(r=>+((r.CA_A||0)/1e6).toFixed(2)),
         backgroundColor:CAT_COLORS['A']+'cc',stack:'s'}]},
-    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{left:30,right:30,bottom:data.length>12?50:8}},interaction:{mode:'index',intersect:false},
+    options:{responsive:true,maintainAspectRatio:false,devicePixelRatio:(window.devicePixelRatio||1),layout:{padding:{left:30,right:30,bottom:data.length>12?50:8}},interaction:{mode:'index',intersect:false},
       plugins:{legend:{display:false},
         tooltip:{callbacks:{title:t=>fDt(t[0].label),label:t=>` ${t.dataset.label}: ${t.parsed.y.toLocaleString('es-CO',{minimumFractionDigits:2})} M`}}},
       onClick:(e,els)=>{if(els.length){_CAR_SELECTED_DATE=data[els[0].index]?.Fecha||null;renderCartera();renderMoraDetalleCA();}},
@@ -2388,7 +2404,7 @@ function renderMoraDetalleCA(){
   new Chart(document.getElementById('chEvolCA'),{type:'bar',
     data:{labels:data.map(r=>r.Fecha),datasets:cats.filter(c=>c!=='A').map(c=>({
       label:'Cat '+c+' (CA)',data:data.map(r=>+((r['CA_'+c]||0)/1e6).toFixed(2)),backgroundColor:CAT_COLORS[c]+'cc',stack:'s'}))},
-    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{left:30,right:30,bottom:data.length>12?50:8}},interaction:{mode:'index',intersect:false},
+    options:{responsive:true,maintainAspectRatio:false,devicePixelRatio:(window.devicePixelRatio||1),layout:{padding:{left:30,right:30,bottom:data.length>12?50:8}},interaction:{mode:'index',intersect:false},
       plugins:{legend:{display:false},
         tooltip:{callbacks:{title:t=>fDt(t[0].label),label:t=>` ${t.dataset.label}: ${t.parsed.y.toLocaleString('es-CO',{minimumFractionDigits:2})} M`}}},
       onClick:(e,els)=>{if(els.length){_CAR_SELECTED_DATE=data[els[0].index]?.Fecha||null;renderCartera();renderMoraDetalleCA();}},
