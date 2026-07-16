@@ -75,12 +75,17 @@ function aplicarScrollGrafica(canvasId){
     const host=innerDiv.querySelector('.cwrap')||innerDiv.firstChild;
     if(host){host.style.width=anchoTotal+'px';host.style.overflow='visible';}
     if(ch.canvas){ch.canvas.style.maxWidth='none';ch.canvas.style.width=anchoTotal+'px';}
+    // Alto objetivo: SIEMPRE el alto real del contenedor (fijado por CSS),
+    // nunca ch.height. En la carga inicial del celular el gráfico puede
+    // crearse antes de que el layout termine y ch.height captura un valor
+    // pequeño; si se reutiliza en el resize, el gráfico queda achatado.
+    const altoObjetivo=Math.round(parseFloat(row.style.height))||host.offsetHeight||ch.height;
     // Nitidez retina: si el gráfico se creó con devicePixelRatio real (>1),
     // lo recalculamos para el nuevo ancho de modo que nunca exceda los límites
     // del canvas. Los gráficos creados con DPR 1 no se tocan.
     if(ch.$dprDeseado===undefined)ch.$dprDeseado=ch.options.devicePixelRatio||1;
-    if(ch.$dprDeseado>1){ch.options.devicePixelRatio=__dprSeguro(anchoTotal,ch.height);}
-    ch.resize(anchoTotal, ch.height);
+    if(ch.$dprDeseado>1){ch.options.devicePixelRatio=__dprSeguro(anchoTotal,altoObjetivo);}
+    ch.resize(anchoTotal, altoObjetivo);
     // Respaldo: si por cualquier motivo el bitmap real del canvas quedó más
     // ancho que el límite seguro (p. ej. el navegador aplicó su propio
     // devicePixelRatio pese a la config), lo recortamos a mano para que
@@ -103,7 +108,8 @@ function aplicarScrollGrafica(canvasId){
         const ratio=c2.currentDevicePixelRatio||1;
         const okBitmap=Math.abs(c2.canvas.width-Math.floor(c2.width*ratio))<=2;
         const okCss=!cssW||Math.abs(c2.width-cssW)<=2;
-        if(!okBitmap||!okCss){c2.resize(anchoTotal-1,c2.height);c2.resize(anchoTotal,c2.height);}
+        const okAlto=Math.abs(c2.height-altoObjetivo)<=4;
+        if(!okBitmap||!okCss||!okAlto){c2.resize(anchoTotal,altoObjetivo-1);c2.resize(anchoTotal,altoObjetivo);}
       }catch(_){}};
       setTimeout(_verificarEscala,300);setTimeout(_verificarEscala,1200);
     }
