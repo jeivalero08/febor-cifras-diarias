@@ -14,6 +14,15 @@
    dejando el gráfico en blanco. Fijarlo aquí, antes de crear cualquier
    gráfico, es más confiable que la opción por gráfico individual. */
 if(window.Chart){Chart.defaults.devicePixelRatio=1;}
+/* DPR seguro: devuelve el devicePixelRatio real del equipo, recortado para que
+   el bitmap del canvas nunca supere los límites del navegador (32.000px de
+   ancho y ~16M px² de área, el tope de Safari iOS). Si el gráfico es muy
+   ancho, se degrada gradualmente hasta 1 (el comportamiento actual). */
+function __dprSeguro(anchoCSS,altoCSS){
+  const d=window.devicePixelRatio||1;
+  const a=Math.max(1,anchoCSS||1), h=Math.max(1,altoCSS||300);
+  return Math.max(1, Math.min(d, 32000/a, Math.sqrt(16000000/(a*h))));
+}
 window.__SCROLL_CHARTS={chHist:{px:22,vis:30}, chDetLine:{px:70,vis:(window.innerWidth<768?6:12)}, chVar:{px:42,vis:24}, chDetBar:{px:34,vis:18}, chMoraSP:{px:50,vis:12}, chMoraCA:{px:50,vis:12}};
 function aplicarScrollGrafica(canvasId){
   try{
@@ -66,6 +75,11 @@ function aplicarScrollGrafica(canvasId){
     const host=innerDiv.querySelector('.cwrap')||innerDiv.firstChild;
     if(host){host.style.width=anchoTotal+'px';host.style.overflow='visible';}
     if(ch.canvas){ch.canvas.style.maxWidth='none';ch.canvas.style.width=anchoTotal+'px';}
+    // Nitidez retina: si el gráfico se creó con devicePixelRatio real (>1),
+    // lo recalculamos para el nuevo ancho de modo que nunca exceda los límites
+    // del canvas. Los gráficos creados con DPR 1 no se tocan.
+    if(ch.$dprDeseado===undefined)ch.$dprDeseado=ch.options.devicePixelRatio||1;
+    if(ch.$dprDeseado>1){ch.options.devicePixelRatio=__dprSeguro(anchoTotal,ch.height);}
     ch.resize(anchoTotal, ch.height);
     // Respaldo: si por cualquier motivo el bitmap real del canvas quedó más
     // ancho que el límite seguro (p. ej. el navegador aplicó su propio
@@ -115,6 +129,7 @@ function quitarScrollGrafica(canvasId){
     if(hint&&hint.classList&&hint.classList.contains('chart-scroll-hint'))hint.remove();
     row.remove();
     const ch=Chart.getChart(cv);
+    if(ch&&ch.$dprDeseado>1){ch.options.devicePixelRatio=ch.$dprDeseado;}
     if(ch)ch.resize();
   }catch(e){console.warn('quitar scroll',canvasId,e);}
 }
@@ -1400,7 +1415,7 @@ function renderProd(prod){
       backgroundColor:(c)=>{const{ctx,chartArea}=c.chart;if(!chartArea)return p.c+'22';const g=ctx.createLinearGradient(0,chartArea.top,0,chartArea.bottom);g.addColorStop(0,p.c+'66');g.addColorStop(1,p.c+'05');return g;},
       pointRadius:0,pointHoverRadius:7,pointHitRadius:14,pointBackgroundColor:p.c,pointBorderColor:'#fff',pointBorderWidth:2.5,tension:0.4,fill:true}]},
     plugins:[globitosPlugin],
-    options:{responsive:true,maintainAspectRatio:false,devicePixelRatio:1,layout:{padding:{top:(rotarFechas&&window.innerWidth<768)?70:44,left:30,right:30,bottom:_mobDenso?20:(rotarFechas?55:8)}},plugins:{legend:{display:false},
+    options:{responsive:true,maintainAspectRatio:false,devicePixelRatio:(window.devicePixelRatio||1),layout:{padding:{top:(rotarFechas&&window.innerWidth<768)?70:44,left:30,right:30,bottom:_mobDenso?20:(rotarFechas?55:8)}},plugins:{legend:{display:false},
       tooltip:{callbacks:{title:t=>fDt(t[0].label),label:t=>` ${t.parsed.y.toLocaleString('es-CO',{minimumFractionDigits:2,maximumFractionDigits:2})} M`}}},
       scales:{x:{ticks:xTicksCfg,grid:{display:false}},
         y:usaScrollDet?{min:yMin,max:yMax,afterFit:(s)=>{s.width=0;},ticks:{display:false,count:_mobDenso?6:undefined,font:{size:10},callback:v=>v.toLocaleString('es-CO',{minimumFractionDigits:2,maximumFractionDigits:2})+' M'},grid:{color:'rgba(0,0,0,0.04)'}}:{min:yMin,max:yMax,ticks:{font:{size:10},callback:v=>v.toLocaleString('es-CO',{minimumFractionDigits:2,maximumFractionDigits:2})+' M'},grid:{color:'rgba(0,0,0,0.04)'}}}}}
