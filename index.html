@@ -1522,12 +1522,16 @@ function renderProd(prod){
   const deltaTotalStr=(deltaTotal>=0?'+':'-')+fK(Math.abs(deltaTotal));
   const deltaDia=(prevRec&&prevRec[prod]!=null)?(l[prod]-prevRec[prod]):null;
   const deltaDiaStr=deltaDia!=null?((deltaDia>=0?'+':'-')+fK(Math.abs(deltaDia))):'';
+  // % de la fila de variación: contra el MISMO registro previo que el monto
+  // en pesos (prevRec, según el modo del filtro), no contra el día anterior
+  // (pctD), que es otro cálculo y causaba porcentaje/color inconsistentes.
+  const pctVar=(prevRec&&prevRec[prod])?((l[prod]-prevRec[prod])/prevRec[prod]*100):null;
 
   const rows=[
     ['Saldo actual', fK(l[prod])],
     ['Saldo inicial período', fK(f[prod])],
     ['Variación total', `<span class="${pct>=0?'cup':'cdn'}">${pct!=null?fP(pct)+' · '+deltaTotalStr:'—'}</span>`],
-    [varDiaLabel, `<span class="${pctD>=0?'cup':'cdn'}">${pctD!=null?fP(pctD)+(deltaDiaStr?' · '+deltaDiaStr:''):'—'}</span>`],
+    [varDiaLabel, `<span class="${(pctVar!=null?pctVar:deltaDia)>=0?'cup':'cdn'}">${pctVar!=null?fP(pctVar)+(deltaDiaStr?' · '+deltaDiaStr:''):(deltaDiaStr||'—')}</span>`],
     [avgLabel, fK(avgV)],
     [`Mínimo período${fMin?' · '+fDt(fMin):''}`, fK(minV)],
     [`Máximo período${fMax?' · '+fDt(fMax):''}`, fK(maxV)],
