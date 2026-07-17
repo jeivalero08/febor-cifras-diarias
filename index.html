@@ -979,7 +979,7 @@ function clearGenDate(){G={mode:'Diario'};clearQ('qpGen');document.getElementByI
 
 // DET FILTERS
 function setQDet(mode,btn){D={mode};clearQ('qpDet');btn.classList.add('on');renderProd(CUR);}
-function applyDetDate(){const f=document.getElementById('dFrom').value,t=document.getElementById('dTo').value;if(!f||!t)return;D={mode:'Diario'};clearQ('qpDet');renderProd(CUR);}
+function applyDetDate(){const f=document.getElementById('dFrom').value,t=document.getElementById('dTo').value;if(!f||!t)return;D={mode:'Diario',desde:f,hasta:t};clearQ('qpDet');renderProd(CUR);}
 function clearDetDate(){D={mode:'Diario'};clearQ('qpDet');document.querySelector('#qpDet .qpill:last-child').classList.add('on');renderProd(CUR);}
 
 // NAV
