@@ -1024,7 +1024,8 @@ function initData(raw){
   document.getElementById('gTo').value=maxD;
   G={mode:'Diario'};
   if(ALL.length){
-    document.getElementById('hdrDate').textContent='Último: '+fDt(ALL[ALL.length-1].Fecha);
+    var _carFecha=(window.__CAR__&&window.__CAR__.length)?fDt(window.__CAR__[window.__CAR__.length-1].Fecha):'—';
+    document.getElementById('hdrDate').textContent='Balance: '+fDt(ALL[ALL.length-1].Fecha)+'  |  Cartera: '+_carFecha;
     document.getElementById('footer').textContent=`FEBOR · Evolución diaria de Saldos · ${fDt(ALL[ALL.length-1].Fecha)} · Jeisson Alirio Valero Nuñez`;
   }
   renderMenuHero();
