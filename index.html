@@ -1037,6 +1037,19 @@ function initData(raw){
 function filtrar(st){const arr=(st.desde&&st.hasta)?ALL.filter(r=>r.Fecha>=st.desde&&r.Fecha<=st.hasta):ALL;return anchorDates(arr, st.mode||'Diario');}
 function filtrarProd(st,prod){return filtrar(st).filter(r=>r[prod]!=null);}
 function infoStr(d){if(!d.length)return'0 registros';return`${fDt(d[0].Fecha)} → ${fDt(d[d.length-1].Fecha)}`;}
+// Enmascara nombres por Habeas Data (Ley 1581): nombres tapados, apellidos completos
+function _maskAp(nombre){
+  if(!nombre||typeof nombre!=='string')return nombre||'';
+  var partes=nombre.trim().split(/\s+/);
+  if(partes.length<2)return nombre;
+  // 4+ palabras: asume 2 nombres + 2 apellidos; 3: 1 nombre + 2 apellidos; 2: 1 nombre + 1 apellido
+  var nNombres=partes.length>=4?2:1;
+  return partes.map(function(w,i){
+    if(i>=nNombres)return w;
+    if(w.length<=1)return w;
+    return w.charAt(0)+'*'.repeat(w.length-1);
+  }).join(' ');
+}
 
 function clearQ(id){document.querySelectorAll('#'+id+' .qpill').forEach(p=>p.classList.remove('on'));}
 
@@ -2208,7 +2221,7 @@ function _tblCred(creds,showFaltan){
       ${showFaltan?'<th style="font-size:.63rem;padding:.2rem .4rem;text-align:center">FALTAN</th>':''}
     </tr></thead>
     <tbody>${creds.map(p=>`<tr>
-      <td style="font-size:.72rem;padding:.2rem .4rem">${p.Cliente||'—'}</td>
+      <td style="font-size:.72rem;padding:.2rem .4rem">${_maskAp(p.Cliente)||'—'}</td>
       <td style="font-size:.72rem;padding:.2rem .4rem;color:var(--tx3)">${p.Identificacion||'—'}</td>
       <td style="font-size:.72rem;padding:.2rem .4rem">${p.Producto||'—'}</td>
       <td style="font-size:.72rem;padding:.2rem .4rem;text-align:right">${fK(p.Saldo)}</td>
@@ -2394,7 +2407,7 @@ function renderMoraDetalleCA(){
         +(nMon>0?'<span style="font-size:.68rem;margin-right:2px">🟢×'+nMon+'</span>':'');
       const rowId='_caRad_'+idx;
       return '<tr style="cursor:pointer;transition:background .13s" onclick="_toggleRadarRow(\''+rowId+'\')" onmouseenter="this.style.background=\'rgba(255,255,255,.06)\'" onmouseleave="this.style.background=\'\'">'
-        +'<td style="padding:.45rem .65rem;font-size:.78rem;font-weight:600;color:var(--g1)">'+a.Cliente+'</td>'
+        +'<td style="padding:.45rem .65rem;font-size:.78rem;font-weight:600;color:var(--g1)">'+_maskAp(a.Cliente)+'</td>'
         +'<td style="padding:.45rem .65rem;text-align:center;font-size:.8rem;font-weight:700;color:var(--tx)">'+nc+'</td>'
         +'<td style="padding:.45rem .65rem;text-align:center;font-size:.78rem">'+miniIcos+'</td>'
         +'<td style="padding:.45rem .65rem;text-align:right;font-family:var(--fm);font-size:.78rem;font-weight:700;color:'+cfg.col+'">'+fK(a.saldoTotal)+'</td>'
@@ -2580,7 +2593,7 @@ function _openRadarModal(grupo){
         +'</tr>';
     }).join('');
     return '<tr style="cursor:pointer;transition:background .13s;border-bottom:1px solid var(--bord)" onclick="_toggleRadarRow(\''+rowId+'\')" onmouseenter="this.style.background=\'rgba(255,255,255,.06)\'" onmouseleave="this.style.background=\'\'">'
-      +'<td style="padding:.5rem .65rem;font-size:.78rem;font-weight:600;color:var(--g1)">'+a.Cliente+'</td>'
+      +'<td style="padding:.5rem .65rem;font-size:.78rem;font-weight:600;color:var(--g1)">'+_maskAp(a.Cliente)+'</td>'
       +'<td style="padding:.5rem .65rem;text-align:center;font-size:.8rem;font-weight:700">'+a.creditos.length+'</td>'
       +'<td style="padding:.5rem .65rem;text-align:center">'+miniIcos+'</td>'
       +'<td style="padding:.5rem .65rem;text-align:right;font-family:var(--fm);font-size:.78rem;font-weight:700;color:'+cfg.col+'">'+fK(a.saldoTotal)+'</td>'
@@ -2838,7 +2851,7 @@ document.addEventListener('DOMContentLoaded',function(){
     +'<div class="sec-t"><span class="dot"></span><span class="tx">ÍNDICES DE MORA</span><span class="ln"></span></div>'
     +'<div class="mora2">'
     +'<div class="mcard m1"><div class="mblob"></div><div class="ml">MORA SIN ARRASTRE</div><div class="mv">'+pct1(im)+'</div><div class="ms">'+M(mora)+' · por crédito</div></div>'
-    +'<div class="mcard m2"><div class="mblob"></div><div class="ml">MORA CON ARRASTRE</div><div class="mv">'+pct1(imca)+'</div><div class="ms">'+M(moraca)+' · por cliente · '+nProx+' próximos a rodar</div></div>'
+    +'<div class="mcard m2"><div class="mblob"></div><div class="ml">MORA CON ARRASTRE</div><div class="mv">'+pct1(imca)+'</div><div class="ms">'+M(moraca)+' · por asociado · '+nProx+' próximos a rodar</div></div>'
     +'</div>'
     // Captaciones
     +'<div class="sec-t"><span class="dot"></span><span class="tx">CAPTACIONES · variación diaria</span><span class="ln"></span></div>'
