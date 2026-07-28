@@ -2740,7 +2740,11 @@ document.addEventListener('DOMContentLoaded',function(){
   function fechaLarga(iso){
     if(!iso) return '';
     var ms=['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
-    var p=iso.split('-'); return parseInt(p[2],10)+' DE '+ms[parseInt(p[1],10)-1]+', '+p[0];
+    var p=iso.split('-');
+    var now=new Date(), h=now.getHours(), mi=now.getMinutes();
+    var ampm=h>=12?'PM':'AM'; h=h%12||12;
+    var hora=h+':'+(mi<10?'0':'')+mi+' '+ampm;
+    return parseInt(p[2],10)+' DE '+ms[parseInt(p[1],10)-1]+', '+p[0]+' · '+hora;
   }
 
   // Extrae el último y penúltimo registro con datos válidos
