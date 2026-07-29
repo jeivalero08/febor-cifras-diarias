@@ -2345,17 +2345,7 @@ function showDrillDown(cat){
   }
 }
 
-var _xlsPwdTarget='radar';
-function descargarRadarExcel(){
-  // Mismo modal de clave; descarga el Radar CA del día seleccionado
-  _xlsPwdTarget='radar';
-  var inp=document.getElementById('xlsPwdInput');
-  var err=document.getElementById('xlsPwdErr');
-  if(inp)inp.value='';
-  if(err)err.style.display='none';
-  document.getElementById('_xlsPwdModal').style.display='flex';
-  setTimeout(function(){if(inp)inp.focus();},80);
-}
+var _xlsPwdTarget='depositos';
 function cerrarXlsPwd(){document.getElementById('_xlsPwdModal').style.display='none';}
 function validarXlsPwd(){
   var inp=document.getElementById('xlsPwdInput');
@@ -2363,47 +2353,11 @@ function validarXlsPwd(){
   if(!inp)return;
   if(inp.value==='Febor2026*'){
     cerrarXlsPwd();
-    if(_xlsPwdTarget==='radar')_ejecutarDescargaRadar();
-    else if(_xlsPwdTarget==='depositos')_ejecutarDescargaDepositos();
+    if(_xlsPwdTarget==='depositos')_ejecutarDescargaDepositos();
   }else{
     if(err)err.style.display='block';
     inp.focus();inp.select();
   }
-}
-function _ejecutarDescargaRadar(){
-  const data=filtrarCar(CAR_F);
-  if(!data.length){alert('Sin datos disponibles.');return;}
-  const _idx=_CAR_SELECTED_DATE?data.findIndex(function(r){return r.Fecha===_CAR_SELECTED_DATE;}):-1;
-  const l=data[_idx>=0?_idx:data.length-1];
-  const _pab=(l&&l.ProximosAB)||[];
-  if(!_pab.length){alert('Sin asociados en riesgo para exportar en esta fecha.');return;}
-  const _clean=function(v){if(v===null||v===undefined)return '';var s=String(v).trim();if(s===''||s.toLowerCase()==='nan'||s.toLowerCase()==='none'||s.toLowerCase()==='null')return '';return v;};
-  const COLS=['IDENTIFICACIÓN','CLIENTE','N° OPERACIÓN','PRODUCTO','PAGADURÍA','FORMA PAGO','TIPO','DÍAS MORA','FALTAN A→B','SALDO CAPITAL'];
-  // Agrupado por cédula: los asociados con mayor monto total en riesgo primero,
-  // y dentro de cada asociado, sus créditos por monto alto y días más próximos a rodarse.
-  const _porCedula={};
-  _pab.forEach(function(c){
-    const key=c.Identificacion||'';
-    if(!_porCedula[key])_porCedula[key]=[];
-    _porCedula[key].push(c);
-  });
-  const _grupos=Object.keys(_porCedula).map(function(key){
-    const arr=_porCedula[key];
-    arr.sort(function(a,b){return (b.Saldo||0)-(a.Saldo||0)||(a.DiasRestantes||0)-(b.DiasRestantes||0);});
-    const totalSaldo=arr.reduce(function(s,c){return s+(c.Saldo||0);},0);
-    const minDias=Math.min.apply(null,arr.map(function(c){return c.DiasRestantes||0;}));
-    return {arr:arr,totalSaldo:totalSaldo,minDias:minDias};
-  });
-  _grupos.sort(function(a,b){return b.totalSaldo-a.totalSaldo||a.minDias-b.minDias;});
-  const _rows=[].concat.apply([],_grupos.map(function(g){return g.arr;})).map(function(c){
-    return[_clean(c.Identificacion),_clean(c.Cliente),_clean(c.Operacion),_clean(c.Producto),_clean(c.Pagaduria),_clean(c.FormaPago),_clean(c.TipoProducto),c.DiasActual||0,c.DiasRestantes||0,c.Saldo||0];
-  });
-  const _wb=XLSX.utils.book_new();
-  const _ws=XLSX.utils.aoa_to_sheet([COLS].concat(_rows));
-  XLSX.utils.book_append_sheet(_wb,_ws,'Radar A→B');
-  const _f=l.Fecha||'';
-  const _fLbl=_f?_f.slice(0,4)+'-'+_f.slice(5,7)+'-'+_f.slice(8,10):'';
-  XLSX.writeFile(_wb,'Radar asociados riesgo rodamiento FEBOR '+_fLbl+'.xlsx');
 }
 function closeMoraDetalle(){
   const _ks=document.getElementById('kpiMoraSP'),_kc=document.getElementById('kpiMoraCA');
@@ -2674,7 +2628,7 @@ function renderMoraDetalleCA(){
         </div>
         <div style="display:flex;align-items:center;gap:.5rem;flex-shrink:0">
           <span class="sp-date-chip" id="radDChip" title="Cambiar fecha">📅 ${_radFechaSel?_radFechaSel.slice(8,10)+'/'+_radFechaSel.slice(5,7)+'/'+_radFechaSel.slice(0,4):'Fecha'}</span>
-          <button onclick="descargarRadarExcel()" style="font-size:.72rem;background:#1e293b;color:#fff;border:none;border-radius:6px;padding:.35rem .8rem;cursor:pointer">⬇ Descargar Excel</button>
+          <button onclick="window.open('https://feborentidad-my.sharepoint.com/:x:/g/personal/analista_riesgos_febor_coop/IQD4zgOOcd4CRINVQ-LWyyYqAQYNgunt5ySyA3vjRQq_UMI?e=XkUhoh','_blank')" style="font-size:.72rem;background:#1e293b;color:#fff;border:none;border-radius:6px;padding:.35rem .8rem;cursor:pointer">⬇ Ver Excel en OneDrive</button>
         </div>
       </div>
       <div style="display:flex;flex-wrap:wrap;gap:.45rem;margin-bottom:.5rem">${_chipsSummary}</div>
