@@ -685,6 +685,10 @@ select,input{font-family:var(--ff)}
 #igCanvas .capt .cv{color:#00332a}
 #igCanvas .capt .up{background:rgba(0,146,122,.15);color:#00694f}
 #igCanvas .capt .dn{background:rgba(220,38,38,.13);color:#b91c1c}
+#igCanvas .cta{text-align:center;padding:13px 11px 11px;background:rgba(0,40,33,.45)}
+#igCanvas .cta-b{display:inline-block;background:linear-gradient(135deg,#FAC616,#e0ad00);color:#3d2900;font-size:12px;font-weight:800;padding:8px 20px;border-radius:22px;letter-spacing:.02em;box-shadow:0 4px 14px rgba(250,198,22,.35)}
+#igCanvas .cta-b i{margin-right:4px}
+#igCanvas .cta-u{display:block;margin-top:6px;color:#9fd4c6;font-size:9.5px;font-weight:600;letter-spacing:.01em}
 #igCanvas .foot{text-align:center;padding:11px;background:rgba(0,40,33,.6);color:#cfe6df;font-size:10px;font-weight:500}
 #igCanvas .foot i{color:#FAC616}
 #igSpin{color:#fff;font-family:'Segoe UI',sans-serif;font-size:14px;text-align:center}
@@ -1646,6 +1650,24 @@ function downloadExcel(){
 function _ejecutarDescargaDepositos(){
   // Abre el Excel en OneDrive (SharePoint FEBOR) — protegido con clave
   window.open('https://feborentidad-my.sharepoint.com/:x:/g/personal/analista_riesgos_febor_coop/IQB-5GrFdRaqTrZgqZxIJVA6AckeLiAMOpm-9ICOVOpI1nE?e=7sLpPf','_blank');
+}
+// Ruta en OneDrive de la carpeta "Historico Radar Cartera", donde el pipeline
+// archiva un Excel por día (Cartera_Riesgo_FEBOR_AAAA-MM-DD.xlsx). Al ser una
+// ruta (y no un vínculo con código de acceso), se le puede pegar el nombre del
+// archivo del día que se esté viendo en el Radar. Verificado abriendo el archivo
+// del 2026-07-29 desde el navegador.
+// El "Documents/Documents" no es un error: la biblioteca de OneDrive es el primer
+// "Documents" y adentro hay una carpeta con ese mismo nombre.
+const RADAR_HISTORICO_BASE_URL='https://feborentidad-my.sharepoint.com/:x:/r/personal/analista_riesgos_febor_coop/Documents/Documents/JEISSON/RIESGOS/003.%20SARL/007.%20Evoluci%C3%B3n%20de%20Saldos%20-Semanal/Historico%20Radar%20Cartera';
+// Vínculo de la carpeta completa (formato :f:), como respaldo para ver todos los días.
+const RADAR_HISTORICO_CARPETA_URL='https://feborentidad-my.sharepoint.com/:f:/g/personal/analista_riesgos_febor_coop/IgB6dcVmjRXcRqeUnOIEUGT0AX3hLdChSZbLxCCT3PzTQjs?e=mrR3zA';
+function abrirExcelRadarDia(fecha){
+  if(!fecha){
+    // Sin fecha no se puede armar el nombre del archivo: se abre la carpeta.
+    window.open(RADAR_HISTORICO_CARPETA_URL,'_blank');
+    return;
+  }
+  window.open(RADAR_HISTORICO_BASE_URL+'/Cartera_Riesgo_FEBOR_'+fecha+'.xlsx?web=1','_blank');
 }
 function downloadHTML(){
   const a=document.createElement('a');
@@ -2628,7 +2650,7 @@ function renderMoraDetalleCA(){
         </div>
         <div style="display:flex;align-items:center;gap:.5rem;flex-shrink:0">
           <span class="sp-date-chip" id="radDChip" title="Cambiar fecha">📅 ${_radFechaSel?_radFechaSel.slice(8,10)+'/'+_radFechaSel.slice(5,7)+'/'+_radFechaSel.slice(0,4):'Fecha'}</span>
-          <button onclick="window.open('https://feborentidad-my.sharepoint.com/:x:/g/personal/analista_riesgos_febor_coop/IQD4zgOOcd4CRINVQ-LWyyYqAQYNgunt5ySyA3vjRQq_UMI?e=XkUhoh','_blank')" style="font-size:.72rem;background:#1e293b;color:#fff;border:none;border-radius:6px;padding:.35rem .8rem;cursor:pointer">⬇ Ver Excel en OneDrive</button>
+          <button onclick="abrirExcelRadarDia('${_radFechaSel}')" title="Abre en OneDrive el Excel de este día: Cartera_Riesgo_FEBOR_${_radFechaSel}.xlsx" style="font-size:.72rem;background:#1e293b;color:#fff;border:none;border-radius:6px;padding:.35rem .8rem;cursor:pointer">⬇ Excel del día en OneDrive</button>
         </div>
       </div>
       <div style="display:flex;flex-wrap:wrap;gap:.45rem;margin-bottom:.5rem">${_chipsSummary}</div>
@@ -2998,6 +3020,8 @@ document.addEventListener('DOMContentLoaded',function(){
       +'<div class="sec-t"><span class="dot"></span><span class="tx">CAPTACIONES \u00b7 variaci\u00f3n diaria</span><span class="ln"></span></div>'
       +'<div class="capt">'+capRows+'</div>'
       +'</div>'
+      +'<div class="cta"><span class="cta-b">🔗 VER DASHBOARD COMPLETO →</span>'
+      +'<span class="cta-u">jeivalero08.github.io/febor-cifras-diarias</span></div>'
       +'<div class="foot"><i class="ti ti-robot"></i> Generado autom\u00e1ticamente desde el pipeline de riesgos \u00b7 FEBOR Entidad Cooperativa</div>'
       +'</div>';
   };
