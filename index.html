@@ -583,8 +583,6 @@ select,input{font-family:var(--ff)}
   .sp-mv { font-size:.75rem; }
   .cat-detail-grid { grid-template-columns:1fr!important; }
 
-  /* Modal de clave */
-  ._xlsPwdBox { width:92vw!important; max-width:340px; padding:1.4rem 1.2rem; }
 
   /* Date picker mora */
   #_moreDatePicker { left:1rem!important; right:1rem!important; width:auto!important; }
@@ -1653,18 +1651,11 @@ function renderProd(prod){
 }
 
 // DOWNLOADS
+// Abre el Excel de depósitos en OneDrive. Ya no pide clave: quien controla el
+// acceso es SharePoint, que solo deja entrar a cuentas del dominio @febor.coop.
+// Una clave escrita dentro del HTML no protegía nada, porque el HTML es público
+// y cualquiera podía leerla viendo el código de la página.
 function downloadExcel(){
-  // Abre el modal de clave; la descarga real ocurre tras validar
-  _xlsPwdTarget='depositos';
-  var inp=document.getElementById('xlsPwdInput');
-  var err=document.getElementById('xlsPwdErr');
-  if(inp)inp.value='';
-  if(err)err.style.display='none';
-  document.getElementById('_xlsPwdModal').style.display='flex';
-  setTimeout(function(){if(inp)inp.focus();},80);
-}
-function _ejecutarDescargaDepositos(){
-  // Abre el Excel en OneDrive (SharePoint FEBOR) — protegido con clave
   window.open('https://feborentidad-my.sharepoint.com/:x:/g/personal/analista_riesgos_febor_coop/IQB-5GrFdRaqTrZgqZxIJVA6AckeLiAMOpm-9ICOVOpI1nE?e=7sLpPf','_blank');
 }
 // Ruta en OneDrive de la carpeta "Historico Radar Cartera", donde el pipeline
@@ -2383,20 +2374,6 @@ function showDrillDown(cat){
   }
 }
 
-var _xlsPwdTarget='depositos';
-function cerrarXlsPwd(){document.getElementById('_xlsPwdModal').style.display='none';}
-function validarXlsPwd(){
-  var inp=document.getElementById('xlsPwdInput');
-  var err=document.getElementById('xlsPwdErr');
-  if(!inp)return;
-  if(inp.value==='Febor2026*'){
-    cerrarXlsPwd();
-    if(_xlsPwdTarget==='depositos')_ejecutarDescargaDepositos();
-  }else{
-    if(err)err.style.display='block';
-    inp.focus();inp.select();
-  }
-}
 function closeMoraDetalle(){
   const _ks=document.getElementById('kpiMoraSP'),_kc=document.getElementById('kpiMoraCA');
   if(_ks) _ks.classList.remove('kpi-selected');
@@ -2940,21 +2917,6 @@ document.addEventListener('DOMContentLoaded',function(){
   if(el) el.textContent='Sin datos. Ejecuta Actualizar FEBOR.bat';
 });
 </script>
-<div id="_xlsPwdModal" onclick="if(event.target===this)cerrarXlsPwd()" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;width:100vw;height:100vh;background:rgba(0,18,14,.78);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);z-index:99999;align-items:center;justify-content:center;padding:1.5rem;box-sizing:border-box">
-  <div style="margin:auto;background:rgba(30,41,59,0.72);backdrop-filter:blur(28px);border-radius:16px;width:100%;max-width:380px;box-shadow:0 24px 60px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.16);padding:1.6rem 1.5rem;text-align:center">
-    <div style="font-size:2.2rem;margin-bottom:.4rem">🔒</div>
-    <div style="font-size:1.05rem;font-weight:700;color:#fff;margin-bottom:.3rem">Descarga protegida</div>
-    <div style="font-size:.78rem;color:rgba(255,255,255,.65);margin-bottom:1.2rem">Ingresa la clave para descargar el Excel detallado de cartera.</div>
-    <input type="password" id="xlsPwdInput" placeholder="Contraseña" autocomplete="off"
-      onkeydown="if(event.key==='Enter')validarXlsPwd()"
-      style="width:100%;box-sizing:border-box;padding:11px 14px;border-radius:10px;border:1.5px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);color:#fff;font-size:.9rem;font-family:var(--ff);outline:none;text-align:center;letter-spacing:.1em">
-    <div id="xlsPwdErr" style="display:none;color:#ff8a8a;font-size:.72rem;margin-top:.5rem;font-weight:600">Clave incorrecta. Inténtalo de nuevo.</div>
-    <div style="display:flex;gap:.6rem;margin-top:1.2rem">
-      <button onclick="cerrarXlsPwd()" style="flex:1;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.06);color:#fff;font-weight:600;font-size:.82rem;cursor:pointer;font-family:var(--ff)">Cancelar</button>
-      <button onclick="validarXlsPwd()" style="flex:1;padding:10px;border-radius:10px;border:none;background:linear-gradient(135deg,var(--ac-l),var(--ac));color:#fff;font-weight:700;font-size:.82rem;cursor:pointer;font-family:var(--ff)">Descargar ⬇</button>
-    </div>
-  </div>
-</div>
 <div id="igOverlay"><div id="igSpin">Generando imagen…</div></div>
 <script>
 
