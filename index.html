@@ -3049,6 +3049,24 @@ document.addEventListener('DOMContentLoaded',function(){
       },350);
     }catch(e){var ov2=document.getElementById('igOverlay');if(ov2)ov2.classList.remove('on');}
   };
+
+  // Igual que descargarInfografiaDia, pero en vez de descargar el archivo deja
+  // la imagen en window.__IG_PNG__ (texto base64). La usa el BOT: abre este HTML
+  // sin pantalla, llama esta funcion, espera el resultado y arma el PNG para
+  // publicarlo y enviarlo a Teams. No cambia nada de lo que ve el usuario.
+  window.generarInfografiaPNG=function(){
+    window.__IG_PNG__=null; window.__IG_ERR__=null;
+    try{
+      var host=document.getElementById('igCanvas');
+      if(!host){host=document.createElement('div');host.id='igCanvas';host.style.position='fixed';host.style.left='-9999px';host.style.top='0';document.body.appendChild(host);}
+      host.innerHTML=window.generarInfografiaDia();
+      setTimeout(function(){
+        html2canvas(host,{scale:2,useCORS:true,backgroundColor:null,logging:false}).then(function(canvas){
+          window.__IG_PNG__=canvas.toDataURL('image/png');
+        }).catch(function(e){ window.__IG_ERR__=String(e); });
+      },350);
+    }catch(e){ window.__IG_ERR__=String(e); }
+  };
 })();
 
 </script>
