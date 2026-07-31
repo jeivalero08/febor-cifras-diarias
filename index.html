@@ -1656,7 +1656,7 @@ function renderProd(prod){
 // Una clave escrita dentro del HTML no protegía nada, porque el HTML es público
 // y cualquiera podía leerla viendo el código de la página.
 function downloadExcel(){
-  window.open('https://feborentidad-my.sharepoint.com/:x:/g/personal/analista_riesgos_febor_coop/IQB-5GrFdRaqTrZgqZxIJVA6AckeLiAMOpm-9ICOVOpI1nE?e=7sLpPf','_blank');
+  window.open('https://feborentidad-my.sharepoint.com/:x:/g/personal/analista_riesgos_febor_coop/IQB-5GrFdRaqTrZgqZxIJVA6AZJd5fMFCB7X0dgfFJ_7J5o?e=LyAF0e','_blank');
 }
 // Ruta en OneDrive de la carpeta "Historico Radar Cartera", donde el pipeline
 // archiva un Excel por día (Cartera_Riesgo_FEBOR_AAAA-MM-DD.xlsx). Al ser una
@@ -1667,7 +1667,7 @@ function downloadExcel(){
 // "Documents" y adentro hay una carpeta con ese mismo nombre.
 const RADAR_HISTORICO_BASE_URL='https://feborentidad-my.sharepoint.com/:x:/r/personal/analista_riesgos_febor_coop/Documents/Documents/JEISSON/RIESGOS/003.%20SARL/007.%20Evoluci%C3%B3n%20de%20Saldos%20-Semanal/Historico%20Radar%20Cartera';
 // Vínculo de la carpeta completa (formato :f:), como respaldo para ver todos los días.
-const RADAR_HISTORICO_CARPETA_URL='https://feborentidad-my.sharepoint.com/:f:/g/personal/analista_riesgos_febor_coop/IgB6dcVmjRXcRqeUnOIEUGT0AX3hLdChSZbLxCCT3PzTQjs?e=mrR3zA';
+const RADAR_HISTORICO_CARPETA_URL='https://feborentidad-my.sharepoint.com/:f:/g/personal/analista_riesgos_febor_coop/IgB6dcVmjRXcRqeUnOIEUGT0AalS6No88EPBzU-9mtqZE1A?e=uyAsdw';
 function abrirExcelRadarDia(fecha){
   if(!fecha){
     // Sin fecha no se puede armar el nombre del archivo: se abre la carpeta.
