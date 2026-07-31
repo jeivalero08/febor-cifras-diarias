@@ -1071,6 +1071,9 @@ function filtrarProd(st,prod){return filtrar(st).filter(r=>r[prod]!=null);}
 function infoStr(d){if(!d.length)return'0 registros';return`${fDt(d[0].Fecha)} → ${fDt(d[d.length-1].Fecha)}`;}
 function _maskAp(nombre){
   if(!nombre||typeof nombre!=='string')return nombre||'';
+  // Los datos publicados vienen anonimizados desde el pipeline ("Asociado 12"),
+  // así que no hay nada que enmascarar: se muestran tal cual.
+  if(/^Asociado\s+\d+$/.test(nombre.trim()))return nombre.trim();
   var partes=nombre.trim().split(/\s+/);
   if(partes.length<2)return nombre;
   var nNombres=partes.length>=4?2:1;
